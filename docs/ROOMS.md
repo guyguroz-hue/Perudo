@@ -152,7 +152,7 @@ added to that publication.
 |---|---|---|
 | ~~2~~ | ~~Schema: limits, lifecycle, kick, heartbeat, code alphabet~~ | **Done.** 10 schema tests + a real 5-way race |
 | ~~3~~ | ~~RPCs: create, join by code, leave, kick~~ | **Done.** 12 behaviour tests + the race run through the real RPC |
-| 4 | Routing + lobby UI: seats at a table, code, share, copy | Playwright at 390×844 |
+| ~~4~~ | ~~Routing + lobby UI: seats at a table, code, share, copy~~ | **Done.** Driven in a real browser at 390×844 |
 | 5 | Realtime: joins, leaves, host changes, presence | Multiple browser contexts |
 | 6 | Start: host-only, atomic, transition animation, room lock | Playwright + race tests |
 | 7 | Reconnect: refresh, disconnect, host migration | Playwright |
@@ -208,6 +208,28 @@ Worth recording, because both would have been invisible in production:
    *that* query instead of on whether the player already had a membership. The
    join returned a seat number while writing no row at all — the player would
    have believed they were in a room that did not contain them.
+
+## 9c. The lobby
+
+Routes: `/` (create or join), `/join/:code` (what an invite link lands on),
+`/room/:roomId` (the table). Identity is gated ahead of all of them, and the URL
+is left alone while a player picks a name — so an invite link survives the
+detour and carries on to the room it was sent for.
+
+`useRoom` treats Realtime as a **notification, never a source**. Every event
+triggers a refetch through RLS, so what renders is always what the database
+would answer rather than a patch applied to a local copy. Six people per room
+makes refetching cheap; drift between a local model and the truth is not.
+
+Actions refresh immediately rather than waiting for their own event to come
+back. Browser testing is what caught this: the host removed a player and the
+count sat unchanged, because Realtime was unreachable in the harness. Realtime
+does deliver the change in production — but it is best-effort, and an action
+already knows the state moved.
+
+Radix supplies the confirmation dialog: focus trapping, escape, scroll lock and
+the accessible roles, with the appearance entirely ours. This is what
+`shadcn/ui` is built on, without importing a second design system (D-005).
 
 ## 10. A testing limitation worth stating up front
 

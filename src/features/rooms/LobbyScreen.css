@@ -1,0 +1,134 @@
+.lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 24rem;
+  padding-bottom: var(--space-4);
+}
+
+.lobby__centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+}
+
+.lobby__centered p {
+  margin: 0;
+  color: var(--bone-dim);
+}
+
+.lobby__dice {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.lobby__count {
+  margin: 0;
+  font-size: var(--text-sm);
+  letter-spacing: 0.1em;
+  color: var(--bone-faint);
+}
+
+.lobby__controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.lobby__controls > .btn {
+  width: 100%;
+}
+
+.lobby__muted {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--bone-faint);
+  text-align: center;
+}
+
+.lobby__error {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--danger-bright);
+  text-align: center;
+}
+
+.lobby__leave {
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border: none;
+  background: none;
+  color: var(--bone-faint);
+  cursor: pointer;
+}
+
+.lobby__leave:hover {
+  color: var(--bone-dim);
+}
+
+/* Confirmation sheet — Radix handles focus trapping, escape and scroll lock;
+   the appearance is ours. */
+.sheet__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.6);
+}
+
+.sheet {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  width: min(100%, 24rem);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--felt-raised);
+  box-shadow: var(--shadow-lg);
+}
+
+.sheet__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+}
+
+.sheet__body {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--bone-dim);
+}
+
+.sheet__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sheet__cancel,
+.sheet__danger {
+  flex: 1;
+  min-height: var(--tap);
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sheet__cancel {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgb(244 239 228 / 0.22);
+  color: var(--bone-dim);
+}
+
+.sheet__danger {
+  background: var(--danger);
+  color: var(--bone);
+}

@@ -1,0 +1,6 @@
+# The last migration that has been applied to the live Supabase project.
+# Everything after this line, in filename order, is still pending.
+#
+# Update this after running the pending SQL. `scripts/pending-sql.sh` reads it
+# and prints exactly what is left, so nothing depends on anyone remembering.
+20260911200000_room_system.sql

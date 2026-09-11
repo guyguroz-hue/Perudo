@@ -1,0 +1,57 @@
+.code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.code__value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-5);
+  border: none;
+  border-radius: var(--radius-lg);
+  background: rgb(0 0 0 / 0.25);
+  box-shadow: inset 0 0 0 1px rgb(244 239 228 / 0.14);
+  cursor: pointer;
+}
+
+.code__label {
+  font-size: var(--text-xs);
+  letter-spacing: 0.18em;
+  color: var(--bone-faint);
+}
+
+.code__digits {
+  font-family: var(--font-numeric);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  /* The trailing letter-spacing would otherwise push the code off-centre. */
+  text-indent: 0.22em;
+  color: var(--brass-bright);
+}
+
+.code__hint {
+  font-size: var(--text-xs);
+  color: var(--bone-faint);
+}
+
+.code__share {
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-5);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgb(244 239 228 / 0.22);
+  color: var(--bone-dim);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.code__share:hover {
+  color: var(--bone);
+}

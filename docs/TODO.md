@@ -47,7 +47,7 @@ Completed items are marked `[x]` and kept, not deleted.
 
 - [x] **T-13** ~~Replace the Vite template app shell~~ — done, template removed.
 - [ ] **T-14** Replace the Vite template `README.md` with project documentation.
-- [ ] **T-15** Add routing (`/`, `/room/:code`, `/join/:code`).
+- [x] **T-15** ~~Add routing~~ — `/`, `/join/:code`, `/room/:roomId`.
 - [x] **T-16** ~~Design-token foundation~~ — `src/styles/tokens.css`.
 - [ ] **T-17** Stable error-code contract shared by client and server.
 - [ ] **T-18** Supabase generated types wired into the build.
@@ -98,8 +98,9 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **TD-1** ~~`SupabaseStatus.tsx` connectivity probe~~ — removed.
 - [x] **TD-2** ~~`App.tsx` is the Vite template~~ — replaced.
 - [x] **TD-3** ~~No test runner~~ — Vitest.
-- [ ] **TD-8** The `Seated` screen in `App.tsx` is a placeholder, not the lobby.
-      Clearly labelled as temporary; replace in the lobby phase.
+- [x] **TD-8** ~~`Seated` placeholder screen~~ — replaced by the real lobby.
+- [ ] **T-28** The lobby's Start button has correct enablement but no action
+      behind it yet; it shows a "next step" notice. Wire it in milestone 6.
 - [ ] **TD-9** `Profile` is hand-typed in `src/features/auth/types.ts`. Replace
       with Supabase generated types once the schema is applied (T-18).
 - [ ] **TD-4** No CI pipeline.

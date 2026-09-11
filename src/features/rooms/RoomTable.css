@@ -1,0 +1,49 @@
+/* Six seats around an ellipse. Positions are explicit rather than computed:
+   six is a fixed, hard limit, so a formula would only hide the arrangement.
+
+   The seats sit ON the boundary, so the box is inset from the container to keep
+   avatars and names from clipping at the screen edge on a narrow phone. */
+.table {
+  position: relative;
+  width: 100%;
+  max-width: 20rem;
+  margin: 0 auto var(--space-5);
+  padding: 0 3.5rem;
+  aspect-ratio: 1 / 1.05;
+}
+
+.table__felt {
+  position: absolute;
+  inset: 7% 15%;
+  border-radius: 50%;
+  /* The felt has to read as a surface, not a hole. A warmer, lighter centre
+     falling to a dark rim does that; matching the page background does not. */
+  background:
+    radial-gradient(ellipse at 50% 38%, #2c5a3c 0%, #1d4029 55%, #12271b 100%);
+  box-shadow:
+    0 0 0 5px var(--wood-dark),
+    0 0 0 8px var(--leather),
+    0 0 0 9px rgb(0 0 0 / 0.35),
+    inset 0 2px 14px rgb(0 0 0 / 0.45),
+    var(--shadow-lg);
+}
+
+.table__seat {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+/* Seat 0 sits nearest the viewer — the player's own place at a real table. */
+.table__seat--0 { left: 50%; top: 92%; }
+.table__seat--1 { left: 16%; top: 71%; }
+.table__seat--2 { left: 11%; top: 30%; }
+.table__seat--3 { left: 50%; top: 8%;  }
+.table__seat--4 { left: 89%; top: 30%; }
+.table__seat--5 { left: 84%; top: 71%; }
+
+@media (max-width: 23rem) {
+  .table {
+    max-width: 17rem;
+    padding: 0 2.75rem;
+  }
+}
