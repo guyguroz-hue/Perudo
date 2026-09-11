@@ -17,7 +17,7 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-1e** ~~Apply room_system migration~~ — applied.
 - [x] **T-1f** ~~Apply room_actions~~ — applied.
 - [x] **T-1g** ~~Apply game_lifecycle~~ — applied.
-- [ ] **T-1h** Apply `20260911230000_rounds_and_private_dice.sql` to the live project.
+- [x] **T-1h** ~~Apply rounds_and_private_dice~~ — applied. Live project is current.
 - [x] **T-5** ~~Private-dice table + RLS~~ — done, and verified by sabotage:
       the plausible wrong policy and a publication leak both fail the suite.
 

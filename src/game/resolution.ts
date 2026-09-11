@@ -1,12 +1,27 @@
-import type { ChallengeKind, Hand, PlayerId, RoundState } from './types'
+import type { ChallengeKind, PlayerId, RoundState } from './types'
 import { MAX_DICE } from './types'
-import { countAcrossTable } from './counting'
+
+/** A player at the table, and how many dice they hold. Public information. */
+export interface PlayerStanding {
+  readonly playerId: PlayerId
+  readonly diceCount: number
+}
 
 export interface ChallengeInput {
   /** Must carry an active bid; challenging nothing is not a move. */
   readonly round: RoundState
-  /** Hands of every player still in the game. Dice counts are derived from these. */
-  readonly hands: readonly Hand[]
+  /** Every player still in the game. Counts only — never faces. */
+  readonly players: readonly PlayerStanding[]
+  /**
+   * Relevant dice actually on the table, counted under this round's rules.
+   *
+   * Passed in rather than derived, because the engine is deliberately not
+   * given anybody's dice. Counting happens where the dice already live, and
+   * only the total travels. The engine could not leak a hand if it tried —
+   * including into a log line or an error report, which is the realistic way
+   * hidden information escapes.
+   */
+  readonly actualCount: number
   readonly challengerId: PlayerId
   readonly kind: ChallengeKind
 }
@@ -68,19 +83,18 @@ export interface ChallengeOutcome {
  * outcome was decided to be and why.
  */
 export function resolveChallenge(input: ChallengeInput): ChallengeOutcome {
-  const { round, hands, challengerId, kind } = input
+  const { round, players, actualCount, challengerId, kind } = input
   const bid = round.bid
   if (bid === null) {
     throw new Error('resolveChallenge called with no active bid')
   }
 
-  const actualCount = countAcrossTable(hands, bid.face, round.type)
   const isBull = bid.bull !== null
 
   const claimHolds = isBull ? actualCount === bid.quantity : actualCount >= bid.quantity
 
   const dieDeltas = isBull
-    ? resolveBull(bid.bull!.callerId, claimHolds, hands)
+    ? resolveBull(bid.bull!.callerId, claimHolds, players)
     : resolvePlainBid(bid.bidderId, claimHolds, challengerId, kind)
 
   // A Bull is an ordinary bet, so Burst Dudo behaves against it exactly as it
@@ -103,7 +117,7 @@ export function resolveChallenge(input: ChallengeInput): ChallengeOutcome {
       ? bid.bidderId
       : challengerId
 
-  return buildOutcome(actualCount, claimHolds, dieDeltas, hands, provedRight)
+  return buildOutcome(actualCount, claimHolds, dieDeltas, players, provedRight)
 }
 
 /**
@@ -145,7 +159,7 @@ function resolvePlainBid(
 function resolveBull(
   bullCallerId: PlayerId,
   bullIsExact: boolean,
-  hands: readonly Hand[],
+  players: readonly PlayerStanding[],
 ): Map<PlayerId, number> {
   const deltas = new Map<PlayerId, number>()
 
@@ -154,9 +168,9 @@ function resolveBull(
     return deltas
   }
 
-  for (const hand of hands) {
-    if (hand.playerId !== bullCallerId) {
-      deltas.set(hand.playerId, -1)
+  for (const player of players) {
+    if (player.playerId !== bullCallerId) {
+      deltas.set(player.playerId, -1)
     }
   }
   return deltas
@@ -166,7 +180,7 @@ function buildOutcome(
   actualCount: number,
   claimHolds: boolean,
   dieDeltas: Map<PlayerId, number>,
-  hands: readonly Hand[],
+  players: readonly PlayerStanding[],
   provedRight: PlayerId,
 ): ChallengeOutcome {
   const eliminated: PlayerId[] = []
@@ -179,21 +193,21 @@ function buildOutcome(
   // from dice a player can actually hold (R-007).
   const capped = new Map<PlayerId, number>()
 
-  for (const hand of hands) {
-    const raw = dieDeltas.get(hand.playerId) ?? 0
+  for (const player of players) {
+    const raw = dieDeltas.get(player.playerId) ?? 0
     const delta =
-      raw > 0 ? Math.min(raw, Math.max(0, MAX_DICE - hand.dice.length)) : raw
-    if (delta !== 0) capped.set(hand.playerId, delta)
+      raw > 0 ? Math.min(raw, Math.max(0, MAX_DICE - player.diceCount)) : raw
+    if (delta !== 0) capped.set(player.playerId, delta)
 
-    const after = hand.dice.length + delta
+    const after = player.diceCount + delta
 
     if (after <= 0) {
-      eliminated.push(hand.playerId)
+      eliminated.push(player.playerId)
       continue
     }
 
     survivors += 1
-    lastSurvivor = hand.playerId
+    lastSurvivor = player.playerId
 
     // A Farewell Round is triggered by *losing* a die down to exactly one
     // (GAME_RULES §10) — never by already sitting on one, and never by gaining.
@@ -203,7 +217,7 @@ function buildOutcome(
     // rounds, while one who wins a die back with Burst Dudo and is later knocked
     // down again crosses the boundary afresh and is owed another (R-003).
     if (after === 1 && delta < 0) {
-      farewellQueue.push(hand.playerId)
+      farewellQueue.push(player.playerId)
     }
   }
 

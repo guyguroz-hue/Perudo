@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { resolveChallenge } from './resolution'
 import type { ChallengeKind } from './types'
-import { bid, blanks, hand, normalRound } from './testing'
+import { resolveChallenge } from './resolution'
+import { bid, blanks, challengeWithHands, hand, normalRound } from './testing'
 
 /** Resolves a challenge on a table where the only player loses their last die. */
 function buildEmptyTableOutcome() {
-  return resolveChallenge({
+  return challengeWithHands({
     round: normalRound(bid(9, 5, 'alice')),
     hands: [hand('alice', 2)],
     challengerId: 'alice',
@@ -18,7 +18,7 @@ function buildEmptyTableOutcome() {
 const table = [hand('alice', 5, 5, 2), hand('bob', 5, 1, 3)]
 
 function challenge(quantity: number, kind: ChallengeKind, challengerId = 'bob') {
-  return resolveChallenge({
+  return challengeWithHands({
     round: normalRound(bid(quantity, 5, 'alice')),
     hands: table,
     challengerId,
@@ -81,7 +81,7 @@ describe('Bull (GAME_RULES §8)', () => {
   const bullTable = [hand('alice', 5, 5, 2), hand('bob', 5, 1, 3), hand('carol', 4, 4, 6)]
 
   it('reads the bid as "exactly", not "at least"', () => {
-    const exact = resolveChallenge({
+    const exact = challengeWithHands({
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
@@ -93,7 +93,7 @@ describe('Bull (GAME_RULES §8)', () => {
     // "3 fives" would be a perfectly good "at least" claim with four on the
     // table — but a Bulled bid must be exact, so this one is false and its
     // caller pays for it.
-    const inexact = resolveChallenge({
+    const inexact = challengeWithHands({
       round: normalRound(bid(3, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
@@ -104,7 +104,7 @@ describe('Bull (GAME_RULES §8)', () => {
   })
 
   it('costs every active player except the Bull caller a die when correct', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
@@ -118,7 +118,7 @@ describe('Bull (GAME_RULES §8)', () => {
   it('is discarded once a later bid supersedes it', () => {
     // Same table, but the Bull has been superseded by a plain bid of 3 fives.
     // Read as "at least", that holds — so the challenger pays.
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(3, 5, 'carol')),
       hands: bullTable,
       challengerId: 'alice',
@@ -132,7 +132,7 @@ describe('Bull (GAME_RULES §8)', () => {
 // PART 68 — elimination and victory
 describe('elimination and victory (GAME_RULES §11)', () => {
   it('eliminates a player who loses their last die', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'alice')),
       hands: [hand('alice', 5), blanks('bob', 3)],
       challengerId: 'bob',
@@ -142,7 +142,7 @@ describe('elimination and victory (GAME_RULES §11)', () => {
   })
 
   it('declares the last player holding dice the winner', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'alice')),
       hands: [hand('alice', 5), blanks('bob', 3)],
       challengerId: 'bob',
@@ -159,7 +159,7 @@ describe('elimination and victory (GAME_RULES §11)', () => {
 // PART 67 — Farewell trigger
 describe('Farewell Round trigger (GAME_RULES §10)', () => {
   it('nominates the player driven down to exactly one die', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'alice')),
       hands: [hand('alice', 5, 5), blanks('bob', 3)],
       challengerId: 'bob',
@@ -171,7 +171,7 @@ describe('Farewell Round trigger (GAME_RULES §10)', () => {
 
   it('does not trigger for a player who was already on one die', () => {
     // Bob holds a single die and loses nothing; Alice drops from 3 to 2.
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(1, 5, 'alice')),
       hands: [hand('alice', 5, 2, 2), hand('bob', 4)],
       challengerId: 'bob',
@@ -182,7 +182,7 @@ describe('Farewell Round trigger (GAME_RULES §10)', () => {
   })
 
   it('does not trigger on a die gained by Burst Dudo', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'alice')),
       hands: [blanks('alice', 3), hand('bob', 6)],
       challengerId: 'bob',
@@ -199,7 +199,7 @@ describe('a false Bull (GAME_RULES §8.4)', () => {
   const table = [hand('alice', 5, 5, 2), hand('bob', 5, 1, 3), hand('carol', 4, 4, 6)]
 
   it('costs the Bull caller a die, and nobody else', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(2, 5, 'alice', 'bob')),
       hands: table,
       challengerId: 'carol',
@@ -214,7 +214,7 @@ describe('a false Bull (GAME_RULES §8.4)', () => {
 
   it('is wrong when the real count is too high as well as too low', () => {
     // Three fives claimed exactly, four on the table: still false.
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(3, 5, 'alice', 'bob')),
       hands: table,
       challengerId: 'carol',
@@ -225,7 +225,7 @@ describe('a false Bull (GAME_RULES §8.4)', () => {
   })
 
   it('flips the cost entirely when the same Bull is right', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: table,
       challengerId: 'carol',
@@ -241,7 +241,7 @@ describe('a false Bull (GAME_RULES §8.4)', () => {
 describe('simultaneous Farewell Rounds (R-003)', () => {
   it('queues every player driven down to one die', () => {
     // A correct Bull of 2 takes a die from everyone but its caller.
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(2, 5, 'alice', 'carol')),
       hands: [hand('alice', 5, 2), hand('bob', 5, 3), blanks('carol', 4)],
       challengerId: 'bob',
@@ -254,7 +254,7 @@ describe('simultaneous Farewell Rounds (R-003)', () => {
     // Bob holds two dice — he was on one, won a die back with a Burst Dudo, and
     // is now knocked down again. Crossing the boundary a second time earns a
     // second Farewell Round.
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'bob')),
       hands: [blanks('alice', 3), hand('bob', 5, 2)],
       challengerId: 'alice',
@@ -268,7 +268,7 @@ describe('simultaneous Farewell Rounds (R-003)', () => {
 // R-004 — several players eliminated at once
 describe('simultaneous elimination (R-004)', () => {
   it('ends the game with no winner when the last players go out together', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(2, 5, 'alice', 'carol')),
       hands: [hand('alice', 5), hand('bob', 5), blanks('carol', 4)],
       challengerId: 'bob',
@@ -281,7 +281,7 @@ describe('simultaneous elimination (R-004)', () => {
   })
 
   it('leaves the Bull caller standing as winner when the last opponent goes out', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(2, 5, 'alice', 'bob')),
       hands: [hand('alice', 5), hand('bob', 1)],
       challengerId: 'alice',
@@ -319,7 +319,7 @@ describe('Burst Dudo against a Bull (R-006)', () => {
   const bullTable = [hand('alice', 5, 5, 2), hand('bob', 5, 1, 3), hand('carol', 4, 4, 6)]
 
   it('wins a die back when the Bull proves false', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(2, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
@@ -332,7 +332,7 @@ describe('Burst Dudo against a Bull (R-006)', () => {
   })
 
   it('costs the challenger a die when the Bull was exact', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
@@ -344,7 +344,7 @@ describe('Burst Dudo against a Bull (R-006)', () => {
   it('still costs the whole table when the Bull was exact', () => {
     // Bursting does not shield the other players from a correct Bull: the two
     // rules compose, so everyone but the caller pays either way.
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
@@ -356,7 +356,7 @@ describe('Burst Dudo against a Bull (R-006)', () => {
   })
 
   it('matches a normal Dudo except for the gain', () => {
-    const asDudo = resolveChallenge({
+    const asDudo = challengeWithHands({
       round: normalRound(bid(2, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
@@ -370,7 +370,7 @@ describe('Burst Dudo against a Bull (R-006)', () => {
 // R-007 — the ceiling on dice
 describe('the five-dice ceiling (R-007)', () => {
   it('refuses to take a full hand past five', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'alice')),
       hands: [blanks('alice', 3), hand('bob', 6, 6, 6, 6, 6)],
       challengerId: 'bob',
@@ -383,7 +383,7 @@ describe('the five-dice ceiling (R-007)', () => {
   })
 
   it('still grants the die when there is room', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'alice')),
       hands: [blanks('alice', 3), hand('bob', 6, 6, 6, 6)],
       challengerId: 'bob',
@@ -393,7 +393,7 @@ describe('the five-dice ceiling (R-007)', () => {
   })
 
   it('caps a Burst Dudo against a Bull too', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(1, 5, 'alice', 'alice')),
       hands: [hand('alice', 5, 5), hand('bob', 6, 6, 6, 6, 6)],
       challengerId: 'bob',
@@ -421,7 +421,7 @@ describe('the next round opens with whoever was proved right (R-002)', () => {
   })
 
   it('hands it to the Bull caller when the count was exact', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: table,
       challengerId: 'alice',
@@ -432,7 +432,7 @@ describe('the next round opens with whoever was proved right (R-002)', () => {
   })
 
   it('hands it to the challenger when the Bull proved false', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(2, 5, 'alice', 'bob')),
       hands: table,
       challengerId: 'alice',
@@ -456,7 +456,7 @@ describe('the next round opens with whoever was proved right (R-002)', () => {
   it('yields to a Farewell Round when one is owed', () => {
     // Alice is knocked down to one die, so she opens the next round even though
     // Bob was the one proved right.
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'alice')),
       hands: [hand('alice', 5, 5), blanks('bob', 3)],
       challengerId: 'bob',
@@ -484,7 +484,7 @@ describe('a Farewell Round permits Burst and Bull (R-008)', () => {
 
   it('counts without the wildcard, so ones do not rescue a bid', () => {
     // The same three fives-and-ones would make four in a normal round.
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: farewell(3),
       hands: table,
       challengerId: 'bob',
@@ -496,7 +496,7 @@ describe('a Farewell Round permits Burst and Bull (R-008)', () => {
   })
 
   it('allows a Burst Dudo, gain included', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: farewell(3),
       hands: table,
       challengerId: 'carol',
@@ -507,7 +507,7 @@ describe('a Farewell Round permits Burst and Bull (R-008)', () => {
   })
 
   it('allows a Bull, resolved exactly as in a normal round', () => {
-    const exact = resolveChallenge({
+    const exact = challengeWithHands({
       round: farewell(2, 'bob'),
       hands: table,
       challengerId: 'carol',
@@ -518,7 +518,7 @@ describe('a Farewell Round permits Burst and Bull (R-008)', () => {
     expect(exact.dieDeltas.get('carol')).toBe(-1)
     expect(exact.dieDeltas.has('bob')).toBe(false)
 
-    const wrong = resolveChallenge({
+    const wrong = challengeWithHands({
       round: farewell(4, 'bob'),
       hands: table,
       challengerId: 'carol',
@@ -530,7 +530,7 @@ describe('a Farewell Round permits Burst and Bull (R-008)', () => {
   })
 
   it('allows a Bull challenged by a Burst Dudo', () => {
-    const outcome = resolveChallenge({
+    const outcome = challengeWithHands({
       round: farewell(4, 'bob'),
       hands: table,
       challengerId: 'carol',
@@ -538,5 +538,59 @@ describe('a Farewell Round permits Burst and Bull (R-008)', () => {
     })
     expect(outcome.dieDeltas.get('bob')).toBe(-1)
     expect(outcome.dieDeltas.get('carol')).toBe(1)
+  })
+})
+
+// The shape production actually uses
+describe('the engine resolves from counts alone', () => {
+  it('needs no dice to decide an ordinary challenge', () => {
+    // This is the call the server makes. Note what is absent: any dice at all.
+    // The count was computed where the dice live, and only the total travelled.
+    const outcome = resolveChallenge({
+      round: normalRound(bid(5, 5, 'alice')),
+      players: [
+        { playerId: 'alice', diceCount: 3 },
+        { playerId: 'bob', diceCount: 3 },
+      ],
+      actualCount: 4,
+      challengerId: 'bob',
+      kind: 'dudo',
+    })
+    expect(outcome.claimHolds).toBe(false)
+    expect(outcome.dieDeltas.get('alice')).toBe(-1)
+    expect(outcome.nextStarterId).toBe('bob')
+  })
+
+  it('decides eliminations and the Farewell queue from counts', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(2, 5, 'alice', 'carol')),
+      players: [
+        { playerId: 'alice', diceCount: 2 },
+        { playerId: 'bob', diceCount: 1 },
+        { playerId: 'carol', diceCount: 4 },
+      ],
+      actualCount: 2,
+      challengerId: 'bob',
+      kind: 'dudo',
+    })
+    // A correct Bull: everyone but Carol loses one.
+    expect(outcome.eliminated).toEqual(['bob'])
+    expect(outcome.farewellQueue).toEqual(['alice'])
+    expect(outcome.gameOver).toBe(false)
+  })
+
+  it('caps a gain at five without knowing what the dice are', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(9, 5, 'alice')),
+      players: [
+        { playerId: 'alice', diceCount: 3 },
+        { playerId: 'bob', diceCount: 5 },
+      ],
+      actualCount: 0,
+      challengerId: 'bob',
+      kind: 'burst_dudo',
+    })
+    expect(outcome.dieDeltas.get('alice')).toBe(-1)
+    expect(outcome.dieDeltas.get('bob')).toBeUndefined()
   })
 })

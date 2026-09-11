@@ -256,6 +256,21 @@ bid of its own, because that is what it is: it re-reads an existing quantity as
 "exactly" and introduces no quantity or face. A later bid replaces the whole
 `ActiveBid`, which is how the Bull stops applying without any special handling.
 
+**The engine is never given anybody's dice.** `resolveChallenge` takes each
+player's dice *count* and the relevant *total* on the table — both public — and
+nothing else. Counting happens where the dice already live, in Postgres, and
+only the total travels.
+
+This is not protection against a compromised server: anything holding the
+service key can read `player_dice` directly. It is protection against the way
+hidden information actually escapes — a log line, an error report, a crash
+payload that happens to include the function's inputs. The engine cannot leak a
+hand into any of those, because it was never handed one.
+
+Tests still state scenarios as hands, which is the natural way to describe a
+table. A test-only helper converts them, so what crosses into the engine in a
+test is what crosses in reality: a count.
+
 **Undefined rules raise.** Every branch the house rules leave open throws
 `UnresolvedRuleError` carrying the rule id and the concrete situation. This is
 deliberate: an engine that guesses would bake an invented rule into the product
