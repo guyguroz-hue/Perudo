@@ -205,6 +205,39 @@ the reveal, so the three cannot drift apart.
 
 Full reasoning in `docs/ROOMS.md`.
 
+### ✅ D-007 — The bid builder offers the table, not infinity (2026-09-11)
+
+Nothing in the rules caps a bid's quantity, so the legal range is unbounded.
+The builder's quantity control stops at the number of dice on the table.
+
+*Why this removes no move:* every bid above the table total is certainly false,
+so all of them are the same bid in play — a doomed one. A player cornered into
+a minimum above the table total can still reach it, because the range opens to
+whatever the lowest legal quantity is. What the control will not do is make a
+thumb travel through sixty values that differ in nothing.
+
+*Where it is enforced:* `quantityBounds` in `src/game/builder.ts`. The server's
+own check is `checkBid`, which does not cap anything — this is an affordance,
+not a rule, and it is deliberately not in the rules module's judgement.
+
+### ✅ D-008 — The builder derives its options from `checkBid` (2026-09-11)
+
+A bid builder needs answers `checkBid` does not give: which faces are offerable
+at this quantity, how low the quantity may go, where to open. Every one of them
+is found by asking `checkBid` over a few hundred pairs, never by restating the
+rule.
+
+*Why not compute them directly:* it would be faster and it would be a second
+implementation of the bid rules. The options a player can reach and the rules
+the server enforces would then be two things that agree until they do not.
+
+*What it turned up:* the lowest legal bid is not the raise anyone wants. Against
+four fives it is **two Perudos**, because switching to the wildcard lets the
+quantity fall (GAME_RULES §5). Opening the builder there would have buried the
+ordinary raise behind a wildcard jump. `minimalRaise` is therefore a separate
+question from `lowestLegalBid`, and the distinction only surfaced because the
+search asked the rules instead of assuming them.
+
 ---
 
 ## ❓ STILL OPEN — game rules

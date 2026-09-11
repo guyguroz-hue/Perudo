@@ -1,0 +1,146 @@
+.builder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: linear-gradient(var(--felt-raised), var(--felt));
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  box-shadow: var(--shadow-lg);
+}
+
+/* The bid being built is the dominant element on the screen: a player knows
+   exactly what they are about to say before they say it. */
+.builder__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.builder__quantity {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--bone);
+}
+
+.builder__times {
+  font-size: var(--text-xl);
+  color: var(--bone-faint);
+}
+
+.builder__row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.builder__step {
+  width: calc(var(--tap) + 12px);
+  height: var(--tap);
+  border: 1px solid var(--wood);
+  border-radius: var(--radius);
+  background: linear-gradient(var(--wood), var(--wood-dark));
+  color: var(--bone);
+  font-size: var(--text-xl);
+  line-height: 1;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease);
+}
+
+.builder__step:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.builder__step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.builder__range {
+  min-width: 4ch;
+  text-align: center;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--bone-faint);
+}
+
+.builder__faces {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+/* Faces are the dice themselves, never the words "one, two, three", so the bid
+   builder, a player's hand and the reveal all speak one visual language. */
+.builder__face {
+  display: grid;
+  place-items: center;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: var(--space-1);
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease);
+}
+
+.builder__face[aria-pressed='true'] {
+  border-color: var(--brass-bright);
+  background: rgb(232 195 77 / 0.12);
+}
+
+/* Disabled, not hidden: the shape of the rule stays visible. */
+.builder__face:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.builder__face:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.builder__why {
+  margin: 0;
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--danger-bright);
+}
+
+.builder__submit {
+  min-height: var(--tap);
+  border: 1px solid var(--brass-dim);
+  border-radius: var(--radius);
+  background: linear-gradient(var(--brass-bright), var(--brass));
+  color: #2b2208;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform var(--duration-fast) var(--ease);
+}
+
+.builder__submit:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+
+.builder__submit:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* A Burst interrupts somebody else's turn, and the button says so before it is
+   pressed rather than after. */
+.builder__submit--burst {
+  background: linear-gradient(var(--leather), var(--wood));
+  border-color: var(--leather);
+  color: var(--bone);
+}

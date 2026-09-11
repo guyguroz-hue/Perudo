@@ -146,7 +146,18 @@ If the request is slow enough to outlast the dramatic pause, the pause extends
 rather than a spinner appearing — the table holds its breath. That degrades
 honestly: a slow connection makes the moment longer, not broken.
 
-### 5.2 The Perudo face — resolved (§92.3)
+### 5.2 Opening on the lowest legal bid would have been wrong
+
+The one-tap promise asks the builder to open holding the smallest legal raise.
+Derived from the rules rather than assumed, that turns out to be a jump to the
+wildcard: against four fives the lowest legal bid is **two Perudos**, because
+switching to Perudo lets the quantity fall (GAME_RULES §5).
+
+So the builder opens on `minimalRaise` — nudge the face up if it can go up,
+otherwise ask for one more of the same face — and `lowestLegalBid` is only the
+floor of the quantity control. See D-008.
+
+### 5.3 The Perudo face — resolved (§92.3)
 
 The spec referred to a custom Joker symbol and canonical components as though
 they existed; they did not. Now they do: the one is an Andean serpent-hook
@@ -159,7 +170,34 @@ them.
 
 ---
 
-## 6. The loop this all serves
+---
+
+## 6. Where the screens are
+
+| Screen | Component | Seen at |
+|---|---|---|
+| The table, waiting and acting | `features/game/GameTable` | `/preview` → Table |
+| Building a bid | `features/game/BidBuilder` | inside the table |
+| Dudo and Bull | `features/game/ChallengeActions` | inside the table |
+| The reveal | `features/game/Reveal` | `/preview` → Reveal |
+| The cup | `components/Cup` | inside the reveal |
+
+`/preview` renders the real components against fixtures. It reaches no network
+and no database, needs no identity, and is therefore the one screen that still
+works when Supabase does not.
+
+Two details the layout forced, both visible there:
+
+- **The cups are on the table for the whole pause.** Dice *counts* are public,
+  so the reveal can draw everyone's cup the instant a challenge is made and
+  only needs the server for what is under them. The held beat is the table
+  holding its breath, not an empty screen.
+- **The lift is clipped, and the headroom collapses after it.** A cup that
+  rises far enough to look lifted would otherwise travel up across the rest of
+  the page. Each hand keeps room above it to be lifted through, and gives that
+  room back once the dice are out.
+
+## 7. The loop this all serves
 
 ```
 wait → action → escalation → choice → anticipation → reveal

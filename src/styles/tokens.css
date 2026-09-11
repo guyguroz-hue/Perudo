@@ -72,6 +72,8 @@
   --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
   --duration-fast: 120ms;
   --duration: 220ms;
+  /* The cup lift, and nothing else. Long enough to read as a physical act. */
+  --duration-lift: 480ms;
 }
 
 /* Animation must never be load-bearing for understanding the game state
@@ -80,6 +82,7 @@
   :root {
     --duration-fast: 0ms;
     --duration: 0ms;
+    --duration-lift: 0ms;
   }
 
   *,

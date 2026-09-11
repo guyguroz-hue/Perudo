@@ -1,10 +1,11 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider } from './features/auth/AuthProvider'
 import { NameScreen } from './features/auth/NameScreen'
 import { useAuth } from './features/auth/useAuth'
 import { HomeScreen } from './features/rooms/HomeScreen'
 import { JoinScreen } from './features/rooms/JoinScreen'
 import { RoomScreen } from './features/rooms/RoomScreen'
+import { PreviewScreen } from './features/game/PreviewScreen'
 import { Button } from './components/Button'
 import { Die } from './components/Die'
 import { supabaseUrl } from './lib/supabaseClient'
@@ -31,6 +32,11 @@ export default function App() {
  */
 function Gate() {
   const { state, retry } = useAuth()
+
+  // Every game screen, driven by fixtures and reaching nothing. It needs no
+  // identity, so it is answered before the gate rather than behind it — which
+  // also makes it the one screen that still works when Supabase does not.
+  if (useLocation().pathname === '/preview') return <PreviewScreen />
 
   switch (state.status) {
     case 'connecting':

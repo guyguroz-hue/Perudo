@@ -117,9 +117,17 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **TD-3** ~~No test runner~~ — Vitest.
 - [x] **TD-8** ~~`Seated` placeholder screen~~ — replaced by the real lobby.
 - [x] **T-28** ~~Wire the Start button~~ — starts a real game.
-- [ ] **T-29** `GameView` is a placeholder: it shows who is playing and how many
-      dice they hold, but there is no play. Bids, Dudo, Bull, Burst, the
-      Farewell Round and the private dice arrive with the engine's own phase.
+- [x] **T-30** ~~Build the game screens~~ — `features/game/GameTable` (waiting,
+      bid builder, Dudo/Bull) and `features/game/Reveal` (cups, count, result)
+      exist and can be seen at **`/preview`**, driven by fixtures.
+- [ ] **T-29** `GameView` is still the placeholder. What is missing is not the
+      UI — that is built — but the round state to drive it: whose turn, the
+      current bid, your own dice. None of it can be invented client-side, so
+      this waits on the action layer (D-002).
+- [ ] **T-31** `/preview` is reachable in production. Harmless (it touches no
+      network and no database, and is the one screen that works when Supabase
+      does not), and useful while the UI is being reviewed on a phone. Decide
+      whether it stays once the game screens are wired.
 - [ ] **TD-9** `Profile` is hand-typed in `src/features/auth/types.ts`. Replace
       with Supabase generated types once the schema is applied (T-18).
 - [ ] **TD-4** No CI pipeline.

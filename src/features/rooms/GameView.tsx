@@ -7,9 +7,13 @@ import './GameView.css'
  *
  * PLACEHOLDER (TODO T-29). It shows who is playing and how many dice each of
  * them holds — which is public information and genuinely useful — but there is
- * no play here yet. Bids, Dudo, Bull, Burst and the Farewell Round arrive with
- * the engine's own phase, along with the private dice that only their owner may
- * see.
+ * no play here yet.
+ *
+ * The screens that replace it are built and can be seen at /preview:
+ * `features/game/GameTable` for play and `features/game/Reveal` for the
+ * resolution. What is missing is not the UI but the round state to drive it —
+ * whose turn, the current bid, your own dice — none of which a client may
+ * invent. That arrives with the action layer (D-002).
  *
  * Note what it deliberately does NOT show: anybody's dice faces. Other players'
  * cups are drawn face down because the client has never been told what is in

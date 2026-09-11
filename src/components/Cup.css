@@ -1,0 +1,88 @@
+.cup {
+  --cup-size: 84px;
+  position: relative;
+  display: inline-block;
+  width: var(--cup-size);
+  height: calc(var(--cup-size) * 1.2);
+}
+
+/* The body tapers — wider at the mouth, narrower at the base — which is the
+   whole silhouette of a dice cup and the only thing that has to read at a
+   glance. */
+.cup__body {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  clip-path: polygon(0% 4%, 100% 4%, 86% 100%, 14% 100%);
+  background:
+    linear-gradient(100deg, rgb(0 0 0 / 0.38) 0%, transparent 24%, transparent 60%, rgb(0 0 0 / 0.42) 100%),
+    linear-gradient(180deg, #8a6543 0%, var(--leather) 20%, #5c4029 74%, var(--wood) 100%);
+  transition:
+    transform var(--duration-lift) var(--ease),
+    opacity var(--duration-lift) var(--ease);
+}
+
+/* The mouth. A cup seen slightly from above shows its rim as an ellipse, and
+   without it the silhouette reads as a bag rather than something dice come
+   out of. */
+.cup__body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 14%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 120%, #2a1a0f 40%, #6d4c32 100%);
+  box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.55);
+}
+
+.cup__carving {
+  width: 52%;
+  height: 52%;
+  margin-top: 8%;
+  opacity: 0.8;
+}
+
+/* Tooled, not drawn: the cut sits dark and the catch sits a pixel above it in
+   light, so the mark reads as pressed into the leather rather than printed. */
+.cup__cut {
+  stroke: rgb(0 0 0 / 0.5);
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cup__catch {
+  stroke: rgb(255 226 190 / 0.32);
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: translateY(-1.2px);
+}
+
+/* The cup does not fade out. It lifts clean out of frame — and its shadow
+   tightens and darkens on the way, which is the part that sells the height. */
+.cup__shadow {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: -4px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.5);
+  filter: blur(4px);
+  transition:
+    transform var(--duration-lift) var(--ease),
+    opacity var(--duration-lift) var(--ease);
+}
+
+.cup--lifted .cup__body {
+  transform: translateY(-125%) rotate(-6deg);
+}
+
+.cup--lifted .cup__shadow {
+  transform: scale(0.72);
+  opacity: 0.7;
+}

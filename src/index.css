@@ -53,3 +53,18 @@ input {
   display: flex;
   flex-direction: column;
 }
+
+/* Available to a screen reader, absent from the layout. Used where a visual
+   composition carries meaning that no single element's text does — the bid
+   preview reads as a number, a times sign and a picture of a die. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

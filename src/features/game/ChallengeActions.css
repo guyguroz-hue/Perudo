@@ -1,0 +1,124 @@
+.challenge {
+  display: flex;
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+/* Dudo runs wide with its mark leading: the shape of an interruption. */
+.challenge__dudo {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  padding: var(--space-3);
+  text-align: left;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, #3a1410, #23100c);
+  color: var(--danger-bright);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+/* Bull is a token, not a bar: narrow, centred, stacked, brass. */
+.challenge__bull {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-width: 6.5rem;
+  min-height: var(--tap);
+  padding: var(--space-3) var(--space-2);
+  border: 2px solid var(--brass);
+  border-radius: var(--radius-lg);
+  background: radial-gradient(circle at 50% 30%, #3a3116, #201a0b);
+  color: var(--brass-bright);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.challenge__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.challenge__icon {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+}
+
+.challenge__name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.challenge__claim {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--bone-dim);
+  /* The reading and the number are one phrase. Broken across lines it stops
+     being one, which is the only thing this row is for. */
+  white-space: nowrap;
+}
+
+/* The word that carries the whole difference between the two actions. */
+.challenge__reading {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.challenge__count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--bone);
+}
+
+.challenge__gloss {
+  font-size: var(--text-xs);
+  color: var(--bone-faint);
+}
+
+.challenge__dudo:disabled,
+.challenge__bull:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Different micro-animation, so the two do not even feel alike under a thumb:
+   Dudo recoils sideways, Bull presses straight down and settles. */
+.challenge__dudo:active:not(:disabled) {
+  animation: challenge-recoil var(--duration-fast) var(--ease);
+}
+
+.challenge__bull:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: var(--shadow-sm);
+}
+
+@keyframes challenge-recoil {
+  0% { transform: translateX(0); }
+  40% { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+
+@media (max-width: 22rem) {
+  .challenge {
+    flex-direction: column;
+  }
+
+  .challenge__bull {
+    flex-direction: row;
+    gap: var(--space-2);
+  }
+}
