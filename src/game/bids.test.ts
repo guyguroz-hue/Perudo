@@ -26,19 +26,24 @@ describe('normal bid progression (GAME_RULES §4)', () => {
   it('allows a face increase', () => expectLegal(current, 4, 6))
   it('allows both to increase', () => expectLegal(current, 5, 6))
 
-  it('rejects a decrease in both', () =>
-    expectRejected(current, 3, 4, 'MUST_NOT_DECREASE'))
-  it('rejects the same quantity with a lower face', () =>
-    expectRejected(current, 4, 4, 'MUST_NOT_DECREASE'))
-  it('rejects the same face with a lower quantity', () =>
-    expectRejected(current, 3, 5, 'MUST_NOT_DECREASE'))
-  it('rejects repeating the current bid', () =>
-    expectRejected(current, 4, 5, 'MUST_NOT_DECREASE'))
+  // R-009: the quantity is the anchor. Raise it and the face may go anywhere.
+  it('allows a higher quantity with a lower face', () => expectLegal(current, 5, 4))
+  it('allows a higher quantity with the lowest face', () => expectLegal(current, 5, 2))
+  it('allows a much higher quantity with a lower face', () => expectLegal(current, 9, 2))
 
-  // Stricter than tournament Perudo, per "a bid may NEVER decrease". Flagged
-  // as R-009 — if the house rule is the tournament one, this test changes.
-  it('rejects a higher quantity paired with a lower face', () =>
-    expectRejected(current, 5, 4, 'MUST_NOT_DECREASE'))
+  it('rejects any drop in quantity', () => {
+    expectRejected(current, 3, 4, 'MUST_NOT_DECREASE')
+    expectRejected(current, 3, 5, 'MUST_NOT_DECREASE')
+    expectRejected(current, 3, 6, 'MUST_NOT_DECREASE')
+  })
+
+  it('requires the face to rise when the quantity holds', () => {
+    expectRejected(current, 4, 4, 'FACE_MUST_INCREASE')
+    expectRejected(current, 4, 2, 'FACE_MUST_INCREASE')
+  })
+
+  it('rejects repeating the current bid', () =>
+    expectRejected(current, 4, 5, 'FACE_MUST_INCREASE'))
 
   it('rejects impossible quantities', () => {
     expectRejected(current, 0, 5, 'INVALID_QUANTITY')

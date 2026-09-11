@@ -21,12 +21,30 @@ export interface ChallengeOutcome {
   readonly claimHolds: boolean
   /** Die changes to apply, keyed by player. Negative loses, positive gains. */
   readonly dieDeltas: ReadonlyMap<PlayerId, number>
-  /** Players reduced to zero dice by this resolution. */
+  /**
+   * Players reduced to zero dice by this resolution. A correct Bull can empty
+   * several cups at once, so this is a list rather than a single player.
+   */
   readonly eliminated: readonly PlayerId[]
-  /** Player reduced to exactly one die, who therefore opens a Farewell Round. */
-  readonly farewellPlayerId: PlayerId | null
-  /** Set when exactly one player remains with dice. */
+  /**
+   * Players owed a Farewell Round, in the order they will take them.
+   *
+   * Usually empty or one. A correct Bull can drive several players down to a
+   * single die at once, and each is owed their own Farewell Round: the first
+   * opens the next round, the next follows after that (R-003). The caller is
+   * responsible for carrying this queue across rounds.
+   */
+  readonly farewellQueue: readonly PlayerId[]
+  /**
+   * The winner, when exactly one player is left holding dice.
+   *
+   * Null when the game is over with nobody standing: if the last players are
+   * eliminated in the same resolution there is no winner, rather than one being
+   * awarded on a tiebreak (R-004).
+   */
   readonly winnerId: PlayerId | null
+  /** True once fewer than two players hold dice, however that came about. */
+  readonly gameOver: boolean
 }
 
 /**
@@ -86,11 +104,14 @@ function resolvePlainBid(
 }
 
 /**
- * Bull, read as "exactly" (GAME_RULES §8.3).
+ * Bull, read as "exactly" (GAME_RULES §8.3, §8.4).
  *
- * A correct Bull costs every other active player a die and costs the caller
- * nothing — the challenger included, since they are among "every participant
- * except the Bull caller".
+ * Correct: every other active player loses a die and the caller loses nothing —
+ * the challenger included, since they are among "every participant except the
+ * Bull caller".
+ *
+ * False: the caller alone pays. Declaring an exact count is a strong claim, and
+ * being wrong costs only the player who made it.
  */
 function resolveBull(
   bullCallerId: PlayerId,
@@ -110,15 +131,13 @@ function resolveBull(
     )
   }
 
+  const deltas = new Map<PlayerId, number>()
+
   if (actualCount !== quantity) {
-    throw new UnresolvedRuleError(
-      'R-001',
-      `a Bull declaring exactly ${quantity} was challenged and proved false ` +
-        `(${actualCount} on the table); the consequence of a false Bull is undefined`,
-    )
+    deltas.set(bullCallerId, -1)
+    return deltas
   }
 
-  const deltas = new Map<PlayerId, number>()
   for (const hand of hands) {
     if (hand.playerId !== bullCallerId) {
       deltas.set(hand.playerId, -1)
@@ -134,7 +153,7 @@ function buildOutcome(
   hands: readonly Hand[],
 ): ChallengeOutcome {
   const eliminated: PlayerId[] = []
-  const reachedOneDie: PlayerId[] = []
+  const farewellQueue: PlayerId[] = []
   let survivors = 0
   let lastSurvivor: PlayerId | null = null
 
@@ -151,26 +170,15 @@ function buildOutcome(
     lastSurvivor = hand.playerId
 
     // A Farewell Round is triggered by *losing* a die down to exactly one
-    // (GAME_RULES §10) — not by already sitting on one, and never by gaining.
+    // (GAME_RULES §10) — never by already sitting on one, and never by gaining.
+    //
+    // Keying on the transition rather than on "holds one die" gives the rest of
+    // the rule for free: a player parked on one die does not keep earning
+    // rounds, while one who wins a die back with Burst Dudo and is later knocked
+    // down again crosses the boundary afresh and is owed another (R-003).
     if (after === 1 && delta < 0) {
-      reachedOneDie.push(hand.playerId)
+      farewellQueue.push(hand.playerId)
     }
-  }
-
-  if (eliminated.length > 1) {
-    throw new UnresolvedRuleError(
-      'R-004',
-      `this resolution eliminates ${eliminated.length} players at once ` +
-        `(${eliminated.join(', ')}); ordering and the winner are undefined`,
-    )
-  }
-
-  if (reachedOneDie.length > 1) {
-    throw new UnresolvedRuleError(
-      'R-003',
-      `${reachedOneDie.length} players reached exactly one die simultaneously ` +
-        `(${reachedOneDie.join(', ')}); the Farewell Round starter is undefined`,
-    )
   }
 
   return {
@@ -178,7 +186,11 @@ function buildOutcome(
     claimHolds,
     dieDeltas,
     eliminated,
-    farewellPlayerId: reachedOneDie[0] ?? null,
+    // Order among simultaneous claimants is explicitly arbitrary by rule, so
+    // this keeps seat order: deterministic, replayable, and identical on every
+    // machine that resolves the same round.
+    farewellQueue,
     winnerId: survivors === 1 ? lastSurvivor : null,
+    gameOver: survivors <= 1,
   }
 }

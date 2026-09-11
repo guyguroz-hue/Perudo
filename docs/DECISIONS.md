@@ -101,14 +101,41 @@ IDs: `D-xxx` architectural/product · `R-xxx` game rules.
 Full statements in `GAME_RULES.md` §12. **None may be implemented until
 resolved. Do not invent behavior.**
 
+### ✅ R-001 — false Bull (2026-09-11)
+The **Bull caller alone loses a die**, whether the real count is above or below
+the declared one. Nobody else is affected, the challenger included.
+*Consequence:* Bull becomes a genuine gamble in both directions — correct, it
+costs everyone else a die; wrong, it costs only you.
+
+### ✅ R-003 — simultaneous Farewell Rounds (2026-09-11)
+Every player driven to one die is **queued** for their own Farewell Round; the
+order among them is arbitrary. The engine uses seat order — deterministic and
+replayable, which matters more for an authoritative server than randomness does.
+Also settled: the trigger is the **transition** down to one die. Parking on one
+die earns nothing further; regaining a die and dropping again earns a new one.
+*Consequence:* the queue is game state that must survive across rounds.
+
+### ✅ R-004 — simultaneous elimination (2026-09-11)
+Order carries no meaning and no tiebreak is applied. An eliminated player is
+never awarded the win. One player left holding dice wins; none left means **no
+winner**.
+*Consequence:* the no-winner branch appears unreachable under current rules
+(every resolution spares somebody), but is implemented as specified.
+
+### ✅ R-009 — bid progression (2026-09-11)
+**The quantity is the anchor and may never fall.** Raise it and the face may go
+anywhere — `4 fives → 5 fours` is legal. Hold it and the face must rise.
+*Consequence:* this is tournament Perudo's rule, and it replaced the stricter
+literal reading the engine had been using.
+
+---
+
+## ❓ STILL OPEN — game rules
+
 | ID | Question |
 |---|---|
-| R-001 | Consequence of a **FALSE** current Bull |
-| R-002 | Who starts the next round after an ordinary (non-Farewell) round |
-| R-003 | Farewell starter when **multiple** players reach 1 die simultaneously |
-| R-004 | Handling of **multiple eliminations** from one resolution (reachable via correct Bull) |
+| **R-002 vs R-004** | **Conflict.** Who opens the next round — the player who *lost* a die, or the one who *won* the bet? Two answers were given and in an ordinary Dudo they name different players. Also requested: a room setting offering the default starter **or** a free-for-all where the fastest bid opens |
 | R-005 | Bull eligibility — turn-only, or out-of-turn like Burst |
-| R-006 | Burst + Bull interaction; may an already-Bulled bid be Bulled again |
+| R-006 | Burst Dudo aimed at a Bull; may an already-Bulled bid be Bulled again |
 | R-007 | Die-gain ceiling on Burst Dudo (can a player exceed 5 dice) |
-| R-008 | Are Burst / Bull legal during a Farewell Round; does staying at 1 die re-trigger Farewell |
-| R-009 | May a bid raise the quantity while lowering the face (`4 fives → 5 fours`)? Engine currently says **no**, following "a bid may never decrease" literally. Tournament Perudo says yes. **Needs confirmation** — this one has a default because every bid passes the check |
+| R-008 | Are Burst / Bull legal during a Farewell Round |

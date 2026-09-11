@@ -10,8 +10,10 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-2** ~~Resolve D-002~~ — resolved; TS engine in an Edge Function.
 - [x] **T-1b** ~~Apply migrations to the live project~~ — applied 2026-09-11.
 - [ ] **T-1c** **Manual:** set `main` as the default branch in GitHub settings.
-- [ ] **T-3** Resolve R-001 — false-Bull consequence. Blocks all Bull resolution.
-- [ ] **T-4** Resolve R-002/R-003/R-004 — round-transition & Farewell starter rules.
+- [x] **T-3** ~~Resolve R-001~~ — false Bull costs its caller a die.
+- [x] **T-4a** ~~Resolve R-003/R-004~~ — Farewell queue; no tiebreak on elimination.
+- [ ] **T-4b** **Resolve the R-002/R-004 conflict** — who opens the next round.
+      Blocks the round-state schema.
 - [ ] **T-5** Design private-dice table + RLS so no player can read another's dice
       (Phase 1 slice 2 — the single highest-risk item in the project).
 
@@ -20,9 +22,9 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-6** ~~Resolve D-003 / D-004~~ — anonymous auth; `main` as trunk.
 - [ ] **T-7** Resolve R-005/R-006/R-008 — Bull eligibility and Burst interaction.
 - [ ] **T-8** Resolve R-007 — die-gain ceiling.
-- [ ] **T-8b** Confirm or overturn **R-009** — may a bid raise the quantity while
-      lowering the face? The engine implements the literal reading (illegal);
-      tournament Perudo would allow it. One-line change if it should flip.
+- [x] **T-8b** ~~Confirm R-009~~ — quantity anchors, face is free when it rises.
+- [ ] **T-25** Room setting for the round starter: default (per R-002) or a
+      free-for-all where the fastest bid opens. Requested alongside R-002.
 - [x] **T-9** ~~Install Vitest; set up the pure engine test harness~~ — 55 cases.
 - [x] **T-10** ~~Phase 1 slice 1 schema + migrations + RLS~~ — locally verified.
 - [ ] **T-10b** Phase 1 slice 2: rounds, bids, private dice, reveals, event log.

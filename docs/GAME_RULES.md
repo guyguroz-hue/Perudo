@@ -48,24 +48,18 @@ A new bid must strictly exceed the current bid. Legal raises:
 | Face up         | `4 fives` → `4 sixes` |
 | Both up         | `4 fives` → `5 sixes` |
 
-A bid may **never** decrease in either dimension.
-Server-side validation is authoritative; client-side validation is UX only.
+### The governing rule ✅ (resolved by R-009)
 
-### ❓ R-009 — raising the quantity while lowering the face
+**The quantity is the anchor and may never fall.**
 
-The three raises above are the ones the specification lists, and it states a bid
-may never decrease. Implemented literally, that makes **both** dimensions
-non-decreasing with at least one strictly greater — so `4 fives → 5 fours`
-(quantity up, face down) is **illegal**.
+| Situation | Legal? |
+|---|---|
+| Quantity rises | ✅ — the face may then go anywhere, up or down |
+| Quantity holds | ✅ only if the face rises |
+| Quantity falls | ❌ always |
 
-Tournament Perudo would allow it: there, any increase in quantity frees the
-face. The house rules neither list it as legal nor call it out as forbidden.
-
-The engine currently implements the **literal reading (illegal)**, since that is
-what "a bid may never decrease" says. This is the one place where the engine
-resolves an ambiguity rather than raising — it has to, because every bid passes
-through this check. **If the intended rule is the tournament one, say so and it
-is a one-line change plus one test.**
+So `4 fives → 5 fours` is a legitimate raise, while `5 fours → 4 anything` is
+not. Server-side validation is authoritative; client-side validation is UX only.
 
 ## 5. Normal → Perudo ✅
 
@@ -148,12 +142,16 @@ Bull is **correct** when `actual_count === declared_quantity` (exact).
 If correct: **every currently active participant EXCEPT the Bull caller loses
 1 die.** The Bull caller loses nothing.
 
-### 8.4 False Bull resolution ❓ UNDEFINED
+### 8.4 False Bull resolution ✅
 
-**The consequence of a FALSE current Bull is NOT defined.**
-**DO NOT INVENT IT.** Requires a product decision.
+If the Bull is **false** — `actual_count !== declared_quantity`, whether the real
+count is higher or lower — the **Bull caller alone loses 1 die**. Nobody else is
+affected, the challenger included.
 
-### 8.5 Bull eligibility ❓ UNDEFINED
+Declaring an exact count is a strong claim; being wrong costs only the player who
+made it.
+
+### 8.5 Bull eligibility ❓ UNDEFINED (R-005)
 
 Unspecified: *who* may declare Bull and *when* — only the player whose normal
 turn it is, or any player (Burst-style interruption)? See §12.6.
@@ -196,6 +194,14 @@ Dudo? Can a player exceed their starting count?
 
 Triggered when a player is reduced to **exactly one die after losing a die**.
 
+The trigger is the **transition** down to one die, not the state of holding one:
+
+- A player parked on a single die does **not** earn a new Farewell Round each
+  time around. It happens once per descent.
+- A player who drops to one die, wins a die back with Burst Dudo, and is later
+  knocked down to one again **does** earn a fresh Farewell Round. They crossed
+  the boundary a second time.
+
 - That player **starts the next round**.
 - The opening face may be **ANY** face — **including Perudo**.
 - The chosen face is **LOCKED for the entire Farewell Round**.
@@ -206,9 +212,15 @@ Triggered when a player is reduced to **exactly one die after losing a die**.
 Authoritative state must explicitly represent: farewell-active, farewell
 player, locked face, round progression, and the transition back to normal.
 
-❓ **UNDEFINED:** whether Burst and/or Bull are permitted during a Farewell Round.
-❓ **UNDEFINED:** whether a player who *remains* at 1 die (without losing one)
-triggers a further Farewell Round.
+### Several players at once ✅ (resolved by R-003)
+
+A correct Bull can drive several players down to one die simultaneously. Each is
+owed their own Farewell Round: they are **queued**, one takes the next round, the
+next follows after that. The order among them is explicitly arbitrary — the
+engine uses seat order, which is deterministic and replayable.
+
+❓ **UNDEFINED (R-008):** whether Burst and/or Bull are permitted during a
+Farewell Round.
 
 ## 11. Elimination ✅
 
@@ -216,23 +228,36 @@ triggers a further Farewell Round.
 - Eliminated players are no longer active participants and cannot act.
 - The **last active player wins**; the game is marked complete.
 
+### Several eliminations at once ✅ (resolved by R-004)
+
+A single resolution may eliminate more than one player. Order carries no meaning
+and no tiebreak is applied: an eliminated player is never awarded the win. If one
+player is left holding dice they win; if none are, the game ends with **no
+winner**.
+
+> Worth noting: under the current rules the no-winner case appears
+> **unreachable**. Normal Dudo and Burst Dudo each cost exactly one player a die,
+> a correct Bull spares its caller, and a false Bull costs only its caller — so
+> somebody always survives. The rule is implemented regardless.
+
 ## 12. ❓ UNDEFINED RULES — DO NOT INVENT
 
 These are deliberately unresolved. On reaching any of them: **STOP, present
 options, ask.** Never silently choose.
 
-1. **False current Bull consequence** (§8.4).
-2. **Simultaneous players reaching one die** — who starts the Farewell Round?
-3. **Multiple eliminations from a single resolution** (reachable via correct
-   Bull, §8.3) — ordering, winner determination.
-4. **Ambiguous Farewell starter.**
-5. **New-round starter** when not otherwise determined (i.e. after an ordinary
-   round that does not trigger Farewell).
-6. **Burst + Bull interaction** (§8.5) — may Bull be declared out of turn?
-   May an already-Bulled bid be Bulled again?
-7. **Burst/Bull legality during a Farewell Round** (§10).
-8. **Die-gain ceiling** (§9.3).
-9. **R-009 — raising quantity while lowering the face** (§4). Unlike the others,
-   this one has a working default (the literal reading: illegal) because every
-   bid must pass the check. Confirm or overturn it.
-10. Any other situation the rules do not uniquely determine.
+**Resolved:** R-001 (false Bull, §8.4) · R-003 (simultaneous Farewell, §10) ·
+R-004 (simultaneous elimination, §11) · R-009 (bid progression, §4).
+
+**Still open — do not implement:**
+
+1. **R-002 / R-004 conflict — who opens the next round.** Two answers were given
+   and they disagree: "whoever lost a die starts" and "whoever won the bet
+   starts". In an ordinary Dudo those are different players. Needs one rule.
+   A configurable alternative was also requested: a room setting offering either
+   the default starter or a free-for-all where the fastest bid opens.
+2. **R-005 — Bull eligibility.** Turn-only, or out of turn like Burst?
+3. **R-006 — Burst Dudo aimed at a Bull.** The Burst die-gain rule and the Bull
+   resolution rule both claim to govern the challenger.
+4. **R-007 — die-gain ceiling.** May Burst Dudo take a player past 5 dice?
+5. **R-008 — Burst and Bull during a Farewell Round.**
+6. Any other situation the rules do not uniquely determine.

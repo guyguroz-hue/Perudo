@@ -112,22 +112,22 @@ function checkNormalBid(round: RoundState, next: ProposedBid): BidCheck {
         )
   }
 
-  // Normal face to normal face. GAME_RULES §4 permits raising the quantity, the
-  // face, or both, and states a bid may never decrease — so neither dimension
-  // may fall, and at least one must rise.
+  // Normal face to normal face (GAME_RULES §4, resolved by R-009).
   //
-  // NOTE: this is stricter than tournament Perudo, where a higher quantity
-  // licenses any face. It follows the house rules as written. Flagged as R-009.
-  const quantityFell = next.quantity < current.quantity
-  const faceFell = next.face < current.face
-  if (quantityFell || faceFell) {
+  // The quantity is the anchor: it may never fall. Raise it and the face is
+  // free to go anywhere, so 4 fives -> 5 fours is a legitimate raise. Hold the
+  // quantity and the face must climb instead.
+  if (next.quantity < current.quantity) {
     return no(
       'MUST_NOT_DECREASE',
-      `a bid may never decrease: ${current.quantity}x${current.face} -> ${next.quantity}x${next.face}`,
+      `the quantity may never fall: ${current.quantity}x${current.face} -> ${next.quantity}x${next.face}`,
     )
   }
-  if (next.quantity === current.quantity && next.face === current.face) {
-    return no('MUST_NOT_DECREASE', 'a bid must raise the quantity, the face, or both')
+  if (next.quantity === current.quantity && next.face <= current.face) {
+    return no(
+      'FACE_MUST_INCREASE',
+      `holding the quantity at ${current.quantity} means the face must rise above ${current.face}`,
+    )
   }
   return ok
 }
