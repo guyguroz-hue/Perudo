@@ -267,6 +267,14 @@ This environment cannot reach `*.supabase.co`. Consequences:
   here. Playwright can drive the UI against a local build with the network
   stubbed, which catches UI and routing faults but not live Realtime behaviour.
 
+This is not theoretical. Opening a room failed in production with PGRST201:
+`room_members` gained a second foreign key to `profiles` (`removed_by`), which
+made an existing embed ambiguous, and PostgREST refuses an ambiguous embed
+rather than choosing one. Every local test passed throughout — the schema was
+correct, and PostgREST is not part of it. **Adding a foreign key to a table that
+is embedded anywhere is a live-behaviour change**, and worth re-checking against
+the real project rather than the harness.
+
 ---
 
 ## 11. Decisions (all made 2026-09-11)

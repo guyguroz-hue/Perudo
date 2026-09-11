@@ -70,7 +70,14 @@ export async function fetchSeats(
 ): Promise<Seat[]> {
   const { data, error } = await supabase
     .from('room_members')
-    .select('user_id, seat, profiles(display_name)')
+    // The foreign key is named explicitly, and must stay that way.
+    //
+    // room_members points at profiles twice — through user_id, and through
+    // removed_by, which records who removed a player. PostgREST cannot guess
+    // which relationship an embed means when there is more than one, and
+    // refuses the query outright (PGRST201) rather than picking. Naming the
+    // constraint is the only thing that makes this unambiguous.
+    .select('user_id, seat, profiles!room_members_user_id_fkey(display_name)')
     .eq('room_id', roomId)
     .is('left_at', null)
     .order('seat')

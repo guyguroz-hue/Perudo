@@ -60,3 +60,19 @@ describe('room errors', () => {
     }
   })
 })
+
+describe('PostgREST embed ambiguity', () => {
+  it('is surfaced as something actionable rather than swallowed', () => {
+    // The failure that reached a player: room_members points at profiles twice
+    // (user_id and removed_by), so an unqualified embed is refused. The message
+    // names the constraints to choose between, and that detail must survive.
+    const result = toRoomError({
+      code: 'PGRST201',
+      message:
+        "Could not embed because more than one relationship was found for 'room_members' and 'profiles'",
+      details: "Try changing 'profiles' to one of the following: 'profiles!room_members_user_id_fkey'",
+    })
+    expect(result.detail).toContain('room_members_user_id_fkey')
+    expect(result.message).not.toContain('[object Object]')
+  })
+})

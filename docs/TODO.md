@@ -72,6 +72,14 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🐛 Bugs
 
+- [x] **B-3** ~~Opening a room failed with PGRST201.~~ `room_members` points at
+      `profiles` twice — through `user_id` and through `removed_by` — so an
+      unqualified embed is ambiguous and PostgREST refuses it outright rather
+      than choosing. The foreign key is now named explicitly. **This class of
+      fault is invisible to the local harness**: it is PostgREST behaviour, not
+      PostgreSQL's, and adding a second foreign key to an already-embedded table
+      is enough to cause it.
+
 - [x] **B-2** ~~Room failures rendered as `[object Object]`.~~ `toRoomError`
       returned a plain object which `api.ts` then threw; the catching code
       converted it a second time, and because a plain object is not an `Error`

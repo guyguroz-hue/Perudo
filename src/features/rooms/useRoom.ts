@@ -84,8 +84,11 @@ export function useRoom(roomId: string | null, youId: string | null): RoomHandle
         message: failure.message,
         // Kept visible for anything we did not anticipate: a screenshot of the
         // error should be enough to diagnose it.
+        // Only worth showing when it says something the sentence above does
+        // not — otherwise the same text appears twice.
         detail:
-          failure.code === 'UNKNOWN' || failure.code === 'DATABASE_BEHIND'
+          (failure.code === 'UNKNOWN' || failure.code === 'DATABASE_BEHIND') &&
+          failure.detail !== failure.message
             ? failure.detail
             : null,
         retryable: failure.retryable,
