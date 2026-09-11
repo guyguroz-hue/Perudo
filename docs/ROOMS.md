@@ -153,7 +153,7 @@ added to that publication.
 | ~~2~~ | ~~Schema: limits, lifecycle, kick, heartbeat, code alphabet~~ | **Done.** 10 schema tests + a real 5-way race |
 | ~~3~~ | ~~RPCs: create, join by code, leave, kick~~ | **Done.** 12 behaviour tests + the race run through the real RPC |
 | ~~4~~ | ~~Routing + lobby UI: seats at a table, code, share, copy~~ | **Done.** Driven in a real browser at 390×844 |
-| 5 | Realtime: joins, leaves, host changes, presence | Multiple browser contexts |
+| ~~5~~ | ~~Realtime: joins, leaves, host changes, connection state~~ | **Done bar live multi-device, which only the owner can run** |
 | 6 | Start: host-only, atomic, transition animation, room lock | Playwright + race tests |
 | 7 | Reconnect: refresh, disconnect, host migration | Playwright |
 | 8 | Rematch: results → lobby → same room | Playwright |
@@ -230,6 +230,30 @@ already knows the state moved.
 Radix supplies the confirmation dialog: focus trapping, escape, scroll lock and
 the accessible roles, with the appearance entirely ours. This is what
 `shadcn/ui` is built on, without importing a second design system (D-005).
+
+## 9d. Connection state
+
+Three things can stop changes arriving, and all three are handled the same way:
+**re-read everything on the way back.**
+
+| Event | Response |
+|---|---|
+| Channel resubscribes after an error | Refetch — events during the gap are simply gone |
+| Tab becomes visible again | Refetch — phones suspend background tabs and drop the socket silently |
+| Browser reports `online` | Refetch |
+
+The distinction that matters is between *the first* subscription and a *re*
+subscription. Only the second implies missed events, so only the second forces
+a re-read.
+
+The indicator says nothing while the connection is healthy. A permanent green
+light is noise, and players should be thinking about the game rather than the
+transport. It appears exactly when a still table stops meaning "nobody has
+moved" and starts meaning "you are not being told".
+
+Verified in a browser across all three states — Realtime genuinely unreachable
+from the test environment, which made it an honest test rather than a simulated
+one — with the lobby remaining usable throughout.
 
 ## 10. A testing limitation worth stating up front
 

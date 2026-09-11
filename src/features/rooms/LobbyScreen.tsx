@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Button } from '../../components/Button'
+import { ConnectionDot } from '../../components/ConnectionDot'
 import { Die } from '../../components/Die'
 import { useAuth } from '../auth/useAuth'
 import { kickPlayer, leaveRoom } from './api'
@@ -19,7 +20,7 @@ export function LobbyScreen() {
   const { state } = useAuth()
   const youId = state.status === 'ready' ? state.userId : null
 
-  const { view, refresh } = useRoom(roomId, youId)
+  const { view, connection, refresh } = useRoom(roomId, youId)
   const [pendingKick, setPendingKick] = useState<Seat | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -82,9 +83,12 @@ export function LobbyScreen() {
     <div className="lobby">
       <RoomCode code={room.code} />
 
-      <p className="lobby__count">
-        {seats.length} / {SEAT_COUNT} players
-      </p>
+      <div className="lobby__status">
+        <p className="lobby__count">
+          {seats.length} / {SEAT_COUNT} players
+        </p>
+        <ConnectionDot connection={connection} />
+      </div>
 
       <RoomTable seats={seats} canManage={youAreHost} onManage={setPendingKick} />
 

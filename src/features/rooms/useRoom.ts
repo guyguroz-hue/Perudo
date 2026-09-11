@@ -4,8 +4,18 @@ import { fetchRoom, fetchSeats, touchRoom } from './api'
 import { toRoomError } from './errors'
 import type { Room, Seat } from './types'
 
+/**
+ * How well we are hearing from the server.
+ *
+ * `live` means changes made by other players will appear on their own.
+ * Anything else means they will not, which is worth telling a player before
+ * they wonder why the table looks frozen.
+ */
+export type Connection = 'connecting' | 'live' | 'reconnecting' | 'offline'
+
 export interface RoomHandle {
   readonly view: RoomView
+  readonly connection: Connection
   /**
    * Refetch now, without waiting for a Realtime event.
    *
@@ -39,6 +49,7 @@ export type RoomView =
  */
 export function useRoom(roomId: string | null, youId: string | null): RoomHandle {
   const [view, setView] = useState<RoomView>({ status: 'loading' })
+  const [connection, setConnection] = useState<Connection>('connecting')
   const generation = useRef(0)
 
   const refresh = useCallback(async () => {
@@ -73,9 +84,10 @@ export function useRoom(roomId: string | null, youId: string | null): RoomHandle
         message: failure.message,
         // Kept visible for anything we did not anticipate: a screenshot of the
         // error should be enough to diagnose it.
-        detail: failure.code === 'UNKNOWN' || failure.code === 'DATABASE_BEHIND'
-          ? failure.detail
-          : null,
+        detail:
+          failure.code === 'UNKNOWN' || failure.code === 'DATABASE_BEHIND'
+            ? failure.detail
+            : null,
         retryable: failure.retryable,
       })
     }
@@ -91,6 +103,12 @@ export function useRoom(roomId: string | null, youId: string | null): RoomHandle
     // oxlint-disable-next-line react/set-state-in-effect
     void refresh()
 
+    // Tracks whether we have been subscribed before, so a *re*connection can be
+    // told apart from the first one. It matters: while the channel was down,
+    // players may have joined or left, and those events are simply gone. The
+    // only safe response to coming back is to re-read everything.
+    let wasLive = false
+
     const channel = supabase
       .channel(`room:${roomId}`)
       .on(
@@ -103,12 +121,48 @@ export function useRoom(roomId: string | null, youId: string | null): RoomHandle
         { event: '*', schema: 'public', table: 'room_members', filter: `room_id=eq.${roomId}` },
         () => void refresh(),
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setConnection('live')
+          if (wasLive) void refresh()
+          wasLive = true
+          return
+        }
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setConnection(navigator.onLine ? 'reconnecting' : 'offline')
+        }
+      })
 
     return () => {
       void supabase.removeChannel(channel)
     }
   }, [roomId, youId, refresh])
+
+  // A phone suspends a background tab and silently drops the socket, so coming
+  // back to the app is its own kind of reconnection.
+  useEffect(() => {
+    if (roomId === null) return
+
+    function onVisible() {
+      if (document.visibilityState === 'visible') void refresh()
+    }
+    function onOnline() {
+      setConnection('reconnecting')
+      void refresh()
+    }
+    function onOffline() {
+      setConnection('offline')
+    }
+
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+    }
+  }, [roomId, refresh])
 
   // Heartbeat. Feeds host migration only — it can never remove anyone, because
   // a quiet connection is not a departure.
@@ -119,5 +173,5 @@ export function useRoom(roomId: string | null, youId: string | null): RoomHandle
     return () => clearInterval(timer)
   }, [roomId])
 
-  return { view, refresh }
+  return { view, connection, refresh }
 }

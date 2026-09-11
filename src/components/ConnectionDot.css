@@ -1,0 +1,30 @@
+.conn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: rgb(0 0 0 / 0.3);
+  font-size: var(--text-xs);
+  color: var(--bone-dim);
+}
+
+.conn__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--brass);
+}
+
+.conn--reconnecting .conn__dot {
+  animation: conn-pulse 1.2s ease-in-out infinite;
+}
+
+.conn--offline .conn__dot {
+  background: var(--danger-bright);
+}
+
+@keyframes conn-pulse {
+  50% { opacity: 0.25; }
+}
