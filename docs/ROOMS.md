@@ -150,13 +150,29 @@ added to that publication.
 
 | # | Scope | Verifiable by |
 |---|---|---|
-| 2 | Schema: limits, lifecycle, kick, heartbeat, code alphabet | SQL tests incl. concurrent-join race |
+| ~~2~~ | ~~Schema: limits, lifecycle, kick, heartbeat, code alphabet~~ | **Done.** 10 schema tests + a real 5-way race |
 | 3 | RPCs: create, join by code, leave, kick | Two concurrent Postgres sessions |
 | 4 | Routing + lobby UI: seats at a table, code, share, copy | Playwright at 390×844 |
 | 5 | Realtime: joins, leaves, host changes, presence | Multiple browser contexts |
 | 6 | Start: host-only, atomic, transition animation, room lock | Playwright + race tests |
 | 7 | Reconnect: refresh, disconnect, host migration | Playwright |
 | 8 | Rematch: results → lobby → same room | Playwright |
+
+## 9a. How the six-player guarantee was verified
+
+`scripts/test-concurrency.sh` is not a simulation. Five real PostgreSQL
+sessions, in five concurrent transactions, all wait for the same wall-clock
+instant and then contend for the one free seat. Exactly one wins.
+
+It runs against the schema with **no application-level locking at all**, because
+the claim being tested is that the schema alone makes a seventh player
+impossible. The row lock the join RPC will take is there to produce a clean
+`ROOM_FULL` error instead of a unique-violation — it is not what keeps the
+guarantee.
+
+The test was checked for teeth: with `room_members_active_seat_idx` dropped, the
+same race seats **seven** players and the test fails. It detects the thing it
+claims to detect.
 
 ## 10. A testing limitation worth stating up front
 

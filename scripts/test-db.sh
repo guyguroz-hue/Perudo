@@ -56,4 +56,15 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
 done
 
 echo "==> running tests"
-AS_PG "$PSQL -f $ROOT/supabase/tests/01_phase1_rls_test.sql"
+for t in "$ROOT"/supabase/tests/0[1-9]*.sql; do
+  AS_PG "$PSQL -f $t"
+done
+
+echo
+echo "==> concurrency: real simultaneous sessions racing for the last seat"
+if [ "$(id -u)" -eq 0 ]; then
+  chmod +x "$ROOT/scripts/test-concurrency.sh"
+  su postgres -c "$ROOT/scripts/test-concurrency.sh $PGDIR $PGPORT 5"
+else
+  "$ROOT/scripts/test-concurrency.sh" "$PGDIR" "$PGPORT" 5
+fi

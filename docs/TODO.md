@@ -13,8 +13,8 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-3** ~~Resolve R-001~~ — false Bull costs its caller a die.
 - [x] **T-4a** ~~Resolve R-003/R-004~~ — Farewell queue; no tiebreak on elimination.
 - [x] **T-4b** ~~Resolve R-002~~ — whoever was proved right opens.
-- [ ] **T-1d** Apply the two new migrations to the live project:
-      `20260911180000_round_start_rule.sql` and `20260911190000_dice_ceiling.sql`.
+- [x] **T-1d** ~~Apply round_start_rule and dice_ceiling migrations~~ — applied.
+- [ ] **T-1e** Apply `20260911200000_room_system.sql` to the live project.
 - [ ] **T-5** Design private-dice table + RLS so no player can read another's dice
       (Phase 1 slice 2 — the single highest-risk item in the project).
       **No longer blocked:** every rule is decided.
@@ -54,6 +54,10 @@ Completed items are marked `[x]` and kept, not deleted.
       (the value is a `sb_publishable_…` key, not a legacy anon JWT).
 
 ## ✨ Polish
+
+- [ ] **T-26** A sweeper for expired rooms. `expires_at` is maintained and
+      indexed, but nothing deletes yet. Not urgent — joins will reject expired
+      rooms — but the table grows without it.
 
 - [ ] **T-20** Animations (roll, reveal, die loss/gain, Burst interruption, victory).
 - [ ] **T-21** Reduced-motion support.
