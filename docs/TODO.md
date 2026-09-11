@@ -14,7 +14,8 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-4a** ~~Resolve R-003/R-004~~ — Farewell queue; no tiebreak on elimination.
 - [x] **T-4b** ~~Resolve R-002~~ — whoever was proved right opens.
 - [x] **T-1d** ~~Apply round_start_rule and dice_ceiling migrations~~ — applied.
-- [ ] **T-1e** Apply `20260911200000_room_system.sql` to the live project.
+- [x] **T-1e** ~~Apply room_system migration~~ — applied.
+- [ ] **T-1f** Apply `20260911210000_room_actions.sql` to the live project.
 - [ ] **T-5** Design private-dice table + RLS so no player can read another's dice
       (Phase 1 slice 2 — the single highest-risk item in the project).
       **No longer blocked:** every rule is decided.
@@ -55,6 +56,11 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## ✨ Polish
 
+- [ ] **T-27** `expires_at` only advances when the `rooms` row itself is
+      written. A lobby nobody touches for four hours expires even with people
+      sitting in it, since joins write `room_members`, not `rooms`. Unlikely to
+      bite in practice — creating, starting and host changes all write the row —
+      but the sweeper should consider member activity too.
 - [ ] **T-26** A sweeper for expired rooms. `expires_at` is maintained and
       indexed, but nothing deletes yet. Not urgent — joins will reject expired
       rooms — but the table grows without it.

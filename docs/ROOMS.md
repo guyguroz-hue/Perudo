@@ -151,7 +151,7 @@ added to that publication.
 | # | Scope | Verifiable by |
 |---|---|---|
 | ~~2~~ | ~~Schema: limits, lifecycle, kick, heartbeat, code alphabet~~ | **Done.** 10 schema tests + a real 5-way race |
-| 3 | RPCs: create, join by code, leave, kick | Two concurrent Postgres sessions |
+| ~~3~~ | ~~RPCs: create, join by code, leave, kick~~ | **Done.** 12 behaviour tests + the race run through the real RPC |
 | 4 | Routing + lobby UI: seats at a table, code, share, copy | Playwright at 390×844 |
 | 5 | Realtime: joins, leaves, host changes, presence | Multiple browser contexts |
 | 6 | Start: host-only, atomic, transition animation, room lock | Playwright + race tests |
@@ -173,6 +173,41 @@ guarantee.
 The test was checked for teeth: with `room_members_active_seat_idx` dropped, the
 same race seats **seven** players and the test fails. It detects the thing it
 claims to detect.
+
+## 9b. The action surface
+
+Five functions are the entire way a client changes a room. Each is
+`SECURITY DEFINER` with an empty `search_path`, and each re-derives the actor
+from `auth.uid()` — a caller can name a room and a code, never who they are.
+
+| Function | Refuses with |
+|---|---|
+| `create_room()` | `NOT_AUTHENTICATED`, `PROFILE_REQUIRED` |
+| `join_room_by_code(code)` | `INVALID_ROOM`, `ROOM_EXPIRED`, `ROOM_FULL`, `GAME_ALREADY_STARTED`, `REMOVED_FROM_ROOM` |
+| `leave_room(room)` | — (leaving a room you are not in is not worth an error) |
+| `kick_player(room, user)` | `NOT_HOST`, `CANNOT_KICK_SELF`, `NOT_IN_ROOM`, `INVALID_ROOM` |
+| `touch_room_member(room)` | — (a heartbeat that fails is not worth interrupting anyone) |
+
+`require_player` and `ensure_room_host` are internal: revoked from every client
+role, reachable only from the actions above, which run as their owner. There is
+a test that a client calling them directly is refused.
+
+Joining is **idempotent**, and deliberately still works once a game is under
+way — which is what lets a player reload the page mid-game without losing their
+seat. It is only *new* players who are turned away after the start.
+
+### Two bugs the tests caught
+
+Worth recording, because both would have been invisible in production:
+
+1. **`room_id` and `seat` are the function's OUT parameters**, so an unqualified
+   `where room_id = …` inside the body resolved to those rather than to the
+   columns.
+2. **`FOUND` is overwritten by every `SELECT INTO`.** The seat lookup is an
+   aggregate, which always returns a row, so the later `if found` reported on
+   *that* query instead of on whether the player already had a membership. The
+   join returned a seat number while writing no row at all — the player would
+   have believed they were in a room that did not contain them.
 
 ## 10. A testing limitation worth stating up front
 

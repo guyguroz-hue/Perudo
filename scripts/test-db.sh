@@ -64,7 +64,9 @@ echo
 echo "==> concurrency: real simultaneous sessions racing for the last seat"
 if [ "$(id -u)" -eq 0 ]; then
   chmod +x "$ROOT/scripts/test-concurrency.sh"
-  su postgres -c "$ROOT/scripts/test-concurrency.sh $PGDIR $PGPORT 5"
+  su postgres -c "$ROOT/scripts/test-concurrency.sh $PGDIR $PGPORT 5 raw"
+  su postgres -c "$ROOT/scripts/test-concurrency.sh $PGDIR $PGPORT 5 rpc"
 else
-  "$ROOT/scripts/test-concurrency.sh" "$PGDIR" "$PGPORT" 5
+  "$ROOT/scripts/test-concurrency.sh" "$PGDIR" "$PGPORT" 5 raw
+  "$ROOT/scripts/test-concurrency.sh" "$PGDIR" "$PGPORT" 5 rpc
 fi
