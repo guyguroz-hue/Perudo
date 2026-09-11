@@ -15,8 +15,11 @@ RLS, Edge Functions and/or RPC). Supabase is the *only* backend.
 
 ## Current phase
 
-**PHASE 5a — Authentication & identity.** ✅ Complete and visually verified.
-Next: the lobby, which needs the server action layer.
+**PHASE 5a — Authentication & identity.** ✅ Complete, deployed, and confirmed
+working against the live Supabase project from a phone.
+
+Everything now hinges on the rule decisions: the next database slice (rounds,
+bids, private dice) cannot be designed without R-001…R-004.
 
 **PHASE 2 — Game engine.** The defined rules are implemented and tested. The
 engine cannot be completed further without the rule decisions: every undefined
@@ -44,7 +47,8 @@ step and also waits on R-001…R-004 for its round-state columns.
 - [x] Realtime publication limited to the four public tables.
 - [x] Local verification harness (`scripts/test-db.sh`) — 11 assertions passing
       against real PostgreSQL, migrations applied as a non-superuser owner.
-- [ ] Applied to the live Supabase project (blocked: egress still refused).
+- [x] **Applied to the live Supabase project** (2026-09-11). Confirmed live:
+      5 tables with RLS, 7 policies. Anonymous sign-in enabled and working.
 
 ### PHASE 2 — game engine (defined rules) ✅
 - [x] Pure `src/game` module: no React, no Supabase, no randomness, no clock.
@@ -122,9 +126,9 @@ even while the network block (R-NET) is unresolved.
 
 | ID | Task | Blocked by |
 |---|---|---|
-| B-1 | Apply migrations to the live Supabase project | R-NET (egress still refused) |
-| B-2 | Inspect live DB schema / RLS / auth config | R-NET |
-| B-3 | Integration tests against real Supabase | R-NET |
+| ~~B-1~~ | ~~Apply migrations to the live project~~ | **Done** — applied by the owner via the SQL Editor |
+| B-2 | Inspect live DB schema / RLS / auth config from here | R-NET (egress still refused) |
+| B-3 | Automated integration tests against real Supabase | R-NET |
 | B-4 | Implement false-Bull resolution | R-001 |
 | B-5 | Implement round-transition / next-starter logic | R-002, R-003, R-004 |
 | B-6 | Implement Bull eligibility & Burst interaction | R-005, R-006 |
@@ -161,7 +165,9 @@ access and the Realtime publication surface. All passing.
 ✅ **Engine:** `npm test` — 55 Vitest cases across counting, bid legality,
 Perudo transitions, Dudo, Burst Dudo, Bull, Farewell and elimination, plus
 assertions that every undefined rule raises instead of guessing.
-❌ **Integration against live Supabase:** blocked by R-NET.
+⚠️ **Against live Supabase:** verified by hand, not automated. Anonymous
+sign-in, the session, and the RLS-protected read of `profiles` are confirmed
+working on a deployed build. Automated integration tests still need R-NET.
 
 ## Production-readiness status
 

@@ -4,13 +4,11 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🔴 Critical
 
-- [ ] **T-0** **Manual:** enable anonymous sign-ins in the Supabase dashboard
-      (Authentication → Sign In / Providers). Without it the app cannot sign
-      anyone in; the error screen says so explicitly.
+- [x] **T-0** ~~Enable anonymous sign-ins~~ — done, confirmed working live.
 
 - [x] **T-1** ~~Resolve D-001~~ — resolved; migrations are reviewed files.
 - [x] **T-2** ~~Resolve D-002~~ — resolved; TS engine in an Edge Function.
-- [ ] **T-1b** Apply `supabase/migrations/` to the live project (egress still refused).
+- [x] **T-1b** ~~Apply migrations to the live project~~ — applied 2026-09-11.
 - [ ] **T-1c** **Manual:** set `main` as the default branch in GitHub settings.
 - [ ] **T-3** Resolve R-001 — false-Bull consequence. Blocks all Bull resolution.
 - [ ] **T-4** Resolve R-002/R-003/R-004 — round-transition & Farewell starter rules.
@@ -33,6 +31,11 @@ Completed items are marked `[x]` and kept, not deleted.
       the publication test asserts the exact table list, so adding it will fail.
 
 ## 🟡 Normal
+
+- [ ] **T-24** Align the deployment source: Vercel's production branch is
+      `claude/supabase-git-connection-8jawms`, and GitHub's default branch is
+      not yet `main`. Both should point at `main` so there is one source of
+      truth and no need to push to two places.
 
 - [x] **T-13** ~~Replace the Vite template app shell~~ — done, template removed.
 - [ ] **T-14** Replace the Vite template `README.md` with project documentation.
