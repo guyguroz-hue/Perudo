@@ -39,9 +39,14 @@ export function LobbyScreen() {
   if (view.status === 'gone') {
     return (
       <div className="lobby__centered" role="alert">
-        <h2>That room is closed</h2>
+        {/* A network blip is not a room ending, and saying so would be a lie. */}
+        <h2>{view.retryable ? 'Could not load the room' : 'That room is closed'}</h2>
         <p className="lobby__muted">{view.message}</p>
-        <Button onClick={() => navigate('/')}>Back</Button>
+        {view.detail !== null && <p className="lobby__detail">{view.detail}</p>}
+        {view.retryable && <Button onClick={() => void refresh()}>Try again</Button>}
+        <button type="button" className="lobby__leave" onClick={() => navigate('/')}>
+          Back
+        </button>
       </div>
     )
   }

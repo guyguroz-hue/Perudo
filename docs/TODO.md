@@ -72,6 +72,14 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🐛 Bugs
 
+- [x] **B-2** ~~Room failures rendered as `[object Object]`.~~ `toRoomError`
+      returned a plain object which `api.ts` then threw; the catching code
+      converted it a second time, and because a plain object is not an `Error`
+      the conversion stringified it and destroyed the original cause. Now a real
+      `Error` subclass, so conversion is idempotent and the message survives.
+      Eight regression tests, including one asserting nothing ever renders
+      "[object Object]" whatever it is handed.
+
 - [x] **B-1** ~~Missing env vars threw at module load, so a misconfigured
       deployment rendered a completely blank page — no message, no retry.~~
       Fixed: configuration is reported as state, not thrown, and an

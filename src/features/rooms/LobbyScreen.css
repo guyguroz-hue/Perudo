@@ -132,3 +132,14 @@
   background: var(--danger);
   color: var(--bone);
 }
+
+/* Raw text for the failures we did not anticipate. Small, quiet, and readable
+   from a screenshot — which is how these get reported. */
+.lobby__detail {
+  margin: 0;
+  max-width: 20rem;
+  font-size: var(--text-xs);
+  color: var(--bone-faint);
+  text-align: center;
+  overflow-wrap: anywhere;
+}

@@ -19,7 +19,13 @@ export interface RoomHandle {
 
 export type RoomView =
   | { readonly status: 'loading' }
-  | { readonly status: 'gone'; readonly message: string }
+  | {
+      readonly status: 'gone'
+      readonly message: string
+      readonly detail: string | null
+      /** True when this looks like a blip rather than a room that has ended. */
+      readonly retryable: boolean
+    }
   | { readonly status: 'ready'; readonly room: Room; readonly seats: Seat[] }
 
 /**
@@ -46,7 +52,12 @@ export function useRoom(roomId: string | null, youId: string | null): RoomHandle
       if (room === null) {
         // RLS hides rooms you do not belong to, so "not found" and "not yours"
         // are the same answer from here — and the same thing to a player.
-        setView({ status: 'gone', message: 'You are no longer in this room.' })
+        setView({
+          status: 'gone',
+          message: 'You are no longer in this room.',
+          detail: null,
+          retryable: false,
+        })
         return
       }
 
@@ -56,7 +67,17 @@ export function useRoom(roomId: string | null, youId: string | null): RoomHandle
       setView({ status: 'ready', room, seats })
     } catch (error) {
       if (generation.current !== mine) return
-      setView({ status: 'gone', message: toRoomError(error).message })
+      const failure = toRoomError(error)
+      setView({
+        status: 'gone',
+        message: failure.message,
+        // Kept visible for anything we did not anticipate: a screenshot of the
+        // error should be enough to diagnose it.
+        detail: failure.code === 'UNKNOWN' || failure.code === 'DATABASE_BEHIND'
+          ? failure.detail
+          : null,
+        retryable: failure.retryable,
+      })
     }
   }, [roomId, youId])
 
