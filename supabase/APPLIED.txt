@@ -3,4 +3,4 @@
 #
 # Update this after running the pending SQL. `scripts/pending-sql.sh` reads it
 # and prints exactly what is left, so nothing depends on anyone remembering.
-20260911230000_rounds_and_private_dice.sql
+20260911240000_dice_dealing.sql
