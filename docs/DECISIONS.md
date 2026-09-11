@@ -238,10 +238,50 @@ ordinary raise behind a wildcard jump. `minimalRaise` is therefore a separate
 question from `lowestLegalBid`, and the distinction only surfaced because the
 search asked the rules instead of assuming them.
 
+### ✅ D-009 — the turn moves on from whoever acted (2026-09-11)
+
+A Burst is not a special case in the turn order. After anybody bids or calls
+Bull — in turn or out of it — play continues clockwise from **them**.
+
+*Why this is the rule and not a choice:* GAME_RULES §9.1 says normal play
+resumes with the player **after the last Burst player**. Applying "the turn
+moves on from the actor" uniformly produces exactly that, and produces ordinary
+clockwise play when nobody bursts. One rule, both cases.
+
+*Consequence:* `src/game/turns.ts` is eight lines, and `last_burst_player_id` is
+kept for the log and for display rather than for computing anything.
+
 ---
 
 ## ❓ STILL OPEN — game rules
 
-**None.** Every rule deliberately left open has been decided. The standing
-instruction stands: a situation the rules do not uniquely determine is raised,
-never guessed.
+Two, both raised rather than guessed, and both reached by building the action
+layer. Neither is a gap in the original specification: they are situations the
+rules had no reason to mention until something had to execute them.
+
+### ❓ R-011 — who opens the **first** round of a game — **BLOCKING**
+
+R-002 says who opens every round after a resolution. Nothing says who opens the
+first one, and the two obvious answers name different players whenever the host
+has migrated:
+
+| Answer | Who that is |
+|---|---|
+| **The host** | whoever holds the room now, which may not be who created it |
+| **The lowest seat** | seat 0, which is whoever created the room |
+
+*Status:* `firstStarter` in `supabase/functions/game/actions.ts` throws
+`UnresolvedRuleError` rather than picking. **A game cannot open a round until
+this is answered**, which is deliberate — a first-mover advantage decided by
+accident is still decided.
+
+### ❓ R-010 — a second Bull on the same bid
+
+A Bull re-reads the current bid as "exactly" (§8.1) and any later bid
+supersedes it (§8.2). What is not said is whether a *second* player may Bull a
+bid that has already been Bulled — and it matters, because the Bull caller is
+who pays when the Bull is false and who is spared when it is exact.
+
+*Status:* refused, in the action layer and again in `apply_bull`. Refusing
+declines to invent the semantics; allowing it would have had to invent them.
+Not blocking: the game plays without ever needing a second Bull.

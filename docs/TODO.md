@@ -128,6 +128,12 @@ Completed items are marked `[x]` and kept, not deleted.
       network and no database, and is the one screen that works when Supabase
       does not), and useful while the UI is being reviewed on a phone. Decide
       whether it stays once the game screens are wired.
+- [x] **T-32** ~~The game action layer~~ — `supabase/functions/game/` runs the
+      engine from `src/game` and applies its decisions through `apply_bid`,
+      `apply_bull` and `apply_challenge`. Paste `bundle.ts` into the dashboard.
+- [ ] **T-33** Wire `GameView` to the action layer and Realtime, replacing the
+      placeholder. Blocked on R-011 (who opens the first round) and on the
+      function being deployed.
 - [ ] **TD-9** `Profile` is hand-typed in `src/features/auth/types.ts`. Replace
       with Supabase generated types once the schema is applied (T-18).
 - [ ] **TD-4** No CI pipeline.

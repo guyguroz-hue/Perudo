@@ -168,6 +168,25 @@ atomic commit. One engine, one set of tests, no drift.
 `INSERT`/`UPDATE`/`DELETE` privilege on any game table, so even a future policy
 mistake cannot authorise a write.
 
+**Built (T-32):** `supabase/functions/game/` is the Edge Function. It imports
+`src/game` directly — the same files the browser imports — establishes the
+caller's identity by handing their token back to Supabase rather than reading
+it, and applies the engine's decision through `apply_bid`, `apply_bull` or
+`apply_challenge`.
+
+Those three SQL functions contain no rules whatsoever. They exist because a
+challenge reveals every hand, moves dice between five players, eliminates some
+of them, may end the game and must deal the next round — and half of that
+applied is a broken game. An Edge Function cannot hold a transaction open
+across those writes; a Postgres function can. So the engine decides and SQL
+commits, and neither takes on the other's job.
+
+`npm run bundle:function` flattens the function into
+`supabase/functions/game/bundle.ts`, which is one file and therefore pasteable
+into the dashboard editor. A test asserts the committed bundle still matches
+its sources, because it is the one artefact here that could silently disagree
+with the code the tests cover.
+
 ---
 
 ## 6. Concurrency (PROPOSED)
