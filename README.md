@@ -1,32 +1,54 @@
-# React + TypeScript + Vite
+# Perudo
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+An online multiplayer version of a house-rule Perudo / Liar's Dice.
 
-Currently, two official plugins are available:
+Real-time, hidden information, server-authoritative rules. The dice live in the
+database and the browser is never trusted with anyone's cup but its own.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Status
 
-## React Compiler
+Under construction. See [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md)
+for where things stand.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Working today: the database foundation (schema + RLS), the rule engine for the
+defined rules, and anonymous sign-in with a player name. Not yet: rooms, rounds,
+dice, or play — several house rules are still undecided and are deliberately not
+implemented. See [`docs/GAME_RULES.md`](docs/GAME_RULES.md) §12.
 
-## Expanding the Oxlint configuration
+## Running it
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Create `.env.local` from `.env.example`:
+
+```
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<publishable key>
+```
+
+The Supabase project needs the migrations in `supabase/migrations/` applied, and
+**anonymous sign-ins enabled** under Authentication → Sign In / Providers.
+
+## Checks
+
+| Command | What it does |
+|---|---|
+| `npm test` | Rule engine and validation (Vitest) |
+| `npm run test:db` | Applies the migrations to a throwaway PostgreSQL instance and asserts the RLS behaviour |
+| `npm run build` | Typecheck and production build |
+| `npm run lint` | Lint |
+
+`test:db` needs the PostgreSQL 16 server binaries, not just `psql`.
+
+## Documentation
+
+| File | Contents |
+|---|---|
+| [`docs/GAME_RULES.md`](docs/GAME_RULES.md) | **The authoritative rules.** If code disagrees, this wins |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Security model, data model, concurrency, risks |
+| [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md) | Phases, current state, what is blocked |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Why things are the way they are |
+| [`docs/TODO.md`](docs/TODO.md) | Backlog and known debt |
