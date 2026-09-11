@@ -4,12 +4,12 @@ import { NameScreen } from './features/auth/NameScreen'
 import { useAuth } from './features/auth/useAuth'
 import { HomeScreen } from './features/rooms/HomeScreen'
 import { JoinScreen } from './features/rooms/JoinScreen'
-import { LobbyScreen } from './features/rooms/LobbyScreen'
+import { RoomScreen } from './features/rooms/RoomScreen'
 import { Button } from './components/Button'
 import { Die } from './components/Die'
 import { supabaseUrl } from './lib/supabaseClient'
 import './App.css'
-import './features/rooms/LobbyScreen.css'
+import './features/rooms/RoomScreen.css'
 
 export default function App() {
   return (
@@ -44,7 +44,7 @@ function Gate() {
         <Routes>
           <Route path="/" element={<HomeScreen name={state.profile.display_name} />} />
           <Route path="/join/:code" element={<JoinScreen />} />
-          <Route path="/room/:roomId" element={<LobbyScreen />} />
+          <Route path="/room/:roomId" element={<RoomScreen />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       )

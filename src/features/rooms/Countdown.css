@@ -1,0 +1,28 @@
+.countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.countdown__label {
+  margin: 0;
+  font-size: var(--text-sm);
+  letter-spacing: 0.14em;
+  color: var(--bone-faint);
+  text-transform: uppercase;
+}
+
+.countdown__number {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 5rem;
+  line-height: 1;
+  color: var(--brass-bright);
+  animation: countdown-in var(--duration) var(--ease);
+}
+
+@keyframes countdown-in {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}

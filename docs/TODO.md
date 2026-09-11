@@ -15,7 +15,8 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-4b** ~~Resolve R-002~~ — whoever was proved right opens.
 - [x] **T-1d** ~~Apply round_start_rule and dice_ceiling migrations~~ — applied.
 - [x] **T-1e** ~~Apply room_system migration~~ — applied.
-- [ ] **T-1f** Apply `20260911210000_room_actions.sql` to the live project.
+- [x] **T-1f** ~~Apply room_actions~~ — applied.
+- [ ] **T-1g** Apply `20260911220000_game_lifecycle.sql` to the live project.
 - [ ] **T-5** Design private-dice table + RLS so no player can read another's dice
       (Phase 1 slice 2 — the single highest-risk item in the project).
       **No longer blocked:** every rule is decided.
@@ -115,8 +116,10 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **TD-2** ~~`App.tsx` is the Vite template~~ — replaced.
 - [x] **TD-3** ~~No test runner~~ — Vitest.
 - [x] **TD-8** ~~`Seated` placeholder screen~~ — replaced by the real lobby.
-- [ ] **T-28** The lobby's Start button has correct enablement but no action
-      behind it yet; it shows a "next step" notice. Wire it in milestone 6.
+- [x] **T-28** ~~Wire the Start button~~ — starts a real game.
+- [ ] **T-29** `GameView` is a placeholder: it shows who is playing and how many
+      dice they hold, but there is no play. Bids, Dudo, Bull, Burst, the
+      Farewell Round and the private dice arrive with the engine's own phase.
 - [ ] **TD-9** `Profile` is hand-typed in `src/features/auth/types.ts`. Replace
       with Supabase generated types once the schema is applied (T-18).
 - [ ] **TD-4** No CI pipeline.

@@ -154,9 +154,9 @@ added to that publication.
 | ~~3~~ | ~~RPCs: create, join by code, leave, kick~~ | **Done.** 12 behaviour tests + the race run through the real RPC |
 | ~~4~~ | ~~Routing + lobby UI: seats at a table, code, share, copy~~ | **Done.** Driven in a real browser at 390×844 |
 | ~~5~~ | ~~Realtime: joins, leaves, host changes, connection state~~ | **Done bar live multi-device, which only the owner can run** |
-| 6 | Start: host-only, atomic, transition animation, room lock | Playwright + race tests |
-| 7 | Reconnect: refresh, disconnect, host migration | Playwright |
-| 8 | Rematch: results → lobby → same room | Playwright |
+| ~~6~~ | ~~Start: host-only, atomic, transition, room lock~~ | **Done.** 10 SQL tests + browser |
+| ~~7~~ | ~~Reconnect: refresh, disconnect, host migration~~ | **Done.** Live multi-device still the owner's |
+| ~~8~~ | ~~Rematch: results → lobby → same room~~ | **Done.** |
 
 ## 9a. How the six-player guarantee was verified
 
@@ -254,6 +254,39 @@ moved" and starts meaning "you are not being told".
 Verified in a browser across all three states — Realtime genuinely unreachable
 from the test environment, which made it an honest test rather than a simulated
 one — with the lobby remaining usable throughout.
+
+## 9e. Starting, ending, replaying
+
+**Starting** is host-only, needs three players, and is guarded by a single
+condition: the room must still be in the lobby. That one check is the whole of
+double-tap protection — a second caller, whether a second tap, a retried
+request or a second device, finds the room already moved on and is told so
+rather than starting a second game. Seats carry over, so where someone waited
+is where they play.
+
+The countdown runs on the **transition** into a game, not on its presence.
+Refreshing mid-game would otherwise replay it every time; there is a browser
+test asserting it does not.
+
+**Rematch** leaves membership completely untouched. The same people keep the
+same seats, and nobody re-joins. It is a new game row, never a revived one.
+
+**Ending a room** abandons any game still open rather than completing it —
+nobody won it, and recording a winner would be a lie.
+
+### Host migration, finally switched on
+
+The earlier version only noticed a host who had actually left. With a heartbeat
+arriving every twenty seconds, a host who has gone quiet for a minute can be
+stood down too — but only in favour of someone **demonstrably fresher**.
+
+That guard matters more than it looks. Without it, a table where nobody is
+reporting in — an older client, a stalled tab, the whole group on a bad
+connection — would hand the room around on every action for no reason.
+
+The check lives in the heartbeat, which is where the tests pushed it. Joining
+was the wrong home: a player already seated returns early, so the commonest
+action in a live room never reached it.
 
 ## 10. A testing limitation worth stating up front
 

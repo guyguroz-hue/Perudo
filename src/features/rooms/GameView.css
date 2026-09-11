@@ -1,0 +1,60 @@
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.game__note {
+  margin: 0;
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--bone-faint);
+}
+
+.game__players {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game__player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  background: rgb(0 0 0 / 0.22);
+  box-shadow: inset 0 0 0 1px rgb(244 239 228 / 0.1);
+}
+
+.game__player--out {
+  opacity: 0.5;
+}
+
+.game__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game__you {
+  color: var(--bone-faint);
+}
+
+.game__dice {
+  display: flex;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.game__out {
+  font-size: var(--text-xs);
+  letter-spacing: 0.1em;
+  color: var(--bone-faint);
+  text-transform: uppercase;
+}

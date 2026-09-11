@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/Button'
 import { Die } from '../../components/Die'
-import { createRoom, joinRoom } from './api'
+import { useAuth } from '../auth/useAuth'
+import { createRoom, fetchMyRoom, joinRoom } from './api'
 import { toRoomError } from './errors'
 import './HomeScreen.css'
 
@@ -13,9 +14,30 @@ import './HomeScreen.css'
  */
 export function HomeScreen({ name }: { name: string }) {
   const navigate = useNavigate()
+  const { state } = useAuth()
+  const youId = state.status === 'ready' ? state.userId : null
+  const [openTable, setOpenTable] = useState<{ roomId: string; code: string } | null>(null)
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<'create' | 'join' | null>(null)
+
+  // Coming back should not mean typing a code you no longer have in front of
+  // you. If a seat is still held somewhere, offer the way back to it.
+  useEffect(() => {
+    if (youId === null) return
+    let stale = false
+    fetchMyRoom(youId)
+      .then((found) => {
+        if (!stale && found !== null) setOpenTable({ roomId: found.roomId, code: found.code })
+      })
+      .catch(() => {
+        // Not being able to find a previous table is not a failure worth
+        // reporting: creating or joining still works perfectly well.
+      })
+    return () => {
+      stale = true
+    }
+  }, [youId])
 
   async function onCreate() {
     setBusy('create')
@@ -51,6 +73,17 @@ export function HomeScreen({ name }: { name: string }) {
       </div>
       <h1 className="home__title">Perudo</h1>
       <p className="home__greeting">Playing as {name}</p>
+
+      {openTable !== null && (
+        <button
+          type="button"
+          className="home__resume"
+          onClick={() => navigate(`/room/${openTable.roomId}`)}
+        >
+          <span className="home__resume-label">Back to your table</span>
+          <span className="home__resume-code">{openTable.code}</span>
+        </button>
+      )}
 
       <Button onClick={() => void onCreate()} busy={busy === 'create'}>
         {busy === 'create' ? 'Setting the table…' : 'Create room'}

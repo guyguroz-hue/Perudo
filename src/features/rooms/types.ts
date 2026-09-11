@@ -23,3 +23,21 @@ export const SEAT_COUNT = 6
 
 /** Below this the host cannot start (R-002 decisions, docs/ROOMS.md §11). */
 export const MIN_PLAYERS = 3
+
+/** A game as the room layer sees it. Play itself belongs to the engine. */
+export interface Game {
+  readonly id: string
+  readonly status: 'starting' | 'active' | 'completed' | 'abandoned'
+  readonly winner_id: string | null
+  readonly starting_dice: number
+}
+
+/** A player in a game: how many dice they hold, and whether they are out. */
+export interface GamePlayer {
+  readonly user_id: string
+  readonly seat: number
+  readonly dice_count: number
+  readonly is_eliminated: boolean
+  readonly display_name: string
+  readonly is_you: boolean
+}
