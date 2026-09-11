@@ -15,8 +15,10 @@ RLS, Edge Functions and/or RPC). Supabase is the *only* backend.
 
 ## Current phase
 
-**PHASE 0 — Audit & Architecture.** ⏸️ Awaiting owner approval of roadmap and
-answers to open decisions before PHASE 1 begins.
+**PHASE 1 — Database & security foundation.** Slice 1 of 2 complete (identity,
+rooms, membership, game lifecycle). ⏸️ Checkpoint: awaiting review before
+slice 2 (rounds, bids, private dice, event log), which additionally needs the
+rule decisions R-001…R-008.
 
 ## Completed phases
 
@@ -26,8 +28,21 @@ answers to open decisions before PHASE 1 begins.
 - [x] Project documentation created (`docs/`).
 - [x] Roadmap proposed.
 - [x] Risks and open decisions identified.
-- [ ] Owner approval of roadmap.
-- [ ] Open decisions D-001 … D-004 resolved.
+- [x] Owner approval of roadmap.
+- [x] Open decisions D-001 … D-004 resolved.
+
+### PHASE 1 slice 1 — identity, rooms, membership, game lifecycle ✅
+- [x] `profiles`, `rooms`, `room_members`, `games`, `game_players`.
+- [x] Constraints, partial unique indexes, derived elimination column.
+- [x] RLS on every table; clients hold SELECT only (plus own profile).
+- [x] Membership predicates as `SECURITY DEFINER` functions (recursion-safe).
+- [x] Realtime publication limited to the four public tables.
+- [x] Local verification harness (`scripts/test-db.sh`) — 11 assertions passing
+      against real PostgreSQL, migrations applied as a non-superuser owner.
+- [ ] Applied to the live Supabase project (blocked: egress still refused).
+
+### PHASE 1 slice 2 — rounds, bids, private dice, event log ⏸️
+Blocked on review of slice 1, and on R-001…R-008 for the round-state columns.
 
 ## Existing state (as of audit, 2026-09-11)
 
@@ -42,13 +57,13 @@ pre-existing work** — the GitHub repo was empty (zero commits, zero refs).
 | Styling system | ❌ none (Vite template CSS only) |
 | Supabase client | ✅ `src/lib/supabaseClient.ts`, env-driven |
 | Env vars | ✅ `.env.local` (gitignored), `.env.example` committed |
-| Database schema | ❌ none |
-| Migrations | ❌ none (no `supabase/` directory, no CLI) |
+| Database schema | ✅ slice 1 (identity, rooms, membership, game lifecycle) |
+| Migrations | ✅ `supabase/migrations/` — 2 files, locally verified |
 | DB functions / RPC | ❌ none |
 | Edge Functions | ❌ none |
-| RLS policies | ❌ none |
+| RLS policies | ✅ all slice-1 tables, read-only for clients |
 | Authentication | ❌ not configured |
-| Tests | ❌ none (no runner installed) |
+| Tests | ✅ SQL/RLS harness · ❌ no JS runner yet |
 | CI / deployment | ❌ none |
 | Game logic | ❌ none |
 
@@ -81,7 +96,7 @@ even while the network block (R-NET) is unresolved.
 
 | ID | Task | Blocked by |
 |---|---|---|
-| B-1 | Apply any migration to the live Supabase project | R-NET (egress blocked) |
+| B-1 | Apply migrations to the live Supabase project | R-NET (egress still refused) |
 | B-2 | Inspect live DB schema / RLS / auth config | R-NET |
 | B-3 | Integration tests against real Supabase | R-NET |
 | B-4 | Implement false-Bull resolution | R-001 |
@@ -93,9 +108,12 @@ even while the network block (R-NET) is unresolved.
 
 See `ARCHITECTURE.md` § Risks for detail.
 
-- **R-NET (blocking, operational):** this development environment's egress
-  proxy denies `*.supabase.co` (HTTP 403 on CONNECT). No migrations, no schema
-  inspection, no live testing from here.
+- **R-NET (partially mitigated):** egress to `*.supabase.co` is still refused,
+  so nothing has reached the live project. Mitigated for correctness by
+  `scripts/test-db.sh`, which applies the migrations to a throwaway local
+  PostgreSQL instance as a non-superuser owner and asserts the RLS behaviour.
+  What it cannot cover: Supabase-specific behaviour (PostgREST, Realtime
+  delivery, Auth), which still needs a live run.
 - **R-SEC-1:** private dice are the core security asset. A single wrong RLS
   policy or over-broad Realtime publication leaks the game.
 - **R-CONC-1:** Burst allows out-of-turn actions, which massively widens the
@@ -110,8 +128,12 @@ Tracked in `DECISIONS.md` (D-xxx architectural, R-xxx rules). All currently
 
 ## Testing status
 
-❌ No test runner installed. Planned: **Vitest** for the pure engine (Phase 2),
-plus SQL-level policy tests and multiplayer integration tests (Phase 9).
+✅ **Database:** `scripts/test-db.sh` — 11 assertions covering schema invariants,
+cross-room RLS isolation, client write refusal, profile ownership, signed-out
+access and the Realtime publication surface. All passing.
+
+❌ **JavaScript:** no runner yet. Vitest arrives with the Phase 2 engine.
+❌ **Integration against live Supabase:** blocked by R-NET.
 
 ## Production-readiness status
 

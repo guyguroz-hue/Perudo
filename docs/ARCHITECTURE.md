@@ -68,7 +68,23 @@ policies), not an application-level convention.
 
 ---
 
-## 4. Proposed data model (PROPOSED — Phase 1)
+## 4. Data model
+
+**Slice 1 is implemented** (`supabase/migrations/`): `profiles`, `rooms`,
+`room_members`, `games`, `game_players`. Slice 2 — `rounds`, current bid,
+`player_dice`, `dice_reveals`, `game_events` — is still PROPOSED and additionally
+gated on the unresolved rules.
+
+Two decisions from slice 1 worth carrying forward:
+
+- **Elimination is a generated column** (`is_eliminated = dice_count = 0`), so
+  the drift PART 77 warns about is structurally impossible rather than merely
+  policed by convention.
+- **`game_players.dice_count` has no upper bound yet.** Burst Dudo grants a die
+  and whether a player may exceed their starting count is unresolved (R-007);
+  adding a ceiling now would be inventing a rule.
+
+### Original table plan (PROPOSED — Phase 1)
 
 | Table | Purpose | Read access |
 |---|---|---|
@@ -116,7 +132,14 @@ game membership → player active & not eliminated → game status → round sta
 code (`NOT_YOUR_TURN`, `INVALID_BID`, `STALE_STATE`, `PLAYER_ELIMINATED`,
 `GAME_COMPLETE`, `UNAUTHORIZED_ACTION`, …), never a raw database error.
 
-**⚠️ Where the rule engine executes is OPEN DECISION D-002.** See below.
+**Where the rule engine executes — DECIDED (D-002):** a single TypeScript
+engine in `src/game`, imported both by the Edge Function that holds authority
+and by the client for UI hints only. The database performs a version-checked
+atomic commit. One engine, one set of tests, no drift.
+
+**Implemented today:** clients hold `SELECT` only. There is no client
+`INSERT`/`UPDATE`/`DELETE` privilege on any game table, so even a future policy
+mistake cannot authorise a write.
 
 ---
 
@@ -135,12 +158,15 @@ validate, and write are atomic.
 
 ---
 
-## 7. Authentication (PROPOSED — D-003 open)
+## 7. Authentication (DECIDED — D-003)
 
-Supabase Auth. Candidate: anonymous sign-in plus a chosen display name, with
-optional later linking to a real identity. Every RLS policy keys off
-`auth.uid()`; anonymous users have real `auth.users` rows, so RLS works
-identically.
+Supabase Auth with **anonymous sign-in** plus a chosen display name. Anonymous
+users are real `auth.users` rows, so `auth.uid()` and every RLS policy behave
+identically to a registered user.
+
+Consequence already reflected in the schema: abandoned anonymous accounts will
+need pruning, so `rooms.host_id` is `ON DELETE SET NULL` — deleting a stale
+account must never be blocked by a room it once hosted.
 
 ---
 
@@ -190,14 +216,28 @@ inside JSX.
 
 ---
 
+## 10a. Database verification
+
+`scripts/test-db.sh` spins up a throwaway PostgreSQL 16 cluster, applies a local
+shim for the Supabase-specific objects the migrations depend on (`auth.uid()`,
+the `anon`/`authenticated` roles, the `supabase_realtime` publication), applies
+`supabase/migrations/` in order, and runs `supabase/tests/`.
+
+Migrations are applied as **`app_owner`, a role with neither `SUPERUSER` nor
+`BYPASSRLS`**. This is the point of the harness: a superuser bypasses RLS
+unconditionally and would mask exactly the class of bug that matters here. It
+already earned its keep — it is why `FORCE ROW LEVEL SECURITY` was removed
+(it would have put the membership predicates back under the policies they exist
+to evaluate, producing infinite policy recursion).
+
 ## 11. Risks
 
 | ID | Risk | Impact | Mitigation |
 |---|---|---|---|
-| **R-NET** | Dev environment's egress proxy denies `*.supabase.co` (403 CONNECT) | Cannot apply migrations, inspect schema, or run live tests from here | D-001: ship migrations as reviewed SQL files the owner applies, or allow-list the host |
+| **R-NET** | Egress to `*.supabase.co` still refused | Nothing applied to the live project yet | Mitigated for correctness by `scripts/test-db.sh` (local PostgreSQL, non-superuser owner, RLS asserted). Supabase-specific behaviour still needs a live run |
 | **R-SEC-1** | Private-dice leak via RLS gap or Realtime publication | Game-breaking | Dedicated table, owner-only policy, excluded from publication, explicit Phase 9 tests |
 | **R-CONC-1** | Burst makes every player a potential concurrent writer | Corrupted state | Version-checked atomic transactions (§6) |
-| **R-DRIFT-1** | Rules duplicated in SQL and TypeScript diverge | Wrong outcomes | Resolved by D-002 (single engine location) |
+| ~~R-DRIFT-1~~ | Rules duplicated in SQL and TypeScript | — | **Closed** by D-002: one TypeScript engine, no SQL counterpart |
 | **R-RULE-1** | 8 undefined rules (`GAME_RULES.md` §12) | Phase 2 cannot complete | Owner decisions R-001…R-008 |
 | **R-KEY-1** | Publishable key is public by design; all safety rests on RLS | Total compromise if RLS is wrong | RLS never disabled; policy tests in Phase 9 |
-| **R-BRANCH-1** | GitHub default branch is the feature branch (repo had no `main`) | Confusing history | D-004 |
+| **R-BRANCH-1** | GitHub default branch is still the feature branch | Confusing history | `main` created and pushed; **the owner must flip the default in GitHub settings** |
