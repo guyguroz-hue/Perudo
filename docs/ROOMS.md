@@ -1,8 +1,7 @@
 # Room & Lobby Architecture — PROPOSAL
 
-> **Status: proposed, not implemented.** Milestone 1 output. Nothing in this
-> document has been built; it needs approval and several product decisions
-> first.
+> **Status: architecture approved, not implemented.** Milestone 1 output.
+> Every product decision it depended on has been made and is recorded in §11.
 
 The room system answers **who is here, where they sit, who hosts, and whether
 the game has started.** It does not answer what a player may do — that is the
@@ -32,7 +31,7 @@ Three existing constraints contradict the new spec and need a migration:
 
 | Constraint | Now | Must be |
 |---|---|---|
-| `rooms_max_players` | 2–10, default 8 | **2–6, default 6** |
+| `rooms_max_players` | 2–10, default 8 | **exactly 6** |
 | `room_members_seat_range` | 0–9 | **0–5** |
 | `game_players_seat_range` | 0–9 | **0–5** |
 
@@ -82,7 +81,7 @@ Proposed split:
 | Game actions — bid, Bull, Dudo, Burst | **Edge Function running `src/game`** | One rule engine, as decided |
 
 This is a **clarification, not a reversal** of D-002: no game rule is being
-moved into SQL. But it is an architectural choice and needs a yes.
+moved into SQL. Approved 2026-09-11.
 
 ## 5. Room lifecycle
 
@@ -137,7 +136,8 @@ the grace period, the host moves to the longest-seated remaining member.
 Deterministic, no scheduler required, and no two hosts can exist because the
 transition is a single locked update.
 
-**Grace period duration is an open decision.**
+**Grace period: 60 seconds** — long enough for a lift or a network handover,
+short enough that a room does not sit leaderless.
 
 ## 8. Private dice are unaffected
 
@@ -169,3 +169,28 @@ This environment cannot reach `*.supabase.co`. Consequences:
 - End-to-end multi-client browser tests against the live project **cannot** run
   here. Playwright can drive the UI against a local build with the network
   stubbed, which catches UI and routing faults but not live Realtime behaviour.
+
+---
+
+## 11. Decisions (all made 2026-09-11)
+
+| Decision | Choice | Why |
+|---|---|---|
+| **Minimum players** | **3** | The smallest table where Burst and Bull mean anything — a third party can interrupt, and a correct Bull costs more than one player |
+| **Room size** | **Fixed at 6** | No setting most people would never touch, one lobby composition to design, fewer states to test |
+| **Room actions** | **Postgres RPC**, game actions stay in the Edge Function | Transactions and row locks; no rule is duplicated |
+| **UI primitives** | **Radix directly, no Tailwind** | shadcn's accessibility without importing a second design system alongside the existing tokens |
+| **Ready system** | **None** | Presence in the lobby is readiness; the host starts when it looks right |
+| **Host grace period** | **60 seconds** | Survives a lift or a network handover |
+| **Room expiry** | Lobby **4h**, in-game **24h** | A long break must not kill a real game; a forgotten lobby should not outlive the evening |
+
+### Deferred, deliberately
+
+- **Spectator mode** — not implemented, but room state is shaped so it could be.
+  A spectator must never receive hidden dice, which needs its own permission
+  model.
+- **Turn timer** — not in scope. Would change how the game feels and needs its
+  own decision.
+- **QR code** — after the MVP. Sharing a link and a code covers the need.
+- **Room titles** — the code, the host's name and the faces around the table are
+  identity enough.

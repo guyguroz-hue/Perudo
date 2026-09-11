@@ -165,6 +165,22 @@ bid; it does not change who may act or how a challenge resolves.
 *Consequence:* none in the engine — the rules were already orthogonal, and the
 tests added for this confirmed existing behaviour rather than changing it.
 
+### ✅ D-005 — Room system decisions (2026-09-11)
+- **Minimum 3 players**, room **fixed at 6**.
+- **Room actions run as Postgres RPCs**; game actions stay in the Edge Function.
+  A clarification of D-002, not a reversal: room membership is not a game rule,
+  and it needs transactions and row locks that an Edge Function cannot provide.
+- **Radix primitives, no Tailwind.** shadcn was specified, but it requires
+  Tailwind and the project already has a working token system. Radix is what
+  shadcn is built on, so this keeps the accessibility and drops the second
+  design system.
+- **No Ready system** — the host starts; presence is readiness.
+- **Host grace period 60s**, then deterministic migration.
+- **Room expiry**: lobby 4h, in-game 24h.
+- Deferred: spectators, turn timer, QR codes, room titles.
+
+Full reasoning in `docs/ROOMS.md`.
+
 ---
 
 ## ❓ STILL OPEN — game rules
