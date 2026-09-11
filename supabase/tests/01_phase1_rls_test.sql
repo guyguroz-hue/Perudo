@@ -301,23 +301,33 @@ commit;
 -- -----------------------------------------------------------------------------
 
 do $$
-declare n int;
+declare
+  published text[];
+  expected  text[] := array[
+    'dice_reveals', 'game_events', 'game_players', 'games',
+    'room_members', 'rooms', 'rounds'
+  ];
 begin
-  select count(*) into n
+  -- The exact list, not a count. A count passes when a table is swapped for
+  -- another; this fails the moment anything appears that was not meant to.
+  select array_agg(tablename order by tablename) into published
     from pg_publication_tables
    where pubname = 'supabase_realtime' and schemaname = 'public';
-  if n <> 4 then
-    raise exception 'FAIL: expected 4 published tables, found %', n;
+
+  if published is distinct from expected then
+    raise exception 'FAIL: publication is % , expected %', published, expected;
   end if;
 
-  if exists (
-    select 1 from pg_publication_tables
-     where pubname = 'supabase_realtime' and tablename = 'profiles'
-  ) then
+  -- Stated separately as well, because this is the one that would end the game
+  -- rather than merely break it.
+  if 'player_dice' = any(coalesce(published, '{}')) then
+    raise exception 'FAIL: private dice are being broadcast';
+  end if;
+  if 'profiles' = any(coalesce(published, '{}')) then
     raise exception 'FAIL: profiles should not be broadcast';
   end if;
 end $$;
-\echo 'PASS  realtime publishes exactly the four public game tables'
+\echo 'PASS  realtime publishes exactly the public tables, and never the dice'
 
 \echo ''
 \echo '================ ALL PHASE 1 TESTS PASSED ================'

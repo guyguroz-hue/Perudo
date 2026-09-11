@@ -70,10 +70,37 @@ policies), not an application-level convention.
 
 ## 4. Data model
 
-**Slice 1 is implemented** (`supabase/migrations/`): `profiles`, `rooms`,
-`room_members`, `games`, `game_players`. Slice 2 — `rounds`, current bid,
-`player_dice`, `dice_reveals`, `game_events` — is still PROPOSED and additionally
-gated on the unresolved rules.
+**Both slices are implemented** (`supabase/migrations/`): `profiles`, `rooms`,
+`room_members`, `games`, `game_players`, and now `rounds`, `player_dice`,
+`dice_reveals` and `game_events`.
+
+### Private dice
+
+`player_dice` is a separate table rather than a column on `game_players`, and
+that is the whole point: a public query about someone's dice **count** cannot
+widen into their dice **values**, because the values are not there to select.
+
+Its policy contains no membership term at all —
+
+```sql
+using (player_id = (select auth.uid()))
+```
+
+— because membership is not what grants it. Being in the room is why you can see
+the bid; it is not a reason to see anyone's hand.
+
+`player_dice` is **never** in the Realtime publication. Replication is a second
+distribution channel, and a table that is safe under RLS is not automatically
+safe when broadcast. The migration itself raises if it finds the table
+published, and a test asserts the publication's exact contents rather than its
+size — a count passes when one table is swapped for another.
+
+`dice_reveals` is the only route from private to public, and it runs through the
+server when a challenge resolves.
+
+Both protections were checked by breaking them. Replacing the policy with the
+plausible mistake — "room members can see dice" — fails the suite immediately,
+as does adding `player_dice` to the publication.
 
 Two decisions from slice 1 worth carrying forward:
 

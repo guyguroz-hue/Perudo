@@ -16,10 +16,10 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-1d** ~~Apply round_start_rule and dice_ceiling migrations~~ — applied.
 - [x] **T-1e** ~~Apply room_system migration~~ — applied.
 - [x] **T-1f** ~~Apply room_actions~~ — applied.
-- [x] **T-1g** ~~Apply game_lifecycle~~ — applied. Live project is current.
-- [ ] **T-5** Design private-dice table + RLS so no player can read another's dice
-      (Phase 1 slice 2 — the single highest-risk item in the project).
-      **No longer blocked:** every rule is decided.
+- [x] **T-1g** ~~Apply game_lifecycle~~ — applied.
+- [ ] **T-1h** Apply `20260911230000_rounds_and_private_dice.sql` to the live project.
+- [x] **T-5** ~~Private-dice table + RLS~~ — done, and verified by sabotage:
+      the plausible wrong policy and a publication leak both fail the suite.
 
 ## 🟠 High priority
 
@@ -36,8 +36,8 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-10** ~~Phase 1 slice 1 schema + migrations + RLS~~ — locally verified.
 - [ ] **T-10b** Phase 1 slice 2: rounds, bids, private dice, reveals, event log.
 - [ ] **T-11** Decide min/max players per game (recommend 2–8).
-- [ ] **T-12** Keep `player_dice` out of the Realtime publication when it lands;
-      the publication test asserts the exact table list, so adding it will fail.
+- [x] **T-12** ~~Keep `player_dice` out of the Realtime publication~~ — enforced
+      by the migration itself and by an exact-list assertion.
 
 ## 🟡 Normal
 
