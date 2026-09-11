@@ -3,6 +3,7 @@ import { NameScreen } from './features/auth/NameScreen'
 import { useAuth } from './features/auth/useAuth'
 import { Button } from './components/Button'
 import { Die } from './components/Die'
+import { supabaseUrl } from './lib/supabaseClient'
 import './App.css'
 
 export default function App() {
@@ -57,6 +58,9 @@ function Failed({
       <h2>That did not work</h2>
       <p>{message}</p>
       {detail !== null && <p className="app__detail">{detail}</p>}
+      <p className="app__detail">
+        Built against: <code>{supabaseUrl ?? 'nothing — no URL in this build'}</code>
+      </p>
       <Button onClick={onRetry}>Try again</Button>
     </div>
   )

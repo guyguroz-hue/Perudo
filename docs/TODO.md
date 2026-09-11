@@ -52,7 +52,11 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🐛 Bugs
 
-- _(none recorded)_
+- [x] **B-1** ~~Missing env vars threw at module load, so a misconfigured
+      deployment rendered a completely blank page — no message, no retry.~~
+      Fixed: configuration is reported as state, not thrown, and an
+      `ErrorBoundary` now backstops render-time crashes. Verified by building
+      with no env vars and confirming the error screen appears.
 
 ## 🧹 Technical debt
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { supabase } from '../../lib/supabaseClient'
+import { configError, supabase } from '../../lib/supabaseClient'
 import { AuthContext } from './AuthContext'
 import { checkDisplayName } from './displayName'
 import { describeAuthError } from './errors'
@@ -34,6 +34,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function connect() {
       setState({ status: 'connecting' })
+
+      // Nothing else can work without configuration, and the cause is specific
+      // enough to name outright rather than surface as a confusing fetch error.
+      if (configError !== null) {
+        setState({
+          status: 'error',
+          message: 'This deployment is missing its Supabase settings.',
+          detail: configError,
+        })
+        return
+      }
+
       try {
         const userId = await establishSession()
         if (isStale()) return
