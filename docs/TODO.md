@@ -4,6 +4,10 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🔴 Critical
 
+- [ ] **T-0** **Manual:** enable anonymous sign-ins in the Supabase dashboard
+      (Authentication → Sign In / Providers). Without it the app cannot sign
+      anyone in; the error screen says so explicitly.
+
 - [x] **T-1** ~~Resolve D-001~~ — resolved; migrations are reviewed files.
 - [x] **T-2** ~~Resolve D-002~~ — resolved; TS engine in an Edge Function.
 - [ ] **T-1b** Apply `supabase/migrations/` to the live project (egress still refused).
@@ -30,10 +34,10 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🟡 Normal
 
-- [ ] **T-13** Replace the Vite template `App.tsx` / `App.css` with real app shell.
+- [x] **T-13** ~~Replace the Vite template app shell~~ — done, template removed.
 - [ ] **T-14** Replace the Vite template `README.md` with project documentation.
 - [ ] **T-15** Add routing (`/`, `/room/:code`, `/join/:code`).
-- [ ] **T-16** Design-token / styling foundation (dark felt, wood, tactile).
+- [x] **T-16** ~~Design-token foundation~~ — `src/styles/tokens.css`.
 - [ ] **T-17** Stable error-code contract shared by client and server.
 - [ ] **T-18** Supabase generated types wired into the build.
 - [ ] **T-19** Rename `VITE_SUPABASE_ANON_KEY` → `VITE_SUPABASE_PUBLISHABLE_KEY`
@@ -62,10 +66,13 @@ Completed items are marked `[x]` and kept, not deleted.
 - [ ] **TD-7** `profiles` is not in the Realtime publication, so a display-name
       change does not broadcast. Lobby must refetch. Revisit if it feels stale.
 
-- [ ] **TD-1** `SupabaseStatus.tsx` is a temporary connectivity probe, not a
-      product feature. Remove once the real lobby exists.
-- [ ] **TD-2** `App.tsx` is still the unmodified Vite template.
-- [ ] **TD-3** No test runner installed.
+- [x] **TD-1** ~~`SupabaseStatus.tsx` connectivity probe~~ — removed.
+- [x] **TD-2** ~~`App.tsx` is the Vite template~~ — replaced.
+- [x] **TD-3** ~~No test runner~~ — Vitest.
+- [ ] **TD-8** The `Seated` screen in `App.tsx` is a placeholder, not the lobby.
+      Clearly labelled as temporary; replace in the lobby phase.
+- [ ] **TD-9** `Profile` is hand-typed in `src/features/auth/types.ts`. Replace
+      with Supabase generated types once the schema is applied (T-18).
 - [ ] **TD-4** No CI pipeline.
 
 ## ❓ Questions for Guy
@@ -93,3 +100,4 @@ Recorded only; **not** to be built without an explicit request.
 - [x] `main` branch created and pushed.
 - [x] PHASE 1 slice 1: core schema, RLS, and a local verification harness.
 - [x] PHASE 2: pure rule engine for the defined rules, 55 tests.
+- [x] PHASE 5a: anonymous auth, player identity, design system, app shell.

@@ -1,124 +1,87 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import { SupabaseStatus } from './components/SupabaseStatus'
+import { AuthProvider } from './features/auth/AuthProvider'
+import { NameScreen } from './features/auth/NameScreen'
+import { useAuth } from './features/auth/useAuth'
+import { Button } from './components/Button'
+import { Die } from './components/Die'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-        <SupabaseStatus />
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <AuthProvider>
+      <main className="app">
+        <CurrentScreen />
+      </main>
+    </AuthProvider>
   )
 }
 
-export default App
+function CurrentScreen() {
+  const { state, retry } = useAuth()
+
+  switch (state.status) {
+    case 'connecting':
+      return <Connecting />
+    case 'error':
+      return <Failed message={state.message} detail={state.detail} onRetry={retry} />
+    case 'unnamed':
+      return <NameScreen />
+    case 'ready':
+      return <Seated name={state.profile.display_name} />
+  }
+}
+
+/** A deliberate loading state rather than a blank screen (PART 55). */
+function Connecting() {
+  return (
+    <div className="app__status">
+      <div className="app__rolling" aria-hidden="true">
+        <Die face={3} size={36} />
+        <Die face={6} size={36} />
+      </div>
+      <p>Finding you a seat…</p>
+    </div>
+  )
+}
+
+function Failed({
+  message,
+  detail,
+  onRetry,
+}: {
+  message: string
+  detail: string | null
+  onRetry: () => void
+}) {
+  return (
+    <div className="app__status" role="alert">
+      <h2>That did not work</h2>
+      <p>{message}</p>
+      {detail !== null && <p className="app__detail">{detail}</p>}
+      <Button onClick={onRetry}>Try again</Button>
+    </div>
+  )
+}
+
+/**
+ * Placeholder for the lobby.
+ *
+ * TEMPORARY (TODO T-15/T-10b): creating and joining rooms needs the server
+ * action layer, which needs the round and dice schema, which is waiting on the
+ * unresolved rules. This screen exists so the identity flow has somewhere to
+ * land — it is not the lobby.
+ */
+function Seated({ name }: { name: string }) {
+  return (
+    <div className="app__status">
+      <div className="app__rolling" aria-hidden="true">
+        <Die face={1} size={36} />
+        <Die face={4} size={36} />
+        <Die hidden size={36} />
+      </div>
+      <h2>Welcome, {name}</h2>
+      <p className="app__detail">
+        Your seat is saved. Rooms and play arrive with the next phase.
+      </p>
+    </div>
+  )
+}

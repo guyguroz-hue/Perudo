@@ -15,6 +15,9 @@ RLS, Edge Functions and/or RPC). Supabase is the *only* backend.
 
 ## Current phase
 
+**PHASE 5a — Authentication & identity.** ✅ Complete and visually verified.
+Next: the lobby, which needs the server action layer.
+
 **PHASE 2 — Game engine.** The defined rules are implemented and tested. The
 engine cannot be completed further without the rule decisions: every undefined
 branch raises `UnresolvedRuleError` by design.
@@ -53,6 +56,17 @@ step and also waits on R-001…R-004 for its round-state columns.
 - [x] 55 Vitest cases covering PARTS 61–68.
 - [ ] Remaining rules — blocked on R-001…R-009.
 
+### PHASE 5a — authentication and player identity ✅
+- [x] Anonymous sign-in on load; session reused across refreshes.
+- [x] Profile creation/rename written straight from the browser — safe because
+      the RLS policy pins the row to `id = auth.uid()`.
+- [x] Display-name validation mirroring the database constraint exactly.
+- [x] Design tokens (felt, wood, brass, bone), reduced-motion support.
+- [x] Reusable `Die` and `Button`; the Vite template is gone.
+- [x] Deliberate loading and error states; failures explained in plain language.
+- [x] Verified in a real browser at 390x844: name screen, validation refusal,
+      and seated state, with no console errors.
+
 ### PHASE 1 slice 2 — rounds, bids, private dice, event log ⏸️
 Blocked on R-001…R-004 for the round-state columns.
 
@@ -64,9 +78,9 @@ pre-existing work** — the GitHub repo was empty (zero commits, zero refs).
 | Area | State |
 |---|---|
 | Frontend | Vite `react-ts` scaffold, React 19, TS 6, Vite 8 |
-| Components | `App.tsx` (Vite template), `SupabaseStatus.tsx` (connection probe) |
-| Routing | ❌ none |
-| Styling system | ❌ none (Vite template CSS only) |
+| Components | App shell, `Die`, `Button`, auth screens |
+| Routing | ❌ none (deferred until the lobby needs it) |
+| Styling system | ✅ design tokens + components |
 | Supabase client | ✅ `src/lib/supabaseClient.ts`, env-driven |
 | Env vars | ✅ `.env.local` (gitignored), `.env.example` committed |
 | Database schema | ✅ slice 1 (identity, rooms, membership, game lifecycle) |
@@ -74,8 +88,8 @@ pre-existing work** — the GitHub repo was empty (zero commits, zero refs).
 | DB functions / RPC | ❌ none |
 | Edge Functions | ❌ none |
 | RLS policies | ✅ all slice-1 tables, read-only for clients |
-| Authentication | ❌ not configured |
-| Tests | ✅ Vitest (55) + SQL/RLS harness (11) |
+| Authentication | ✅ anonymous sign-in + profile identity |
+| Tests | ✅ Vitest (62) + SQL/RLS harness (11) |
 | CI / deployment | ❌ none |
 | Game logic | ✅ pure engine, defined rules, 55 tests |
 

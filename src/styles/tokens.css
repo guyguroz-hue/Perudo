@@ -1,0 +1,93 @@
+/*
+ * Design tokens.
+ *
+ * The table is the product: dark felt, warm wood, brass and bone. Everything
+ * here is a variable so the surface can be retuned in one place rather than
+ * hunted through components.
+ *
+ * The game is played on phones held in one hand, so sizing starts at the small
+ * end and grows, and every interactive target clears 44px.
+ */
+:root {
+  /* Felt — the table surface, and the ground for almost every screen. */
+  --felt-deep: #0e1f17;
+  --felt: #16301f;
+  --felt-raised: #1e4029;
+  --felt-edge: #0a1710;
+
+  /* Wood and leather — the rail around the table. */
+  --wood-dark: #2d1d12;
+  --wood: #4a3020;
+  --leather: #7d5a3c;
+
+  /* Brass — the single accent. Used sparingly so it still means something. */
+  --brass: #c9a227;
+  --brass-bright: #e8c34d;
+  --brass-dim: #8a6f1b;
+
+  /* Bone — dice, and the colour text is set in. */
+  --bone: #f4efe4;
+  --bone-dim: #cfc7b6;
+  --bone-faint: #9a9384;
+
+  --danger: #c0472f;
+  --danger-bright: #e06349;
+
+  /* Type. System stacks only: no webfont request to fail or block a first
+     paint, and no third-party dependency on the critical path. */
+  --font-display: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-numeric: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.75rem;
+
+  /* Spacing, on a 4px rhythm. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
+  /* Tactile depth: a lifted edge above, a cast shadow below. */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow: 0 2px 8px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.06);
+  --shadow-lg: 0 8px 28px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.08);
+
+  /* Minimum comfortable tap target. */
+  --tap: 44px;
+
+  --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration: 220ms;
+}
+
+/* Animation must never be load-bearing for understanding the game state
+   (PART 51), so switching it off costs nothing but polish. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
