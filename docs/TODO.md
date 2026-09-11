@@ -16,7 +16,7 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-1d** ~~Apply round_start_rule and dice_ceiling migrations~~ — applied.
 - [x] **T-1e** ~~Apply room_system migration~~ — applied.
 - [x] **T-1f** ~~Apply room_actions~~ — applied.
-- [ ] **T-1g** Apply `20260911220000_game_lifecycle.sql` to the live project.
+- [x] **T-1g** ~~Apply game_lifecycle~~ — applied. Live project is current.
 - [ ] **T-5** Design private-dice table + RLS so no player can read another's dice
       (Phase 1 slice 2 — the single highest-risk item in the project).
       **No longer blocked:** every rule is decided.

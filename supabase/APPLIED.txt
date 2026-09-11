@@ -3,4 +3,4 @@
 #
 # Update this after running the pending SQL. `scripts/pending-sql.sh` reads it
 # and prints exactly what is left, so nothing depends on anyone remembering.
-20260911210000_room_actions.sql
+20260911220000_game_lifecycle.sql
