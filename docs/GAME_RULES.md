@@ -238,8 +238,12 @@ owed their own Farewell Round: they are **queued**, one takes the next round, th
 next follows after that. The order among them is explicitly arbitrary — the
 engine uses seat order, which is deterministic and replayable.
 
-❓ **UNDEFINED (R-008):** whether Burst and/or Bull are permitted during a
-Farewell Round.
+### Burst and Bull during a Farewell Round ✅ (resolved by R-008)
+
+**Both are fully permitted.** A Farewell Round changes what counts and what may
+be bid — the face is locked and Perudo is not wild — but it does not change who
+may act or how a challenge resolves. Burst, Burst Dudo and Bull all behave
+exactly as they do in a normal round.
 
 ## 11. Elimination ✅
 
@@ -280,18 +284,22 @@ winner**.
 > a correct Bull spares its caller, and a false Bull costs only its caller — so
 > somebody always survives. The rule is implemented regardless.
 
-## 12. ❓ UNDEFINED RULES — DO NOT INVENT
+## 12. ✅ ALL RULES RESOLVED
 
-These are deliberately unresolved. On reaching any of them: **STOP, present
-options, ask.** Never silently choose.
+Every rule that was deliberately left open has been decided:
 
-**Resolved:** R-001 (false Bull, §8.4) · R-002 (round starter, §11) ·
-R-003 (simultaneous Farewell, §10) · R-004 (simultaneous elimination, §11) ·
-R-005 (Bull eligibility, §8.5) · R-006 (Burst Dudo on a Bull, §9.4) ·
-R-007 (dice ceiling, §9.3) · R-009 (bid progression, §4).
+| ID | Rule | Where |
+|---|---|---|
+| R-001 | False Bull costs its caller alone | §8.4 |
+| R-002 | Whoever was proved right opens the next round | §11 |
+| R-003 | Simultaneous Farewell Rounds are queued; the trigger is the descent | §10 |
+| R-004 | No tiebreak on elimination; an eliminated player never wins | §11 |
+| R-005 | A Bull may be declared out of turn, as a Burst | §8.5 |
+| R-006 | Burst Dudo against a Bull composes with the Bull resolution | §9.4 |
+| R-007 | Five dice, never more | §9.3 |
+| R-008 | Burst and Bull are permitted in a Farewell Round | §10 |
+| R-009 | The quantity anchors a bid and may never fall | §4 |
 
-**Still open — do not implement:**
-
-1. **R-008 — Burst and Bull during a Farewell Round.** The face is locked and
-   Perudo is not wild; may a player still burst in, and may a Bull be declared?
-2. Any other situation the rules do not uniquely determine.
+**The standing instruction still holds.** If play reaches a situation these
+rules do not uniquely determine, **STOP, present options, ask.** Never silently
+choose. `UnresolvedRuleError` exists for exactly that.

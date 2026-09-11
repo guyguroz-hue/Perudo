@@ -159,10 +159,16 @@ anywhere — `4 fives → 5 fours` is legal. Hold it and the face must rise.
 *Consequence:* this is tournament Perudo's rule, and it replaced the stricter
 literal reading the engine had been using.
 
+### ✅ R-008 — Burst and Bull in a Farewell Round (2026-09-11)
+**Both fully permitted.** A Farewell Round changes what counts and what may be
+bid; it does not change who may act or how a challenge resolves.
+*Consequence:* none in the engine — the rules were already orthogonal, and the
+tests added for this confirmed existing behaviour rather than changing it.
+
 ---
 
 ## ❓ STILL OPEN — game rules
 
-| ID | Question |
-|---|---|
-| R-008 | Are Burst / Bull legal during a Farewell Round |
+**None.** Every rule deliberately left open has been decided. The standing
+instruction stands: a situation the rules do not uniquely determine is raised,
+never guessed.

@@ -17,12 +17,13 @@ Completed items are marked `[x]` and kept, not deleted.
       `20260911180000_round_start_rule.sql` and `20260911190000_dice_ceiling.sql`.
 - [ ] **T-5** Design private-dice table + RLS so no player can read another's dice
       (Phase 1 slice 2 — the single highest-risk item in the project).
+      **No longer blocked:** every rule is decided.
 
 ## 🟠 High priority
 
 - [x] **T-6** ~~Resolve D-003 / D-004~~ — anonymous auth; `main` as trunk.
 - [x] **T-7a** ~~Resolve R-005/R-006~~ — Bull may burst; Burst Dudo composes.
-- [ ] **T-7b** Resolve **R-008** — Burst and Bull inside a Farewell Round.
+- [x] **T-7b** ~~Resolve R-008~~ — both permitted; engine already correct.
 - [x] **T-8** ~~Resolve R-007~~ — five dice, enforced in engine and database.
 - [x] **T-8b** ~~Confirm R-009~~ — quantity anchors, face is free when it rises.
 - [ ] **T-25** Implement the non-default `round_start_rule` paths
@@ -68,6 +69,11 @@ Completed items are marked `[x]` and kept, not deleted.
       with no env vars and confirming the error screen appears.
 
 ## 🧹 Technical debt
+
+- [ ] **TD-10** `UnresolvedRuleError` now has no thrower, since every rule is
+      decided. Kept deliberately for the round-state and action-layer work,
+      which is likely to surface new ambiguities. Remove it if that turns out
+      not to happen.
 
 - [ ] **TD-5** RLS policies call `is_room_member(id)` once per candidate row, so
       `select * from rooms` scales with total room count rather than with the

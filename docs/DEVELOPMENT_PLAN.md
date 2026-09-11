@@ -18,8 +18,8 @@ RLS, Edge Functions and/or RPC). Supabase is the *only* backend.
 **PHASE 5a — Authentication & identity.** ✅ Complete, deployed, and confirmed
 working against the live Supabase project from a phone.
 
-Everything now hinges on the rule decisions: the next database slice (rounds,
-bids, private dice) cannot be designed without R-001…R-004.
+**All nine open rules are now decided** (R-001…R-009). The next database slice —
+rounds, bids, private dice, event log — is unblocked and is the critical path.
 
 **PHASE 2 — Game engine.** The defined rules are implemented and tested. The
 engine cannot be completed further without the rule decisions: every undefined
@@ -58,7 +58,7 @@ step and also waits on R-001…R-004 for its round-state columns.
 - [x] Elimination, victory, Farewell trigger.
 - [x] `UnresolvedRuleError` on every undefined branch (R-001/R-003/R-004/R-006).
 - [x] 55 Vitest cases covering PARTS 61–68.
-- [ ] Remaining rules — blocked on R-001…R-009.
+- [x] **All nine open rules implemented and tested** (R-001…R-009).
 
 ### PHASE 5a — authentication and player identity ✅
 - [x] Anonymous sign-in on load; session reused across refreshes.
@@ -71,8 +71,9 @@ step and also waits on R-001…R-004 for its round-state columns.
 - [x] Verified in a real browser at 390x844: name screen, validation refusal,
       and seated state, with no console errors.
 
-### PHASE 1 slice 2 — rounds, bids, private dice, event log ⏸️
-Blocked on R-001…R-004 for the round-state columns.
+### PHASE 1 slice 2 — rounds, bids, private dice, event log ⏭️ NEXT
+No longer blocked. The private-dice table and its RLS are the highest-risk item
+in the project: a single over-broad policy exposes every player's cup.
 
 ## Existing state (as of audit, 2026-09-11)
 
@@ -93,9 +94,9 @@ pre-existing work** — the GitHub repo was empty (zero commits, zero refs).
 | Edge Functions | ❌ none |
 | RLS policies | ✅ all slice-1 tables, read-only for clients |
 | Authentication | ✅ anonymous sign-in + profile identity |
-| Tests | ✅ Vitest (62) + SQL/RLS harness (11) |
+| Tests | ✅ Vitest (85) + SQL/RLS harness (13) |
 | CI / deployment | ❌ none |
-| Game logic | ✅ pure engine, defined rules, 55 tests |
+| Game logic | ✅ pure engine, all rules, 85 tests |
 
 Build (`npm run build`) and lint (`npm run lint`) pass clean.
 

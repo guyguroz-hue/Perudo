@@ -466,3 +466,77 @@ describe('the next round opens with whoever was proved right (R-002)', () => {
     expect(outcome.farewellQueue).toEqual(['alice'])
   })
 })
+
+// R-008 — Burst and Bull inside a Farewell Round
+describe('a Farewell Round permits Burst and Bull (R-008)', () => {
+  // Locked on fives with no wildcard, so only literal fives count: two of them.
+  const farewell = (quantity: number, bull: string | null = null) => ({
+    type: 'farewell' as const,
+    lockedFace: 5 as const,
+    bid: {
+      quantity,
+      face: 5 as const,
+      bidderId: 'alice',
+      bull: bull === null ? null : { callerId: bull },
+    },
+  })
+  const table = [hand('alice', 5, 1, 2), hand('bob', 5, 1, 3), hand('carol', 4, 4, 6)]
+
+  it('counts without the wildcard, so ones do not rescue a bid', () => {
+    // The same three fives-and-ones would make four in a normal round.
+    const outcome = resolveChallenge({
+      round: farewell(3),
+      hands: table,
+      challengerId: 'bob',
+      kind: 'dudo',
+    })
+    expect(outcome.actualCount).toBe(2)
+    expect(outcome.claimHolds).toBe(false)
+    expect(outcome.dieDeltas.get('alice')).toBe(-1)
+  })
+
+  it('allows a Burst Dudo, gain included', () => {
+    const outcome = resolveChallenge({
+      round: farewell(3),
+      hands: table,
+      challengerId: 'carol',
+      kind: 'burst_dudo',
+    })
+    expect(outcome.dieDeltas.get('alice')).toBe(-1)
+    expect(outcome.dieDeltas.get('carol')).toBe(1)
+  })
+
+  it('allows a Bull, resolved exactly as in a normal round', () => {
+    const exact = resolveChallenge({
+      round: farewell(2, 'bob'),
+      hands: table,
+      challengerId: 'carol',
+      kind: 'dudo',
+    })
+    expect(exact.claimHolds).toBe(true)
+    expect(exact.dieDeltas.get('alice')).toBe(-1)
+    expect(exact.dieDeltas.get('carol')).toBe(-1)
+    expect(exact.dieDeltas.has('bob')).toBe(false)
+
+    const wrong = resolveChallenge({
+      round: farewell(4, 'bob'),
+      hands: table,
+      challengerId: 'carol',
+      kind: 'dudo',
+    })
+    expect(wrong.claimHolds).toBe(false)
+    expect(wrong.dieDeltas.get('bob')).toBe(-1)
+    expect(wrong.dieDeltas.size).toBe(1)
+  })
+
+  it('allows a Bull challenged by a Burst Dudo', () => {
+    const outcome = resolveChallenge({
+      round: farewell(4, 'bob'),
+      hands: table,
+      challengerId: 'carol',
+      kind: 'burst_dudo',
+    })
+    expect(outcome.dieDeltas.get('bob')).toBe(-1)
+    expect(outcome.dieDeltas.get('carol')).toBe(1)
+  })
+})
