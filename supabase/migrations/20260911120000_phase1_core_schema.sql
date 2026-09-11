@@ -65,6 +65,9 @@ create table if not exists public.profiles (
 comment on table public.profiles is
   'Public-facing player identity. Never holds private game information.';
 
+-- Dropped first so the whole migration can be re-run safely; PostgreSQL has
+-- no CREATE TRIGGER IF NOT EXISTS.
+drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at
   before update on public.profiles
   for each row execute function public.set_updated_at();
@@ -98,6 +101,9 @@ comment on column public.rooms.host_id is
 
 create index if not exists rooms_host_idx on public.rooms (host_id);
 
+-- Dropped first so the whole migration can be re-run safely; PostgreSQL has
+-- no CREATE TRIGGER IF NOT EXISTS.
+drop trigger if exists rooms_set_updated_at on public.rooms;
 create trigger rooms_set_updated_at
   before update on public.rooms
   for each row execute function public.set_updated_at();
@@ -166,6 +172,9 @@ create table if not exists public.games (
     check (winner_id is null or status = 'completed')
 );
 
+-- Dropped first so the whole migration can be re-run safely; PostgreSQL has
+-- no CREATE TRIGGER IF NOT EXISTS.
+drop trigger if exists games_set_updated_at on public.games;
 create trigger games_set_updated_at
   before update on public.games
   for each row execute function public.set_updated_at();
