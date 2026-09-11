@@ -13,15 +13,17 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-3** ~~Resolve R-001~~ — false Bull costs its caller a die.
 - [x] **T-4a** ~~Resolve R-003/R-004~~ — Farewell queue; no tiebreak on elimination.
 - [x] **T-4b** ~~Resolve R-002~~ — whoever was proved right opens.
-- [ ] **T-1d** Apply `20260911180000_round_start_rule.sql` to the live project.
+- [ ] **T-1d** Apply the two new migrations to the live project:
+      `20260911180000_round_start_rule.sql` and `20260911190000_dice_ceiling.sql`.
 - [ ] **T-5** Design private-dice table + RLS so no player can read another's dice
       (Phase 1 slice 2 — the single highest-risk item in the project).
 
 ## 🟠 High priority
 
 - [x] **T-6** ~~Resolve D-003 / D-004~~ — anonymous auth; `main` as trunk.
-- [ ] **T-7** Resolve R-005/R-006/R-008 — Bull eligibility and Burst interaction.
-- [ ] **T-8** Resolve R-007 — die-gain ceiling.
+- [x] **T-7a** ~~Resolve R-005/R-006~~ — Bull may burst; Burst Dudo composes.
+- [ ] **T-7b** Resolve **R-008** — Burst and Bull inside a Farewell Round.
+- [x] **T-8** ~~Resolve R-007~~ — five dice, enforced in engine and database.
 - [x] **T-8b** ~~Confirm R-009~~ — quantity anchors, face is free when it rises.
 - [ ] **T-25** Implement the non-default `round_start_rule` paths
       (`loser_starts`, `free_for_all`) plus the UI to choose. The column exists

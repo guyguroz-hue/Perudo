@@ -131,6 +131,28 @@ favour of the winner.
 costs a die, so the round transition needs no fallback. Alternatives
 (`loser_starts`, `free_for_all`) are stored as a room setting but unimplemented.
 
+### ✅ R-005 — Bull eligibility (2026-09-11)
+A Bull is a bet like any other, so it may be declared **out of turn as a Burst**.
+*Consequence:* turn validation must treat Bull the same as a Burst bid; the
+action layer, not the engine, enforces this.
+
+### ✅ R-006 — Burst Dudo against a Bull (2026-09-11)
+Burst Dudo works against a Bull exactly as against any other bid. The two rules
+turned out to **compose without conflict**: when the Bull is false the caller
+pays and the burster gains; when it is exact, "everyone except the Bull caller
+loses one" already charges the mistaken burster their die, so only the gain
+needed adding.
+*Consequence:* bursting does **not** shield the rest of the table from a correct
+Bull. That reading was chosen because nothing in the rule suspends the Bull
+resolution — worth confirming if the intent was a two-player duel instead.
+
+### ✅ R-007 — dice ceiling (2026-09-11)
+**Five dice, never more, in any situation.** A Burst Dudo won by a player already
+at five grants nothing; the loser still loses theirs.
+*Consequence:* enforced in the database as well as the engine, so a bug in the
+action layer cannot mint a sixth die. `games.starting_dice` was narrowed from
+1–6 to 1–5 to match.
+
 ### ✅ R-009 — bid progression (2026-09-11)
 **The quantity is the anchor and may never fall.** Raise it and the face may go
 anywhere — `4 fives → 5 fours` is legal. Hold it and the face must rise.
@@ -143,7 +165,4 @@ literal reading the engine had been using.
 
 | ID | Question |
 |---|---|
-| R-005 | Bull eligibility — turn-only, or out-of-turn like Burst |
-| R-006 | Burst Dudo aimed at a Bull; may an already-Bulled bid be Bulled again |
-| R-007 | Die-gain ceiling on Burst Dudo (can a player exceed 5 dice) |
 | R-008 | Are Burst / Bull legal during a Farewell Round |

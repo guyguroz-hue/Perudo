@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { resolveChallenge } from './resolution'
-import { UnresolvedRuleError } from './errors'
 import type { ChallengeKind } from './types'
 import { bid, blanks, hand, normalRound } from './testing'
 
@@ -314,32 +313,95 @@ describe('simultaneous elimination (R-004)', () => {
   })
 })
 
-// The rules still deliberately undefined
-describe('remaining undefined rules raise rather than guess', () => {
-  it('R-006: refuses a Burst Dudo aimed at a Bull', () => {
-    expect(() =>
-      resolveChallenge({
-        round: normalRound(bid(4, 5, 'alice', 'bob')),
-        hands: table,
-        challengerId: 'bob',
-        kind: 'burst_dudo',
-      }),
-    ).toThrow(/R-006/)
+// R-006 — Burst Dudo aimed at a Bull
+describe('Burst Dudo against a Bull (R-006)', () => {
+  // Four fives on this table.
+  const bullTable = [hand('alice', 5, 5, 2), hand('bob', 5, 1, 3), hand('carol', 4, 4, 6)]
+
+  it('wins a die back when the Bull proves false', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(2, 5, 'alice', 'bob')),
+      hands: bullTable,
+      challengerId: 'carol',
+      kind: 'burst_dudo',
+    })
+    expect(outcome.claimHolds).toBe(false)
+    expect(outcome.dieDeltas.get('carol')).toBe(1)
+    expect(outcome.dieDeltas.get('bob')).toBe(-1)
+    expect(outcome.dieDeltas.has('alice')).toBe(false)
   })
 
-  it('names the rule and the situation so the gap is actionable', () => {
-    try {
-      resolveChallenge({
-        round: normalRound(bid(4, 5, 'alice', 'bob')),
-        hands: table,
-        challengerId: 'bob',
-        kind: 'burst_dudo',
-      })
-      expect.unreachable('should have thrown')
-    } catch (error) {
-      expect(error).toBeInstanceOf(UnresolvedRuleError)
-      expect((error as UnresolvedRuleError).ruleId).toBe('R-006')
-    }
+  it('costs the challenger a die when the Bull was exact', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(4, 5, 'alice', 'bob')),
+      hands: bullTable,
+      challengerId: 'carol',
+      kind: 'burst_dudo',
+    })
+    expect(outcome.dieDeltas.get('carol')).toBe(-1)
+  })
+
+  it('still costs the whole table when the Bull was exact', () => {
+    // Bursting does not shield the other players from a correct Bull: the two
+    // rules compose, so everyone but the caller pays either way.
+    const outcome = resolveChallenge({
+      round: normalRound(bid(4, 5, 'alice', 'bob')),
+      hands: bullTable,
+      challengerId: 'carol',
+      kind: 'burst_dudo',
+    })
+    expect(outcome.dieDeltas.get('alice')).toBe(-1)
+    expect(outcome.dieDeltas.get('carol')).toBe(-1)
+    expect(outcome.dieDeltas.has('bob')).toBe(false)
+  })
+
+  it('matches a normal Dudo except for the gain', () => {
+    const asDudo = resolveChallenge({
+      round: normalRound(bid(2, 5, 'alice', 'bob')),
+      hands: bullTable,
+      challengerId: 'carol',
+      kind: 'dudo',
+    })
+    expect(asDudo.dieDeltas.get('bob')).toBe(-1)
+    expect(asDudo.dieDeltas.has('carol')).toBe(false)
+  })
+})
+
+// R-007 — the ceiling on dice
+describe('the five-dice ceiling (R-007)', () => {
+  it('refuses to take a full hand past five', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(9, 5, 'alice')),
+      hands: [blanks('alice', 3), hand('bob', 6, 6, 6, 6, 6)],
+      challengerId: 'bob',
+      kind: 'burst_dudo',
+    })
+    // Bob was right, but he is already holding five.
+    expect(outcome.claimHolds).toBe(false)
+    expect(outcome.dieDeltas.get('alice')).toBe(-1)
+    expect(outcome.dieDeltas.get('bob')).toBeUndefined()
+  })
+
+  it('still grants the die when there is room', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(9, 5, 'alice')),
+      hands: [blanks('alice', 3), hand('bob', 6, 6, 6, 6)],
+      challengerId: 'bob',
+      kind: 'burst_dudo',
+    })
+    expect(outcome.dieDeltas.get('bob')).toBe(1)
+  })
+
+  it('caps a Burst Dudo against a Bull too', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(1, 5, 'alice', 'alice')),
+      hands: [hand('alice', 5, 5), hand('bob', 6, 6, 6, 6, 6)],
+      challengerId: 'bob',
+      kind: 'burst_dudo',
+    })
+    // Two fives on the table, so the Bull of one is false and Alice pays.
+    expect(outcome.dieDeltas.get('alice')).toBe(-1)
+    expect(outcome.dieDeltas.get('bob')).toBeUndefined()
   })
 })
 

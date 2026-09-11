@@ -5,8 +5,10 @@
  * Function and the client both import it, which is what keeps a single set of
  * rules from drifting into two (DECISIONS.md D-002).
  *
- * The rules themselves live in docs/GAME_RULES.md. Where that document marks a
- * rule UNDEFINED, this engine raises `UnresolvedRuleError` rather than guessing.
+ * The rules themselves live in docs/GAME_RULES.md. Where that document still
+ * marks a rule UNDEFINED, this engine raises `UnresolvedRuleError` rather than
+ * guessing — every rule it currently implements has been decided, so nothing
+ * throws today.
  */
 
 /** A die face. In a normal round `1` is Perudo — the wildcard. */
@@ -16,6 +18,15 @@ export type Face = 1 | 2 | 3 | 4 | 5 | 6
 export const PERUDO: Face = 1
 
 export const FACES: readonly Face[] = [1, 2, 3, 4, 5, 6]
+
+/**
+ * The hard ceiling on a player's dice (R-007).
+ *
+ * Burst Dudo is the only move that hands a die back, and it may never take a
+ * player above this — not even one who started below it. No situation in the
+ * game produces a sixth die.
+ */
+export const MAX_DICE = 5
 
 export type PlayerId = string
 

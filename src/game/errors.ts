@@ -5,6 +5,11 @@
  * intentionally unresolved (docs/GAME_RULES.md §12), and inventing behaviour for
  * them would bake a made-up rule into the product. Crashing the action is the
  * correct response: it surfaces the gap instead of silently inventing an answer.
+ *
+ * Nothing in the engine throws this at present: every rule it implements has
+ * been decided. It is kept for the action layer, which still has R-008 ahead of
+ * it — whether Burst and Bull are permitted inside a Farewell Round — and for
+ * whatever the round-state work turns up next.
  */
 export class UnresolvedRuleError extends Error {
   /** Identifier from docs/DECISIONS.md, e.g. `R-001`. */

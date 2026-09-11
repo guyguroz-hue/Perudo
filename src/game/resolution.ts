@@ -1,6 +1,6 @@
 import type { ChallengeKind, Hand, PlayerId, RoundState } from './types'
+import { MAX_DICE } from './types'
 import { countAcrossTable } from './counting'
-import { UnresolvedRuleError } from './errors'
 
 export interface ChallengeInput {
   /** Must carry an active bid; challenging nothing is not a move. */
@@ -63,8 +63,9 @@ export interface ChallengeOutcome {
  * Everything here is server-authoritative: the count, the verdict and the die
  * movements. The client is never told the result it should expect (PART 76).
  *
- * Throws `UnresolvedRuleError` on any branch the house rules leave open, rather
- * than inventing an outcome.
+ * Every branch below is a decided rule. Where the house rules once left a gap,
+ * the gap is closed rather than guessed: see docs/DECISIONS.md for what each
+ * outcome was decided to be and why.
  */
 export function resolveChallenge(input: ChallengeInput): ChallengeOutcome {
   const { round, hands, challengerId, kind } = input
@@ -79,8 +80,17 @@ export function resolveChallenge(input: ChallengeInput): ChallengeOutcome {
   const claimHolds = isBull ? actualCount === bid.quantity : actualCount >= bid.quantity
 
   const dieDeltas = isBull
-    ? resolveBull(bid.bull!.callerId, claimHolds, hands, kind)
+    ? resolveBull(bid.bull!.callerId, claimHolds, hands)
     : resolvePlainBid(bid.bidderId, claimHolds, challengerId, kind)
+
+  // A Bull is an ordinary bet, so Burst Dudo behaves against it exactly as it
+  // does against any other bid: being right about a false claim wins a die back
+  // (R-006). The two rules compose without conflict — when the Bull is correct,
+  // "everyone except the caller loses one" already charges the mistaken
+  // challenger their die, so only the gain needs adding here.
+  if (isBull && kind === 'burst_dudo' && !claimHolds) {
+    dieDeltas.set(challengerId, (dieDeltas.get(challengerId) ?? 0) + 1)
+  }
 
   // Whoever was proved right. For an ordinary bid that is the bidder if the
   // claim stood and the challenger if it did not; for a Bull it is the caller
@@ -136,19 +146,7 @@ function resolveBull(
   bullCallerId: PlayerId,
   bullIsExact: boolean,
   hands: readonly Hand[],
-  kind: ChallengeKind,
 ): Map<PlayerId, number> {
-  // Burst Dudo grants a die on a false bid, while a Bull resolution moves dice
-  // by a different rule entirely. Which one governs a Burst Dudo aimed at a Bull
-  // is not specified, and the two readings disagree about the challenger.
-  if (kind === 'burst_dudo') {
-    throw new UnresolvedRuleError(
-      'R-006',
-      'a Burst Dudo was aimed at a Bulled bid, where the Burst die-gain rule and ' +
-        'the Bull resolution rule both claim to govern the challenger',
-    )
-  }
-
   const deltas = new Map<PlayerId, number>()
 
   if (!bullIsExact) {
@@ -176,8 +174,17 @@ function buildOutcome(
   let survivors = 0
   let lastSurvivor: PlayerId | null = null
 
+  // Gains are capped before anything else is decided, so every number that
+  // follows — eliminations, the Farewell queue, the survivor count — is computed
+  // from dice a player can actually hold (R-007).
+  const capped = new Map<PlayerId, number>()
+
   for (const hand of hands) {
-    const delta = dieDeltas.get(hand.playerId) ?? 0
+    const raw = dieDeltas.get(hand.playerId) ?? 0
+    const delta =
+      raw > 0 ? Math.min(raw, Math.max(0, MAX_DICE - hand.dice.length)) : raw
+    if (delta !== 0) capped.set(hand.playerId, delta)
+
     const after = hand.dice.length + delta
 
     if (after <= 0) {
@@ -203,7 +210,7 @@ function buildOutcome(
   return {
     actualCount,
     claimHolds,
-    dieDeltas,
+    dieDeltas: capped,
     eliminated,
     // Order among simultaneous claimants is explicitly arbitrary by rule, so
     // this keeps seat order: deterministic, replayable, and identical on every

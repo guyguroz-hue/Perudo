@@ -321,3 +321,32 @@ end $$;
 
 \echo ''
 \echo '================ ALL PHASE 1 TESTS PASSED ================'
+
+-- -----------------------------------------------------------------------------
+-- The five-dice ceiling (R-007)
+-- -----------------------------------------------------------------------------
+
+do $$
+begin
+  begin
+    update public.game_players set dice_count = 6
+     where user_id = '11111111-1111-1111-1111-111111111111';
+    raise exception 'FAIL: a sixth die was accepted';
+  exception when check_violation then null;
+  end;
+
+  update public.game_players set dice_count = 5
+   where user_id = '11111111-1111-1111-1111-111111111111';
+end $$;
+\echo 'PASS  no player may hold more than five dice'
+
+do $$
+begin
+  begin
+    insert into public.games (room_id, starting_dice)
+    values ('bbbbbbbb-0000-0000-0000-000000000002', 6);
+    raise exception 'FAIL: a game starting on six dice was accepted';
+  exception when check_violation then null;
+  end;
+end $$;
+\echo 'PASS  a game cannot start above the ceiling'

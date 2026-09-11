@@ -151,10 +151,10 @@ affected, the challenger included.
 Declaring an exact count is a strong claim; being wrong costs only the player who
 made it.
 
-### 8.5 Bull eligibility ❓ UNDEFINED (R-005)
+### 8.5 Bull eligibility ✅ (resolved by R-005)
 
-Unspecified: *who* may declare Bull and *when* — only the player whose normal
-turn it is, or any player (Burst-style interruption)? See §12.6.
+A Bull is a bet like any other, so it may be declared **out of turn, as a
+Burst**. Any active player may call it, not only the player whose turn it is.
 
 ## 9. Burst (התפרצות) ✅ / ❓
 
@@ -183,12 +183,31 @@ A player may Burst Dudo out of turn.
 | Challenged bid **FALSE** | Bidder **−1 die**; Burst-Dudo caller **+1 die** |
 | Challenged bid **TRUE**  | Burst-Dudo caller **−1 die**                    |
 
-**Only Burst Dudo can generate a die gain.** Server-authoritative.
+**Only Burst Dudo can generate a die gain**, and never above five (§9.3).
+Server-authoritative.
 
-### 9.3 Die-gain ceiling ❓ UNDEFINED
+### 9.4 Burst Dudo against a Bull ✅ (resolved by R-006)
 
-Unspecified: is there a maximum dice count (e.g. 5) when gaining via Burst
-Dudo? Can a player exceed their starting count?
+A Bull is an ordinary bet, so Burst Dudo works against it exactly as it works
+against any other bid — the two rules compose without conflict:
+
+| Bull | Consequence |
+|---|---|
+| **False** | Bull caller **−1**; Burst-Dudo caller **+1** |
+| **Exact** | Everyone except the Bull caller **−1**, the Burst-Dudo caller among them |
+
+Note the second row: **bursting does not shield the rest of the table** from a
+correct Bull. The mistaken challenger's −1 is simply their share of "everyone
+except the caller", so no separate penalty is needed.
+
+### 9.3 Die-gain ceiling ✅ (resolved by R-007)
+
+**No player may ever hold more than five dice, in any situation.** A Burst Dudo
+won by a player already holding five wins them nothing; the die is simply not
+granted. The loser still loses theirs.
+
+This is enforced in the database as well as the engine, so a bug in the action
+layer cannot quietly mint a sixth die.
 
 ## 10. Farewell Round (סיבוב פרידה) ✅ / ❓
 
@@ -268,13 +287,11 @@ options, ask.** Never silently choose.
 
 **Resolved:** R-001 (false Bull, §8.4) · R-002 (round starter, §11) ·
 R-003 (simultaneous Farewell, §10) · R-004 (simultaneous elimination, §11) ·
-R-009 (bid progression, §4).
+R-005 (Bull eligibility, §8.5) · R-006 (Burst Dudo on a Bull, §9.4) ·
+R-007 (dice ceiling, §9.3) · R-009 (bid progression, §4).
 
 **Still open — do not implement:**
 
-1. **R-005 — Bull eligibility.** Turn-only, or out of turn like Burst?
-2. **R-006 — Burst Dudo aimed at a Bull.** The Burst die-gain rule and the Bull
-   resolution rule both claim to govern the challenger.
-3. **R-007 — die-gain ceiling.** May Burst Dudo take a player past 5 dice?
-4. **R-008 — Burst and Bull during a Farewell Round.**
-5. Any other situation the rules do not uniquely determine.
+1. **R-008 — Burst and Bull during a Farewell Round.** The face is locked and
+   Perudo is not wild; may a player still burst in, and may a Bull be declared?
+2. Any other situation the rules do not uniquely determine.
