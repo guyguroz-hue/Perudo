@@ -12,8 +12,8 @@ Completed items are marked `[x]` and kept, not deleted.
 - [ ] **T-1c** **Manual:** set `main` as the default branch in GitHub settings.
 - [x] **T-3** ~~Resolve R-001~~ — false Bull costs its caller a die.
 - [x] **T-4a** ~~Resolve R-003/R-004~~ — Farewell queue; no tiebreak on elimination.
-- [ ] **T-4b** **Resolve the R-002/R-004 conflict** — who opens the next round.
-      Blocks the round-state schema.
+- [x] **T-4b** ~~Resolve R-002~~ — whoever was proved right opens.
+- [ ] **T-1d** Apply `20260911180000_round_start_rule.sql` to the live project.
 - [ ] **T-5** Design private-dice table + RLS so no player can read another's dice
       (Phase 1 slice 2 — the single highest-risk item in the project).
 
@@ -23,8 +23,10 @@ Completed items are marked `[x]` and kept, not deleted.
 - [ ] **T-7** Resolve R-005/R-006/R-008 — Bull eligibility and Burst interaction.
 - [ ] **T-8** Resolve R-007 — die-gain ceiling.
 - [x] **T-8b** ~~Confirm R-009~~ — quantity anchors, face is free when it rises.
-- [ ] **T-25** Room setting for the round starter: default (per R-002) or a
-      free-for-all where the fastest bid opens. Requested alongside R-002.
+- [ ] **T-25** Implement the non-default `round_start_rule` paths
+      (`loser_starts`, `free_for_all`) plus the UI to choose. The column exists
+      and is constrained; the action layer must reject anything but
+      `winner_starts` until these are built.
 - [x] **T-9** ~~Install Vitest; set up the pure engine test harness~~ — 55 cases.
 - [x] **T-10** ~~Phase 1 slice 1 schema + migrations + RLS~~ — locally verified.
 - [ ] **T-10b** Phase 1 slice 2: rounds, bids, private dice, reveals, event log.

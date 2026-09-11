@@ -122,6 +122,15 @@ winner**.
 *Consequence:* the no-winner branch appears unreachable under current rules
 (every resolution spares somebody), but is implemented as specified.
 
+### ✅ R-002 — who opens the next round (2026-09-11)
+**Whoever was proved right**, with a Farewell Round taking precedence.
+Two answers had been given that disagreed — "whoever lost a die" and "whoever
+won the bet" — which name different players in an ordinary Dudo. Resolved in
+favour of the winner.
+*Consequence:* the starter is always a surviving player, since being right never
+costs a die, so the round transition needs no fallback. Alternatives
+(`loser_starts`, `free_for_all`) are stored as a room setting but unimplemented.
+
 ### ✅ R-009 — bid progression (2026-09-11)
 **The quantity is the anchor and may never fall.** Raise it and the face may go
 anywhere — `4 fives → 5 fours` is legal. Hold it and the face must rise.
@@ -134,7 +143,6 @@ literal reading the engine had been using.
 
 | ID | Question |
 |---|---|
-| **R-002 vs R-004** | **Conflict.** Who opens the next round — the player who *lost* a die, or the one who *won* the bet? Two answers were given and in an ordinary Dudo they name different players. Also requested: a room setting offering the default starter **or** a free-for-all where the fastest bid opens |
 | R-005 | Bull eligibility — turn-only, or out-of-turn like Burst |
 | R-006 | Burst Dudo aimed at a Bull; may an already-Bulled bid be Bulled again |
 | R-007 | Die-gain ceiling on Burst Dudo (can a player exceed 5 dice) |

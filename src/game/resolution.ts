@@ -45,6 +45,16 @@ export interface ChallengeOutcome {
   readonly winnerId: PlayerId | null
   /** True once fewer than two players hold dice, however that came about. */
   readonly gameOver: boolean
+  /**
+   * The player who was proved right, and who therefore opens the next round
+   * (R-002).
+   *
+   * A Farewell Round takes precedence: when `farewellQueue` is non-empty its
+   * first entry opens instead, and this player's turn comes after. Whoever was
+   * right never loses a die in the same resolution, so they are always still
+   * holding dice here.
+   */
+  readonly nextStarterId: PlayerId
 }
 
 /**
@@ -66,13 +76,24 @@ export function resolveChallenge(input: ChallengeInput): ChallengeOutcome {
   const actualCount = countAcrossTable(hands, bid.face, round.type)
   const isBull = bid.bull !== null
 
-  const dieDeltas = isBull
-    ? resolveBull(bid.bull!.callerId, bid.quantity, actualCount, hands, kind)
-    : resolvePlainBid(bid.bidderId, bid.quantity, actualCount, challengerId, kind)
-
   const claimHolds = isBull ? actualCount === bid.quantity : actualCount >= bid.quantity
 
-  return buildOutcome(actualCount, claimHolds, dieDeltas, hands)
+  const dieDeltas = isBull
+    ? resolveBull(bid.bull!.callerId, claimHolds, hands, kind)
+    : resolvePlainBid(bid.bidderId, claimHolds, challengerId, kind)
+
+  // Whoever was proved right. For an ordinary bid that is the bidder if the
+  // claim stood and the challenger if it did not; for a Bull it is the caller
+  // when the count was exact and the challenger when it was not.
+  const provedRight = isBull
+    ? claimHolds
+      ? bid.bull!.callerId
+      : challengerId
+    : claimHolds
+      ? bid.bidderId
+      : challengerId
+
+  return buildOutcome(actualCount, claimHolds, dieDeltas, hands, provedRight)
 }
 
 /**
@@ -83,13 +104,11 @@ export function resolveChallenge(input: ChallengeInput): ChallengeOutcome {
  */
 function resolvePlainBid(
   bidderId: PlayerId,
-  quantity: number,
-  actualCount: number,
+  bidHolds: boolean,
   challengerId: PlayerId,
   kind: ChallengeKind,
 ): Map<PlayerId, number> {
   const deltas = new Map<PlayerId, number>()
-  const bidHolds = actualCount >= quantity
 
   if (bidHolds) {
     deltas.set(challengerId, -1)
@@ -115,8 +134,7 @@ function resolvePlainBid(
  */
 function resolveBull(
   bullCallerId: PlayerId,
-  quantity: number,
-  actualCount: number,
+  bullIsExact: boolean,
   hands: readonly Hand[],
   kind: ChallengeKind,
 ): Map<PlayerId, number> {
@@ -133,7 +151,7 @@ function resolveBull(
 
   const deltas = new Map<PlayerId, number>()
 
-  if (actualCount !== quantity) {
+  if (!bullIsExact) {
     deltas.set(bullCallerId, -1)
     return deltas
   }
@@ -151,6 +169,7 @@ function buildOutcome(
   claimHolds: boolean,
   dieDeltas: Map<PlayerId, number>,
   hands: readonly Hand[],
+  provedRight: PlayerId,
 ): ChallengeOutcome {
   const eliminated: PlayerId[] = []
   const farewellQueue: PlayerId[] = []
@@ -192,5 +211,6 @@ function buildOutcome(
     farewellQueue,
     winnerId: survivors === 1 ? lastSurvivor : null,
     gameOver: survivors <= 1,
+    nextStarterId: provedRight,
   }
 }

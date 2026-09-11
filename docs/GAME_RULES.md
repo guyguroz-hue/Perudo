@@ -228,6 +228,27 @@ Farewell Round.
 - Eliminated players are no longer active participants and cannot act.
 - The **last active player wins**; the game is marked complete.
 
+### Who opens the next round ✅ (resolved by R-002)
+
+**Whoever was proved right opens the next round.**
+
+| Outcome | Opens next |
+|---|---|
+| Bid challenged and stood | the **bidder** |
+| Bid challenged and fell | the **challenger** |
+| Bull exact | the **Bull caller** |
+| Bull false | the **challenger** |
+
+This holds for Burst Dudo as well. Being right never costs a die, so the player
+it names is always still holding dice.
+
+**A Farewell Round takes precedence:** a player knocked down to one die opens
+instead, and the winner's turn follows.
+
+Two alternatives are stored as a room setting but **not implemented**
+(`round_start_rule`): `loser_starts`, and `free_for_all` where anyone may burst
+in and the fastest bid opens.
+
 ### Several eliminations at once ✅ (resolved by R-004)
 
 A single resolution may eliminate more than one player. Order carries no meaning
@@ -245,19 +266,15 @@ winner**.
 These are deliberately unresolved. On reaching any of them: **STOP, present
 options, ask.** Never silently choose.
 
-**Resolved:** R-001 (false Bull, §8.4) · R-003 (simultaneous Farewell, §10) ·
-R-004 (simultaneous elimination, §11) · R-009 (bid progression, §4).
+**Resolved:** R-001 (false Bull, §8.4) · R-002 (round starter, §11) ·
+R-003 (simultaneous Farewell, §10) · R-004 (simultaneous elimination, §11) ·
+R-009 (bid progression, §4).
 
 **Still open — do not implement:**
 
-1. **R-002 / R-004 conflict — who opens the next round.** Two answers were given
-   and they disagree: "whoever lost a die starts" and "whoever won the bet
-   starts". In an ordinary Dudo those are different players. Needs one rule.
-   A configurable alternative was also requested: a room setting offering either
-   the default starter or a free-for-all where the fastest bid opens.
-2. **R-005 — Bull eligibility.** Turn-only, or out of turn like Burst?
-3. **R-006 — Burst Dudo aimed at a Bull.** The Burst die-gain rule and the Bull
+1. **R-005 — Bull eligibility.** Turn-only, or out of turn like Burst?
+2. **R-006 — Burst Dudo aimed at a Bull.** The Burst die-gain rule and the Bull
    resolution rule both claim to govern the challenger.
-4. **R-007 — die-gain ceiling.** May Burst Dudo take a player past 5 dice?
-5. **R-008 — Burst and Bull during a Farewell Round.**
-6. Any other situation the rules do not uniquely determine.
+3. **R-007 — die-gain ceiling.** May Burst Dudo take a player past 5 dice?
+4. **R-008 — Burst and Bull during a Farewell Round.**
+5. Any other situation the rules do not uniquely determine.

@@ -342,3 +342,65 @@ describe('remaining undefined rules raise rather than guess', () => {
     }
   })
 })
+
+// R-002 — who opens the next round
+describe('the next round opens with whoever was proved right (R-002)', () => {
+  it('hands it to the challenger when the bid was false', () => {
+    expect(challenge(5, 'dudo').nextStarterId).toBe('bob')
+  })
+
+  it('hands it to the bidder when the bid stood', () => {
+    expect(challenge(4, 'dudo').nextStarterId).toBe('alice')
+  })
+
+  it('works the same way for a Burst Dudo', () => {
+    expect(challenge(5, 'burst_dudo').nextStarterId).toBe('bob')
+    expect(challenge(4, 'burst_dudo').nextStarterId).toBe('alice')
+  })
+
+  it('hands it to the Bull caller when the count was exact', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(4, 5, 'alice', 'bob')),
+      hands: table,
+      challengerId: 'alice',
+      kind: 'dudo',
+    })
+    expect(outcome.claimHolds).toBe(true)
+    expect(outcome.nextStarterId).toBe('bob')
+  })
+
+  it('hands it to the challenger when the Bull proved false', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(2, 5, 'alice', 'bob')),
+      hands: table,
+      challengerId: 'alice',
+      kind: 'dudo',
+    })
+    expect(outcome.claimHolds).toBe(false)
+    expect(outcome.nextStarterId).toBe('alice')
+  })
+
+  it('never nominates a player who was eliminated in the same resolution', () => {
+    // Whoever was right never loses a die, so the starter always still holds
+    // dice. This is the property the round transition depends on.
+    for (const quantity of [4, 5]) {
+      for (const kind of ['dudo', 'burst_dudo'] as const) {
+        const outcome = challenge(quantity, kind)
+        expect(outcome.eliminated).not.toContain(outcome.nextStarterId)
+      }
+    }
+  })
+
+  it('yields to a Farewell Round when one is owed', () => {
+    // Alice is knocked down to one die, so she opens the next round even though
+    // Bob was the one proved right.
+    const outcome = resolveChallenge({
+      round: normalRound(bid(9, 5, 'alice')),
+      hands: [hand('alice', 5, 5), blanks('bob', 3)],
+      challengerId: 'bob',
+      kind: 'dudo',
+    })
+    expect(outcome.nextStarterId).toBe('bob')
+    expect(outcome.farewellQueue).toEqual(['alice'])
+  })
+})
