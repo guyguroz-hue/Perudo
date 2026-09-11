@@ -111,3 +111,4 @@ resolved. Do not invent behavior.**
 | R-006 | Burst + Bull interaction; may an already-Bulled bid be Bulled again |
 | R-007 | Die-gain ceiling on Burst Dudo (can a player exceed 5 dice) |
 | R-008 | Are Burst / Bull legal during a Farewell Round; does staying at 1 die re-trigger Farewell |
+| R-009 | May a bid raise the quantity while lowering the face (`4 fives → 5 fours`)? Engine currently says **no**, following "a bid may never decrease" literally. Tournament Perudo says yes. **Needs confirmation** — this one has a default because every bid passes the check |

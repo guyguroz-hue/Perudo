@@ -51,6 +51,22 @@ A new bid must strictly exceed the current bid. Legal raises:
 A bid may **never** decrease in either dimension.
 Server-side validation is authoritative; client-side validation is UX only.
 
+### ❓ R-009 — raising the quantity while lowering the face
+
+The three raises above are the ones the specification lists, and it states a bid
+may never decrease. Implemented literally, that makes **both** dimensions
+non-decreasing with at least one strictly greater — so `4 fives → 5 fours`
+(quantity up, face down) is **illegal**.
+
+Tournament Perudo would allow it: there, any increase in quantity frees the
+face. The house rules neither list it as legal nor call it out as forbidden.
+
+The engine currently implements the **literal reading (illegal)**, since that is
+what "a bid may never decrease" says. This is the one place where the engine
+resolves an ambiguity rather than raising — it has to, because every bid passes
+through this check. **If the intended rule is the tournament one, say so and it
+is a one-line change plus one test.**
+
 ## 5. Normal → Perudo ✅
 
 Minimum Perudo quantity when switching from a normal face:
@@ -216,4 +232,7 @@ options, ask.** Never silently choose.
    May an already-Bulled bid be Bulled again?
 7. **Burst/Bull legality during a Farewell Round** (§10).
 8. **Die-gain ceiling** (§9.3).
-9. Any other situation the rules do not uniquely determine.
+9. **R-009 — raising quantity while lowering the face** (§4). Unlike the others,
+   this one has a working default (the literal reading: illegal) because every
+   bid must pass the check. Confirm or overturn it.
+10. Any other situation the rules do not uniquely determine.

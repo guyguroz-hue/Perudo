@@ -18,7 +18,10 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-6** ~~Resolve D-003 / D-004~~ — anonymous auth; `main` as trunk.
 - [ ] **T-7** Resolve R-005/R-006/R-008 — Bull eligibility and Burst interaction.
 - [ ] **T-8** Resolve R-007 — die-gain ceiling.
-- [ ] **T-9** Install Vitest; set up the pure engine test harness.
+- [ ] **T-8b** Confirm or overturn **R-009** — may a bid raise the quantity while
+      lowering the face? The engine implements the literal reading (illegal);
+      tournament Perudo would allow it. One-line change if it should flip.
+- [x] **T-9** ~~Install Vitest; set up the pure engine test harness~~ — 55 cases.
 - [x] **T-10** ~~Phase 1 slice 1 schema + migrations + RLS~~ — locally verified.
 - [ ] **T-10b** Phase 1 slice 2: rounds, bids, private dice, reveals, event log.
 - [ ] **T-11** Decide min/max players per game (recommend 2–8).
@@ -89,3 +92,4 @@ Recorded only; **not** to be built without an explicit request.
 - [x] PHASE 0 audit + `docs/` created.
 - [x] `main` branch created and pushed.
 - [x] PHASE 1 slice 1: core schema, RLS, and a local verification harness.
+- [x] PHASE 2: pure rule engine for the defined rules, 55 tests.

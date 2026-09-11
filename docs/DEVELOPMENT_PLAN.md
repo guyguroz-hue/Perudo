@@ -15,10 +15,12 @@ RLS, Edge Functions and/or RPC). Supabase is the *only* backend.
 
 ## Current phase
 
-**PHASE 1 — Database & security foundation.** Slice 1 of 2 complete (identity,
-rooms, membership, game lifecycle). ⏸️ Checkpoint: awaiting review before
-slice 2 (rounds, bids, private dice, event log), which additionally needs the
-rule decisions R-001…R-008.
+**PHASE 2 — Game engine.** The defined rules are implemented and tested. The
+engine cannot be completed further without the rule decisions: every undefined
+branch raises `UnresolvedRuleError` by design.
+
+Phase 1 slice 2 (rounds, bids, private dice, event log) is the next database
+step and also waits on R-001…R-004 for its round-state columns.
 
 ## Completed phases
 
@@ -41,8 +43,18 @@ rule decisions R-001…R-008.
       against real PostgreSQL, migrations applied as a non-superuser owner.
 - [ ] Applied to the live Supabase project (blocked: egress still refused).
 
+### PHASE 2 — game engine (defined rules) ✅
+- [x] Pure `src/game` module: no React, no Supabase, no randomness, no clock.
+- [x] Counting with the normal-round wildcard and the Farewell suspension of it.
+- [x] Bid legality: progression, `ceil(n/2)`, `2n+1`, Farewell face locking.
+- [x] Resolution: normal Dudo, Burst Dudo die gain, correct Bull.
+- [x] Elimination, victory, Farewell trigger.
+- [x] `UnresolvedRuleError` on every undefined branch (R-001/R-003/R-004/R-006).
+- [x] 55 Vitest cases covering PARTS 61–68.
+- [ ] Remaining rules — blocked on R-001…R-009.
+
 ### PHASE 1 slice 2 — rounds, bids, private dice, event log ⏸️
-Blocked on review of slice 1, and on R-001…R-008 for the round-state columns.
+Blocked on R-001…R-004 for the round-state columns.
 
 ## Existing state (as of audit, 2026-09-11)
 
@@ -63,9 +75,9 @@ pre-existing work** — the GitHub repo was empty (zero commits, zero refs).
 | Edge Functions | ❌ none |
 | RLS policies | ✅ all slice-1 tables, read-only for clients |
 | Authentication | ❌ not configured |
-| Tests | ✅ SQL/RLS harness · ❌ no JS runner yet |
+| Tests | ✅ Vitest (55) + SQL/RLS harness (11) |
 | CI / deployment | ❌ none |
-| Game logic | ❌ none |
+| Game logic | ✅ pure engine, defined rules, 55 tests |
 
 Build (`npm run build`) and lint (`npm run lint`) pass clean.
 
@@ -132,7 +144,9 @@ Tracked in `DECISIONS.md` (D-xxx architectural, R-xxx rules). All currently
 cross-room RLS isolation, client write refusal, profile ownership, signed-out
 access and the Realtime publication surface. All passing.
 
-❌ **JavaScript:** no runner yet. Vitest arrives with the Phase 2 engine.
+✅ **Engine:** `npm test` — 55 Vitest cases across counting, bid legality,
+Perudo transitions, Dudo, Burst Dudo, Bull, Farewell and elimination, plus
+assertions that every undefined rule raises instead of guessing.
 ❌ **Integration against live Supabase:** blocked by R-NET.
 
 ## Production-readiness status

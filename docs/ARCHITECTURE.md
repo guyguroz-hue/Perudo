@@ -210,9 +210,34 @@ src/
   styles/       design tokens
 ```
 
-`src/game` is a **pure, dependency-free, unit-tested** module. The UI reads
-state and dispatches actions; it is never the authority. Game rules never live
-inside JSX.
+`src/game` is a **pure, dependency-free, unit-tested** module — implemented, 55
+tests. It has no React, no Supabase, no randomness and no clock, so every rule is
+a function of its inputs and can be exercised exhaustively.
+
+Its public surface:
+
+| Module | Responsibility |
+|---|---|
+| `types.ts` | `Face`, `ActiveBid`, `RoundState`, rejection codes |
+| `counting.ts` | Wildcard counting, and its suspension during a Farewell Round |
+| `bids.ts` | Bid legality, `ceil(n/2)` and `2n+1` transitions, face locking |
+| `resolution.ts` | Dudo, Burst Dudo, correct Bull, elimination, Farewell trigger |
+| `errors.ts` | `UnresolvedRuleError` |
+
+A Bull is modelled as a declaration hanging off the current bid rather than a
+bid of its own, because that is what it is: it re-reads an existing quantity as
+"exactly" and introduces no quantity or face. A later bid replaces the whole
+`ActiveBid`, which is how the Bull stops applying without any special handling.
+
+**Undefined rules raise.** Every branch the house rules leave open throws
+`UnresolvedRuleError` carrying the rule id and the concrete situation. This is
+deliberate: an engine that guesses would bake an invented rule into the product
+and the guess would be invisible. The one exception is R-009, documented in
+`GAME_RULES.md` §4, which needs a working default because every bid passes
+through that check.
+
+The UI reads state and dispatches actions; it is never the authority. Game rules
+never live inside JSX.
 
 ---
 
