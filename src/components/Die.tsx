@@ -1,14 +1,16 @@
 import type { CSSProperties } from 'react'
 import type { Face } from '../game'
+import { GLYPH_DETAIL_THRESHOLD, PERUDO_GLYPH, glyphStrokeWidth } from './perudoGlyph'
 import './Die.css'
 
 /**
  * A single die.
  *
- * Pips are laid out on a 3x3 grid rather than drawn, so the face scales with the
- * die and stays crisp at any size. The Perudo face is tinted brass because it is
- * the wildcard — but the pip count still says which face it is, so the meaning
- * never rests on colour alone.
+ * Faces 2–6 are pips on a 3×3 grid, so they scale without ever going soft. The
+ * one is not a pip at all: it is the Perudo glyph, because the wildcard is a
+ * different kind of thing from a number and the die should say so. Tinting a
+ * pip would have carried the same meaning in colour alone, which is no meaning
+ * at all to anyone glancing quickly or not seeing the tint.
  */
 export function Die({
   face,
@@ -30,13 +32,30 @@ export function Die({
     )
   }
 
+  if (face === 1) {
+    const detailed = size >= GLYPH_DETAIL_THRESHOLD
+    const paths = detailed ? PERUDO_GLYPH.detailed : PERUDO_GLYPH.reduced
+
+    return (
+      <span className="die die--perudo" style={style} role="img" aria-label={label ?? 'Perudo'}>
+        <svg className="die__glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          {paths.map((d) => (
+            <path
+              key={d}
+              d={d}
+              stroke="currentColor"
+              strokeWidth={glyphStrokeWidth(size)}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ))}
+        </svg>
+      </span>
+    )
+  }
+
   return (
-    <span
-      className={`die${face === 1 ? ' die--perudo' : ''}`}
-      style={style}
-      role="img"
-      aria-label={label ?? `Die showing ${face}`}
-    >
+    <span className="die" style={style} role="img" aria-label={label ?? `Die showing ${face}`}>
       {PIPS[face].map((position) => (
         <span key={position} className={`die__pip die__pip--${position}`} />
       ))}
@@ -44,9 +63,8 @@ export function Die({
   )
 }
 
-/** Grid positions for each face, named by row and column on the 3x3. */
-const PIPS: Record<Face, readonly string[]> = {
-  1: ['mc'],
+/** Grid positions for each face, named by row and column on the 3×3. */
+const PIPS: Record<Exclude<Face, 1>, readonly string[]> = {
   2: ['tl', 'br'],
   3: ['tl', 'mc', 'br'],
   4: ['tl', 'tr', 'bl', 'br'],

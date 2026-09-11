@@ -165,6 +165,30 @@ bid; it does not change who may act or how a challenge resolves.
 *Consequence:* none in the engine — the rules were already orthogonal, and the
 tests added for this confirmed existing behaviour rather than changing it.
 
+### ✅ D-006 — The Perudo face (2026-09-11)
+The one is drawn as an **Andean serpent-hook glyph**, not a pip. Owner chose the
+faithful drawing from rendered options at real sizes.
+
+Drawn rather than copied: the mark on commercial Perudo dice is somebody's
+artwork, so this is a piece in that spirit rather than a reproduction.
+
+**Two levels of detail**, chosen by size. The full drawing is used from 30px up;
+below that a reduction with the same gesture and fewer strokes takes over,
+because the interior of the full drawing collapses into a smudge at the size a
+player scans the table with — and that is the size they see most. Standard icon
+practice, not a compromise.
+
+Dark like the pips, not brass. The shape already carries the distinction, and a
+brass mark pulls the eye harder than it deserves in a hand of five.
+
+Stroke weight is matched to pip diameter rather than chosen by eye. A measured
+check confirmed the ink is fully black; a thin line simply covers less area than
+a solid dot, so the face reads a little lighter. That is inherent to a drawn
+mark and accepted.
+
+*Consequence:* the same component serves the bid builder, a player's hand and
+the reveal, so the three cannot drift apart.
+
 ### ✅ D-005 — Room system decisions (2026-09-11)
 - **Minimum 3 players**, room **fixed at 6**.
 - **Room actions run as Postgres RPCs**; game actions stay in the Edge Function.

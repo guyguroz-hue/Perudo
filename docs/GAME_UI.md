@@ -146,16 +146,16 @@ If the request is slow enough to outlast the dramatic pause, the pause extends
 rather than a spinner appearing — the table holds its breath. That degrades
 honestly: a slow connection makes the moment longer, not broken.
 
-### 5.2 There is no Joker symbol yet (§92.3)
+### 5.2 The Perudo face — resolved (§92.3)
 
-The spec refers to "the custom Joker symbol" and "the canonical Die/JokerFace
-components" as though they exist. **They do not.** The `Die` component today
-renders the 1 as a single pip tinted brass — a colour distinction, which the
-spec rightly rejects as insufficient on its own.
+The spec referred to a custom Joker symbol and canonical components as though
+they existed; they did not. Now they do: the one is an Andean serpent-hook
+glyph (D-006), drawn at two levels of detail so it survives both a player's own
+hand and the size they scan the table at.
 
-This needs an owner decision, recorded in `DECISIONS.md`, before the bid builder
-is built — because the face selector, the player's hand, and the revealed dice
-must all use the same mark, and changing it later means changing it everywhere.
+One component serves the bid builder, a hand and the reveal, so those three
+cannot drift apart — which was the reason to settle it before building any of
+them.
 
 ---
 
