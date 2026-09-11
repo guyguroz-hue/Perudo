@@ -1,0 +1,171 @@
+# Room & Lobby Architecture — PROPOSAL
+
+> **Status: proposed, not implemented.** Milestone 1 output. Nothing in this
+> document has been built; it needs approval and several product decisions
+> first.
+
+The room system answers **who is here, where they sit, who hosts, and whether
+the game has started.** It does not answer what a player may do — that is the
+game engine's job, and the two must not blur together.
+
+---
+
+## 1. What already exists
+
+| Piece | State | Fit for rooms |
+|---|---|---|
+| `rooms` | code, host, status, max_players | Good bones; **limits are wrong** |
+| `room_members` | room, user, seat, joined_at, left_at | Good; needs kick + heartbeat |
+| `games` / `game_players` | lifecycle, seats, dice counts | Reusable as-is |
+| RLS | SELECT-only for clients, membership-gated | Correct posture, extends cleanly |
+| Auth | anonymous sign-in + profile | Exactly the guest model wanted |
+| Rule engine | complete, 85 tests | Untouched by this work |
+| **Action layer** | **does not exist** | **The main gap** |
+| **Routing** | **does not exist** | Needed for `/join/:code` |
+
+The client currently holds **no write privilege on any game table**. That is the
+right starting point: every room mutation has to go through a server action.
+
+## 2. Conflicts with the six-player specification
+
+Three existing constraints contradict the new spec and need a migration:
+
+| Constraint | Now | Must be |
+|---|---|---|
+| `rooms_max_players` | 2–10, default 8 | **2–6, default 6** |
+| `room_members_seat_range` | 0–9 | **0–5** |
+| `game_players_seat_range` | 0–9 | **0–5** |
+
+There is also a **room-code problem**. The current alphabet is
+`23456789ABCDEFGHJKMNPQRSTUVWXYZ` — it drops `0 O 1 I L` but still contains
+both `5` and `S`, which the specification explicitly calls out as confusable.
+Proposed replacement:
+
+```
+2346789ABCDEFGHJKMNPQRTUVWXYZ     (29 characters, 5 long ≈ 20.5M codes)
+```
+
+`B/8` and `Z/2` are the next most confusable pairs if we want to go further.
+
+## 3. How the six-player limit is actually enforced
+
+The requirement is that two simultaneous joins can never both succeed. Three
+independent layers, so a bug in any one of them still cannot produce a seventh
+player:
+
+1. **A seat is a physical resource.** Seats are `0–5` and there is already a
+   partial unique index on `(room_id, seat) where left_at is null`. Two
+   transactions claiming the same seat — one is rejected by the database, not by
+   application logic.
+2. **Joins serialise on the room row.** The join RPC takes
+   `SELECT … FROM rooms WHERE id = $1 FOR UPDATE` before allocating, so
+   concurrent joins to the same room queue rather than race.
+3. **A count check inside that transaction**, which is then trustworthy because
+   the row is locked.
+
+The database physically cannot hold seven active members with distinct seats in
+`0–5`. This is testable without a browser: two concurrent Postgres sessions
+reproduce the race exactly, which is how it will be verified.
+
+## 4. Where room actions run — a clarification of D-002
+
+D-002 put the **rule engine** in a TypeScript Edge Function. Room actions are
+not rules, and they need something an Edge Function cannot give: a real
+transaction with row locks, so that read → validate → allocate seat → write is
+atomic.
+
+Proposed split:
+
+| Action kind | Runs as | Why |
+|---|---|---|
+| Room & membership — create, join, leave, kick, start, end, rematch, host transfer | **`SECURITY DEFINER` plpgsql RPC** | Transactional, row-locked, single round trip, no game rules so nothing is duplicated |
+| Game actions — bid, Bull, Dudo, Burst | **Edge Function running `src/game`** | One rule engine, as decided |
+
+This is a **clarification, not a reversal** of D-002: no game rule is being
+moved into SQL. But it is an architectural choice and needs a yes.
+
+## 5. Room lifecycle
+
+Explicit states on `rooms.status`, never scattered booleans:
+
+```
+lobby ──► starting ──► in_game ──► finished ──┐
+  ▲                                            │
+  └──────────── rematch ───────────────────────┘
+  
+any ──► closed
+```
+
+`starting` exists specifically to make Start idempotent. The transition is:
+
+```sql
+update rooms set status = 'starting' where id = $1 and status = 'lobby'
+```
+
+Zero rows means someone already started — a double-tap, a retried request, or a
+second device. The second caller is told the game is already starting rather
+than starting it again.
+
+Current statuses are `lobby / in_game / completed / abandoned`; this needs
+`starting`, `finished` and `closed`.
+
+## 6. Membership, kicking, and rejoining
+
+`room_members` gains:
+
+- `removed_at`, `removed_by` — a kick, distinct from `left_at` (a voluntary
+  departure). Both free the seat; only one blocks return.
+- `last_seen_at` — a heartbeat, used **only** for host migration decisions.
+
+**An honest limitation.** Players are anonymous, so a kicked player can clear
+their browser storage, obtain a fresh identity, and rejoin. Blocking on
+`user_id` stops the casual case — tapping the link again — which is what the
+specification actually asks for. It is not a ban system and should not be
+described as one. Anything stronger needs real accounts.
+
+## 7. Connection state and host migration
+
+Connection state is **ephemeral and never authoritative**. It lives in Supabase
+Realtime Presence, not in the database. A dropped connection must never look
+like leaving the room — which is why `room_members` deliberately has no
+`connected` column.
+
+Host migration cannot rest on presence, because presence is a client claim.
+Proposed: the host changes only through an RPC, triggered by an explicit leave,
+or lazily — on the next room action, if the host's `last_seen_at` is older than
+the grace period, the host moves to the longest-seated remaining member.
+Deterministic, no scheduler required, and no two hosts can exist because the
+transition is a single locked update.
+
+**Grace period duration is an open decision.**
+
+## 8. Private dice are unaffected
+
+Nothing here touches the private-dice design. The room layer broadcasts
+membership, seats, host and lifecycle — all public. Realtime carries only the
+four public tables, and the private dice table (still unbuilt) must never be
+added to that publication.
+
+## 9. Proposed milestones
+
+| # | Scope | Verifiable by |
+|---|---|---|
+| 2 | Schema: limits, lifecycle, kick, heartbeat, code alphabet | SQL tests incl. concurrent-join race |
+| 3 | RPCs: create, join by code, leave, kick | Two concurrent Postgres sessions |
+| 4 | Routing + lobby UI: seats at a table, code, share, copy | Playwright at 390×844 |
+| 5 | Realtime: joins, leaves, host changes, presence | Multiple browser contexts |
+| 6 | Start: host-only, atomic, transition animation, room lock | Playwright + race tests |
+| 7 | Reconnect: refresh, disconnect, host migration | Playwright |
+| 8 | Rematch: results → lobby → same room | Playwright |
+
+## 10. A testing limitation worth stating up front
+
+This environment cannot reach `*.supabase.co`. Consequences:
+
+- Migrations continue to be applied by hand from the repository.
+- Concurrency, RLS and the six-player guarantee **can** be tested properly, via
+  concurrent sessions against a local PostgreSQL instance — that is a faithful
+  test of the actual mechanism.
+- End-to-end multi-client browser tests against the live project **cannot** run
+  here. Playwright can drive the UI against a local build with the network
+  stubbed, which catches UI and routing faults but not live Realtime behaviour.
