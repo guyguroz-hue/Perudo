@@ -12,6 +12,12 @@
 -- because superusers bypass RLS unconditionally.
 -- =============================================================================
 
+-- Supabase puts pgcrypto in its own schema, and the dealing functions call it
+-- there. Without this the local harness would pass on a function that cannot
+-- run in production.
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
+
 create role anon          nologin noinherit;
 create role authenticated nologin noinherit;
 create role service_role  nologin noinherit bypassrls;
@@ -21,6 +27,7 @@ grant anon, authenticated, service_role to app_owner;
 
 create schema if not exists auth authorization app_owner;
 grant usage on schema auth to anon, authenticated, service_role;
+grant usage on schema extensions to anon, authenticated, service_role, app_owner;
 
 -- Minimal stand-in for auth.users. Only the columns our schema references.
 create table auth.users (
