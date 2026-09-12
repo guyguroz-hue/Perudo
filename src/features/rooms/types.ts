@@ -21,8 +21,20 @@ export interface Seat {
 /** Every seat position the table has, occupied or not. */
 export const SEAT_COUNT = 6
 
-/** Below this the host cannot start (R-002 decisions, docs/ROOMS.md §11). */
-export const MIN_PLAYERS = 3
+/**
+ * Below this the host cannot start.
+ *
+ * Never a rule of the game — GAME_RULES says nothing about how many people are
+ * needed. Three was a judgement about what makes a good table, and two is a
+ * worse game: with one opponent every bid is a claim about one hand you cannot
+ * see plus your own, and there is no table to read. It is playable, and it is
+ * the only way to sit down and try a change without finding a third person
+ * first.
+ *
+ * The database is the authority (`start_game` refuses fewer). This is what the
+ * lobby greys the button out with, and the two have to agree.
+ */
+export const MIN_PLAYERS = 2
 
 /** A game as the room layer sees it. Play itself belongs to the engine. */
 export interface Game {

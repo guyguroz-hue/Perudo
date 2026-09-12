@@ -257,7 +257,7 @@ one — with the lobby remaining usable throughout.
 
 ## 9e. Starting, ending, replaying
 
-**Starting** is host-only, needs three players, and is guarded by a single
+**Starting** is host-only, needs two players, and is guarded by a single
 condition: the room must still be in the lobby. That one check is the whole of
 double-tap protection — a second caller, whether a second tap, a retried
 request or a second device, finds the room already moved on and is told so

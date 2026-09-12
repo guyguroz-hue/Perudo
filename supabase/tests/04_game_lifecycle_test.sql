@@ -48,21 +48,17 @@ begin
     if sqlerrm <> 'NOT_ENOUGH_PLAYERS' then raise exception 'FAIL: wrong error %', sqlerrm; end if;
   end;
   reset role;
+end $$;
+\echo 'PASS  one player cannot start a game'
 
+-- Two is now enough to start, so the rest of this file seats a third before it
+-- tries anything else — otherwise every later case would be racing a game that
+-- had already begun.
+do $$
+begin
   perform pg_temp.act2('e0000000-0000-0000-0000-000000000002');
   set local role authenticated; perform public.join_room_by_code((select code from t_g)); reset role;
-
-  perform pg_temp.act2('e0000000-0000-0000-0000-000000000001');
-  set local role authenticated;
-  begin
-    perform public.start_game((select id from t_g));
-    raise exception 'FAIL: a game started with two players';
-  exception when sqlstate 'P0001' then
-    if sqlerrm <> 'NOT_ENOUGH_PLAYERS' then raise exception 'FAIL: wrong error %', sqlerrm; end if;
-  end;
-  reset role;
 end $$;
-\echo 'PASS  fewer than three players cannot start a game'
 
 do $$
 begin
