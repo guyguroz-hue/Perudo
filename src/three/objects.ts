@@ -1,4 +1,5 @@
 import {
+  CanvasTexture,
   CircleGeometry,
   Color,
   DoubleSide,
@@ -7,8 +8,10 @@ import {
   Mesh,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
+  PlaneGeometry,
   Vector2,
 } from 'three'
+import { CROWN_PATH } from './crown'
 import { woodTexture } from './textures'
 
 /**
@@ -63,6 +66,9 @@ export function makeTable(): Group {
   const top = new Mesh(new CircleGeometry(TABLE_RADIUS * 0.985, 128), wood)
   top.rotation.x = -Math.PI / 2
   top.receiveShadow = true
+  // The table casts as well as receives, so the floor gets one shadow of the
+  // table rather than six loose cup shadows drifting across it.
+  top.castShadow = true
   group.add(top)
 
   // The edge, and the reason the camera reads as seated rather than overhead.
@@ -158,6 +164,26 @@ export function makeCup(colour: string): Group {
   foot.castShadow = true
   group.add(foot)
 
+  // The crown, stamped into the lacquer. Placed facing the viewer rather than
+  // wrapped round the cup: the body is a solid of revolution and turning it
+  // changes nothing except where the mark ends up, so it may as well end up
+  // where it can be seen.
+  const mark = new Mesh(
+    new PlaneGeometry(0.092, 0.063),
+    new MeshStandardMaterial({
+      color: new Color('#e6b95f'),
+      roughness: 0.3,
+      metalness: 0.85,
+      transparent: true,
+      alphaMap: crownStamp(),
+      alphaTest: 0.28,
+    }),
+  )
+  mark.position.set(0, CUP_HEIGHT * 0.4, CUP_TOP + 0.024)
+  // Leaned back to lie along the cup's taper rather than floating off it.
+  mark.rotation.x = -0.17
+  group.add(mark)
+
   // The dark ring it stands on, which is what stops a cup floating.
   const coaster = new Mesh(
     new CircleGeometry(CUP_BASE + 0.038, 64),
@@ -168,4 +194,33 @@ export function makeCup(colour: string): Group {
   group.add(coaster)
 
   return group
+}
+
+/**
+ * The crown, drawn once and reused by every cup.
+ *
+ * The same path the interface uses for its own crown, so the mark on a cup and
+ * the mark in the lobby are one shape rather than two drawings of one.
+ */
+let stamp: CanvasTexture | null = null
+
+function crownStamp(): CanvasTexture {
+  if (stamp !== null) return stamp
+
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = Math.round(size * 0.6875)
+  const ctx = canvas.getContext('2d')
+  if (ctx === null) throw new Error('no 2d context for the crown')
+
+  ctx.fillStyle = '#000'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.fillStyle = '#fff'
+  // The path is drawn in a 32x22 box; scale it to fill the canvas.
+  ctx.scale(size / 32, size / 32)
+  for (const d of CROWN_PATH) ctx.fill(new Path2D(d))
+
+  stamp = new CanvasTexture(canvas)
+  return stamp
 }

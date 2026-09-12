@@ -13,6 +13,7 @@ import {
 } from 'three'
 import { roomEnvironment } from './environment'
 import { CUP_HEIGHT, SEAT_RADIUS, makeCup, makeTable } from './objects'
+import { makeRoom } from './room'
 
 /**
  * The scene.
@@ -53,7 +54,7 @@ export interface TableScene {
 }
 
 export function createTableScene(canvas: HTMLCanvasElement): TableScene {
-  const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true })
+  const renderer = new WebGLRenderer({ canvas, antialias: true })
   renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio ?? 1, 2))
   renderer.outputColorSpace = SRGBColorSpace
   // Filmic, because the lamp is much brighter than the room and clipping it to
@@ -69,12 +70,15 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
   camera.position.copy(EYE)
   camera.lookAt(LOOK_AT)
 
+  scene.add(makeRoom())
   scene.add(makeTable())
 
   // The lamp: warm, high, behind and to the right, which is where the
   // environment puts it. Lights and reflections have to agree or the eye knows.
   const key = new DirectionalLight(new Color('#ffd2a1'), 2.6)
-  key.position.set(1.5, 2.5, -1.1)
+  // Close to overhead. Lower and the cups throw long shadows clean off the
+  // table onto the floor, which reads as six stains rather than as light.
+  key.position.set(0.85, 3.3, -0.75)
   key.castShadow = true
   key.shadow.mapSize.set(1024, 1024)
   key.shadow.camera.left = -1.4
@@ -124,7 +128,6 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
         cup.position.copy(seatPosition(seat.index, seats.length))
         // Turned a little, each differently, so six identical objects do not
         // read as a printed pattern.
-        cup.rotation.y = seat.index * 1.21
         cups.add(cup)
       })
     },
