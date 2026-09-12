@@ -23,3 +23,23 @@ export function toneForSeat(seat: number): string {
   // and a player with no colour would be worse than a player sharing one.
   return SEAT_TONES[((seat % SEAT_TONES.length) + SEAT_TONES.length) % SEAT_TONES.length]
 }
+
+/**
+ * The same six colours, as values rather than as CSS variables.
+ *
+ * The renderer cannot read a stylesheet, so it needs the numbers. They are
+ * written once here and the custom properties above are generated from the
+ * same list, so a colour named in one place and used in another cannot drift.
+ */
+export const SEAT_HEX: readonly string[] = [
+  '#8b5cf6',
+  '#10b981',
+  '#3b82f6',
+  '#e5346b',
+  '#f59e0b',
+  '#2b3444',
+]
+
+export function hexForSeat(seat: number): string {
+  return SEAT_HEX[((seat % SEAT_HEX.length) + SEAT_HEX.length) % SEAT_HEX.length]
+}

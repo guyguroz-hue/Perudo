@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Atoms } from './Atoms'
 import { Finish } from './Finish'
+import { RenderPreview } from './RenderPreview'
 import { GameTable } from './GameTable'
 import { Reveal } from './Reveal'
 import { ENDINGS, REVEALS, SCENARIOS, claimFor, standingsFor } from './fixtures'
@@ -21,7 +22,7 @@ import './PreviewScreen.css'
  * checked against it in one place.
  */
 export function PreviewScreen() {
-  const [tab, setTab] = useState<'table' | 'reveal' | 'end' | 'atoms'>('table')
+  const [tab, setTab] = useState<'table' | 'reveal' | 'end' | 'atoms' | 'render'>('table')
   const [ending, setEnding] = useState(0)
   const [scenario, setScenario] = useState(SCENARIOS[0])
   const [revealIndex, setRevealIndex] = useState(0)
@@ -83,10 +84,20 @@ export function PreviewScreen() {
           >
             Objects
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'render'}
+            onClick={() => setTab('render')}
+          >
+            Render
+          </button>
         </div>
       </header>
 
-      {tab === 'atoms' ? (
+      {tab === 'render' ? (
+        <RenderPreview />
+      ) : tab === 'atoms' ? (
         <Atoms />
       ) : tab === 'end' ? (
         <>
