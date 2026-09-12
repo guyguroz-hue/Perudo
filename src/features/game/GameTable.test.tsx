@@ -68,7 +68,7 @@ describe('what the screen is allowed to know', () => {
     const faces = [...container.querySelectorAll('.board__hand .die')]
     expect(faces).toHaveLength(3)
     // Everyone else is a cup and a row of blanks in their colour.
-    const counts = [...container.querySelectorAll('.pseat__dice .die')]
+    const counts = [...container.querySelectorAll('.pseat__pips .die')]
     expect(counts.length).toBeGreaterThan(0)
     expect(counts.every((die) => die.classList.contains('die--hidden'))).toBe(true)
   })

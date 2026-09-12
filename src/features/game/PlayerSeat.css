@@ -1,75 +1,86 @@
 /*
  * A seat.
  *
- * Positioned from the table's centre by the fractions the seating module works
- * out, so the layout is arithmetic in one place and CSS in the other. The cup
- * sits on the point; the name tag hangs off whichever side of the table the
- * seat is on, so tags never cross the middle of the board.
+ * Anchored at the point on the tabletop where the cup stands, which the camera
+ * works out — so the seat is positioned by its own bottom centre rather than
+ * its middle, and the cup rises from the table instead of hovering over it.
+ *
+ * The cup takes the perspective scale. The name tag does not: a label at the
+ * far rim would be two thirds the size of one at the near rim and unreadable
+ * on a phone. Perspective is for objects on the table; a label is something
+ * written on the screen about them.
  */
 .pseat {
-  --pseat-x: 0;
-  --pseat-y: 1;
   --pseat-scale: 1;
+  /* As wide as its cup and no wider. The tag is taken out of flow below,
+     because a label is wider than the object it labels and a seat at the rim
+     would otherwise push its own box off the screen. */
+  width: var(--pseat-cup);
+  /*
+   * How wide this seat's cup is drawn.
+   *
+   * A share of the table's own width, not a number of pixels: a cup is an
+   * object on the table, so it has to grow and shrink with it — and then the
+   * camera's perspective scale on top. Roughly a nine-centimetre cup on a table
+   * a metre across, nudged up a little the way every tabletop game does so the
+   * far side is still readable.
+   */
+  --pseat-cup: calc(11cqw * var(--pseat-scale));
   position: absolute;
-  top: 50%;
-  left: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* The seat's point on the ellipse, then lifted so the cup stands on it
-     rather than being centred over it. */
-  translate:
-    calc(-50% + var(--pseat-x) * var(--ring-x))
-    calc(-50% + var(--pseat-y) * var(--ring-y));
-  scale: var(--pseat-scale);
-  transition:
-    translate var(--t-medium) var(--ease-object),
-    scale var(--t-medium) var(--ease-object),
-    opacity var(--t-short) var(--ease-ui);
+  /* Anchor: the seat's point is the middle of the cup's base. */
+  translate: -50% 0;
+  transition: opacity var(--t-short) var(--ease-ui);
 }
 
 /* A seat arriving. Not a component mounting — somebody sitting down. */
 @starting-style {
   .pseat {
     opacity: 0;
-    scale: calc(var(--pseat-scale) * 0.6);
   }
 }
 
 .pseat__cup {
-  display: block;
-  /* The cup's base is the seat's point, so it stands on the table rather than
-     hovering over it. */
-  margin-bottom: -14px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
 }
 
 /* A seat somebody has left. The place stays, which is what a table does. */
 .pseat__empty {
   display: block;
-  width: 80px;
-  height: 26px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: calc(var(--pseat-cup) * 0.3);
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(0 0 0 / 0.5), transparent 72%);
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.55), transparent 72%);
 }
 
 /*
  * The name tag.
  *
- * Dark, small, and pinned to the cup. It is the one piece of chrome allowed on
+ * Dark, small, pinned under the cup. It is the one piece of chrome allowed on
  * the table surface, so it stays as quiet as it can while still being legible
  * against wood.
  */
 .pseat__tag {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  translate: -50% 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 4px 9px 5px;
+  gap: var(--space-2);
+  padding: 3px 8px 4px;
   border-radius: var(--radius);
-  background: rgb(8 7 12 / 0.82);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.5);
-  /* Tags do not shrink with their seat: a name at 0.7 scale is unreadable. */
-  scale: calc(1 / var(--pseat-scale));
+  background: rgb(8 7 12 / 0.86);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.55);
+  white-space: nowrap;
 }
 
 .pseat__name {
@@ -77,14 +88,35 @@
   font-size: var(--text-sm);
   font-weight: 600;
   letter-spacing: var(--track-display);
-  line-height: 1;
-  white-space: nowrap;
+  line-height: 1.1;
 }
 
-.pseat__dice {
+/*
+ * How many dice are under that cup.
+ *
+ * The number first, because counting five small shapes is slower than reading
+ * "5" — and this is the figure every bid is judged against. The blanks beside
+ * it carry the same fact physically, in the player's colour, so the table reads
+ * at a glance and the tag reads exactly.
+ */
+.pseat__count {
   display: flex;
-  gap: 2px;
-  min-height: 11px;
+  align-items: center;
+  gap: 4px;
+}
+
+.pseat__number {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--pseat-tone, var(--ink));
+}
+
+.pseat__pips {
+  display: flex;
+  gap: 1.5px;
 }
 
 .pseat__gone {
@@ -94,26 +126,41 @@
   color: var(--ink-faint);
 }
 
-/* Whose turn it is. The cup already has its ring of light on the table; the
-   tag picks up the same blue so the two read as one signal. */
+/* Whose turn it is. The cup already has its ring of light on the table; the tag
+   picks up the same blue so the two read as one signal. */
 .pseat--turn .pseat__tag {
-  background: rgb(14 22 42 / 0.92);
+  background: rgb(12 20 40 / 0.94);
   box-shadow:
-    0 0 0 1px rgb(79 143 255 / 0.55),
-    0 2px 12px rgb(79 143 255 / 0.35);
+    0 0 0 1px rgb(79 143 255 / 0.6),
+    0 2px 14px rgb(79 143 255 / 0.4);
 }
 
 .pseat--out {
-  opacity: 0.4;
+  opacity: 0.42;
 }
 
-/* Seats on the far side sit above their cup, so a tag never covers the table's
-   centre — which is where the bid is. */
-.pseat--far {
-  flex-direction: column-reverse;
+/*
+ * Tags at the sides lean inward.
+ *
+ * A seat at the left or right rim is within a tag's width of the screen edge,
+ * and a tag centred on it would hang off. Anchoring it to the inside edge of
+ * its cup keeps it on screen and pointing at the table it belongs to.
+ */
+.pseat--left .pseat__tag {
+  left: 0;
+  translate: 0 0;
 }
 
-.pseat--far .pseat__cup {
-  margin-bottom: 0;
-  margin-top: -10px;
+.pseat--right .pseat__tag {
+  left: auto;
+  right: 0;
+  translate: 0 0;
+}
+
+/* Seats at the far rim put their tag above the cup, so no label ever covers the
+   middle of the table — which is where the bid is. Cleared by the cup's full
+   height, which is 1.18 times its width. */
+.pseat--far .pseat__tag {
+  top: auto;
+  bottom: calc(var(--pseat-cup) * 1.18 + 4px);
 }

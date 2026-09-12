@@ -5,6 +5,8 @@ import { BidBuilder } from './BidBuilder'
 import { ChallengeActions } from './ChallengeActions'
 import { CurrentBid } from './CurrentBid'
 import { PlayerSeat } from './PlayerSeat'
+import { TableSurface, INLAY_RADIUS } from './TableSurface'
+import { VIEW_RATIO, ringBox } from './camera'
 import { placeSeats } from './seating'
 import type { TableView } from './view'
 import { turnHolder, wouldBurst, you } from './view'
@@ -49,12 +51,21 @@ export function GameTable({
   const canAct = self !== null && !self.isEliminated
   const seats = placeSeats(view.players)
   const bid = view.round.bid
+  // Every bid is a claim about this number, so it belongs beside the bid rather
+  // than being counted off the seats each time somebody wants to weigh one.
+  const onTable = diceOnTable(view.players.map((p) => ({ diceCount: p.diceCount })))
 
   return (
     <div className={`board${yourTurn ? ' board--yours' : ''}`}>
       <header className="board__strip">
         <span className="board__round">
           Round {view.roundNumber}
+          {/* Dice still in play. Every bid is a claim about this number, so it
+              is always on screen rather than something to count off the seats. */}
+          <span className="board__count" aria-label={`${onTable} dice in play`}>
+            <Die hidden size={11} tone="var(--brass)" label="" />
+            <b>{onTable}</b>
+          </span>
           {view.round.type === 'farewell' && <b className="board__farewell">Farewell</b>}
         </span>
         <span className="board__turn" aria-live="polite">
@@ -66,9 +77,9 @@ export function GameTable({
         </span>
       </header>
 
-      <div className="board__stage">
-        <div className="board__surface" aria-hidden="true" />
-        <div className="board__centre">
+      <div className="board__stage" style={{ aspectRatio: VIEW_RATIO }}>
+        <TableSurface />
+        <div className="board__centre" style={ringBox(INLAY_RADIUS)}>
           <CurrentBid
             bid={bid}
             bidderName={view.players.find((p) => p.id === bid?.bidderId)?.name ?? null}
@@ -110,9 +121,7 @@ export function GameTable({
           )}
           <BidBuilder
             round={view.round}
-            diceOnTable={diceOnTable(
-              view.players.map((player) => ({ diceCount: player.diceCount })),
-            )}
+            diceOnTable={onTable}
             ownHand={view.yourHand ?? []}
             burst={burst}
             busy={busy}

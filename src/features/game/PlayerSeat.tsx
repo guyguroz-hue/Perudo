@@ -27,14 +27,15 @@ export function PlayerSeat({
   placement: SeatPlacement
   cup: CupState
 }) {
-  const { player, x, y, scale, side } = placement
+  const { player, left, top, scale, depth, side } = placement
   const tone = toneForSeat(player.seatIndex)
 
-  // Rounded, because CSS has no exponent notation and cos(90°) comes out of
-  // JavaScript as 6.1e-17, which is not a number any stylesheet can parse.
+  // The cup stands on this point, so the seat is anchored at its own bottom
+  // centre rather than at its middle.
   const style = {
-    '--pseat-x': x.toFixed(4),
-    '--pseat-y': y.toFixed(4),
+    left,
+    top,
+    zIndex: depth,
     '--pseat-scale': scale.toFixed(3),
   } as CSSProperties
 
@@ -55,21 +56,24 @@ export function PlayerSeat({
         {player.isEliminated ? (
           <span className="pseat__empty" aria-hidden="true" />
         ) : (
-          <Cup tone={tone} state={cup} active={player.hasTurn} size={80} label="" />
+          <Cup tone={tone} state={cup} active={player.hasTurn} size="var(--pseat-cup)" label="" />
         )}
       </span>
 
-      <span className="pseat__tag">
+      <span className="pseat__tag" style={{ '--pseat-tone': tone } as CSSProperties}>
         <span className="pseat__name">{player.name}</span>
-        <span className="pseat__dice" aria-label={`${player.diceCount} dice`}>
-          {player.isEliminated ? (
-            <span className="pseat__gone">out</span>
-          ) : (
-            Array.from({ length: player.diceCount }, (_, i) => (
-              <Die key={i} hidden tone={tone} size={11} label="" />
-            ))
-          )}
-        </span>
+        {player.isEliminated ? (
+          <span className="pseat__gone">out</span>
+        ) : (
+          <span className="pseat__count" aria-label={`${player.diceCount} dice`}>
+            <span className="pseat__number">{player.diceCount}</span>
+            <span className="pseat__pips" aria-hidden="true">
+              {Array.from({ length: player.diceCount }, (_, i) => (
+                <Die key={i} hidden tone={tone} size={9} label="" />
+              ))}
+            </span>
+          </span>
+        )}
       </span>
     </li>
   )

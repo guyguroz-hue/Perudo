@@ -32,10 +32,18 @@ export function Cup({
   state?: CupState
   /** Whether this player holds the turn. The only reason anything here glows. */
   active?: boolean
-  size?: number
+  /**
+   * How wide the cup is drawn. A number is pixels; a string is any CSS length,
+   * which is how a cup on the table takes its size from the table rather than
+   * from a constant that knows nothing about the camera.
+   */
+  size?: number | string
   label?: string
 }) {
-  const style = { '--cup-size': `${size}px`, '--cup-tone': tone } as CSSProperties
+  const style = {
+    '--cup-size': typeof size === 'number' ? `${size}px` : size,
+    '--cup-tone': tone,
+  } as CSSProperties
 
   return (
     <span

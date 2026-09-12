@@ -31,6 +31,27 @@
 
 /* A Farewell Round is marked, not announced. It is a change in the rules, and
    the rule it changes is already visible in what the bid builder will accept. */
+/* Dice in play. Quiet, permanent, and next to the round number because both
+   are facts about the table rather than about anybody's turn. */
+.board__count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px 2px 5px;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 0.06);
+  color: var(--ink-dim);
+}
+
+.board__count b {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
 .board__farewell {
   padding: 2px 7px;
   border-radius: var(--radius-full);
@@ -64,83 +85,29 @@
  * The table
  * ---------------------------------------------------------------------------*/
 /*
- * A container query context, because the seats are positioned from the table's
- * own radii rather than from the page. The table can then be any size on any
- * screen and the seating arithmetic never changes.
+ * The scene.
+ *
+ * Its proportions come from the camera's view box, so the table is never
+ * squashed to fit a shape somebody picked. Everything inside is positioned in
+ * percentages of this box by the projection.
  */
 .board__stage {
   position: relative;
-  aspect-ratio: 1 / 0.92;
-  /* Room above and below for what hangs off the table's edges: a far cup rises
-     past the back rim, and the near seat's name tag sits below the front one —
-     both of which is what happens at a real table. */
-  margin: var(--space-8) 0 var(--space-6);
-  container-type: size;
-}
-
-/*
- * The wood.
- *
- * Four layers: the light pooling near the top where the lamp is, a faint grain,
- * the body of the timber, and a dark rail around the edge. Stylised rather than
- * photoreal — a photograph of oak at this size is noise, while one clear light
- * source and one clear silhouette reads as a table instantly.
- */
-.board__surface {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background:
-    radial-gradient(52% 40% at 50% 12%, rgb(255 226 190 / 0.26), transparent 64%),
-    /* Grain, barely there. Straight boards on a round table read as corduroy,
-       so this is closer to a sheen than to timber. */
-    repeating-linear-gradient(
-      94deg,
-      rgb(0 0 0 / 0.028) 0 3px,
-      rgb(255 236 210 / 0.012) 3px 7px,
-      transparent 7px 13px
-    ),
-    radial-gradient(
-      86% 76% at 50% 26%,
-      var(--wood-light) 0%,
-      var(--wood) 42%,
-      var(--wood-deep) 78%,
-      var(--wood-edge) 100%
-    );
-  box-shadow:
-    inset 0 0 0 5px rgb(26 12 5 / 0.85),
-    inset 0 0 0 7px rgb(212 162 76 / 0.18),
-    inset 0 14px 30px rgb(0 0 0 / 0.3),
-    0 26px 54px rgb(0 0 0 / 0.62);
+  /* A container, so the cups can be sized as a share of the table. Inline size
+     only: the height comes from the camera's aspect ratio, and asking for both
+     would make the box depend on itself. */
+  container-type: inline-size;
+  /* The room for what hangs off the table's edges is inside the camera's view
+     box, so the scene needs no margin of its own. */
 }
 
 .board__centre {
+  /* Laid over the brass inlay, from the same projection that draws it. */
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 48%;
-  /* An ellipse, not a circle: the bid reads across, and a circle tall enough to
-     hold it would leave the near cup nowhere to stand. */
-  aspect-ratio: 1 / 0.62;
-  translate: -50% -50%;
 }
 
-/* The radii live here rather than on the stage: an element does not query
-   itself as a container, so `cqw` written on `.board__stage` would resolve
-   against whatever contains *it*, and the seats would scatter. */
+/* Seats are placed by the camera, so this is only the plane they live in. */
 .board__seats {
-  /*
-   * The ellipse the cups stand on.
-   *
-   * Pushed close to the rim on purpose. The near cup has to clear the bid in
-   * the middle of the table, and the only way it can is by sitting where a
-   * player's own cup actually sits: at the edge nearest them.
-   *
-   * A far cup whose body rises past the table's top edge is not a bug. That is
-   * what a cup on the far side of a round table looks like.
-   */
-  --ring-x: 34cqw;
-  --ring-y: 46cqh;
   position: absolute;
   inset: 0;
   margin: 0;
