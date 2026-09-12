@@ -8,29 +8,30 @@
 /*
  * The centre of the table.
  *
- * Anchored to the bottom of the brass inlay and growing upward, rather than
- * centred inside it. The inlay is only a few dozen pixels tall at this camera
- * and the bid is taller than that — centred, it spilled down into the near
- * player's own cup, which stands in front of the table's lower half. Upward is
- * clear timber.
- *
- * The ring itself is drawn on the table by the surface, not here. One inlay,
- * in the place that knows where the table is.
+ * Sits over the brass inlay the renderer draws, projected to the same place by
+ * the same camera. The ring is not drawn here: one inlay, in the place that
+ * knows where the table is.
  */
 .bid {
-  position: absolute;
-  /* Lifted off the inlay's floor by the height of the near player's cup, which
-     stands in front of the table's lower half. */
-  bottom: 24%;
-  left: 50%;
-  /* Shrink-to-fit inside the inlay would break "AT LEAST" across two lines. */
+  position: relative;
   width: max-content;
-  translate: -50% 0;
+  margin-inline: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
   text-align: center;
+}
+
+/* A breath of shadow under the bid, so the numbers read against figured wood
+   without a panel being drawn over the table the game is played on. */
+.bid::after {
+  content: '';
+  position: absolute;
+  inset: -34% -30%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(6 4 10 / 0.62), transparent 74%);
+  z-index: -1;
 }
 
 .bid__reading {
@@ -46,12 +47,12 @@
 .bid__figure {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 7px;
 }
 
 .bid__quantity {
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: 700;
   letter-spacing: var(--track-display);
   line-height: 0.9;

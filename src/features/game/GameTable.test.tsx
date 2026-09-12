@@ -52,9 +52,11 @@ describe('waiting is a state, not a curtain', () => {
     expect(screen.getByRole('button', { name: /Burst Dudo/ })).toBeTruthy()
   })
 
+  // Said once, at your seat. The strip above the table names whoever is
+  // thinking only when that is somebody else.
   it('says plainly when the turn is yours', () => {
-    show(BASE)
-    expect(screen.getByText('Your turn')).toBeTruthy()
+    const { container } = show(BASE)
+    expect(container.querySelector('.badge--you')?.textContent).toBe('Your turn')
     expect(screen.getByRole('button', { name: 'Bid' })).toBeTruthy()
   })
 })
@@ -68,7 +70,7 @@ describe('what the screen is allowed to know', () => {
     const faces = [...container.querySelectorAll('.board__hand .die')]
     expect(faces).toHaveLength(3)
     // Everyone else is a cup and a row of blanks in their colour.
-    const counts = [...container.querySelectorAll('.pseat__pips .die')]
+    const counts = [...container.querySelectorAll('.badge__dice .die')]
     expect(counts.length).toBeGreaterThan(0)
     expect(counts.every((die) => die.classList.contains('die--hidden'))).toBe(true)
   })

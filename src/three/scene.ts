@@ -12,7 +12,8 @@ import {
   WebGLRenderer,
 } from 'three'
 import { roomEnvironment } from './environment'
-import { CUP_HEIGHT, SEAT_RADIUS, makeCup, makeTable } from './objects'
+import { CUP_HEIGHT, makeCup, makeTable } from './objects'
+import { CAMERA, SEAT_RADIUS, seatAngle } from './layout'
 import { FACE_UP, DIE_SIZE, makeDie } from './die'
 import { makeRoom } from './room'
 
@@ -30,10 +31,14 @@ import { makeRoom } from './room'
  * underneath them.
  */
 
-/** Where the eye is. A person sitting at a table, not standing over it. */
-const EYE = new Vector3(0, 1.12, 3.15)
-const LOOK_AT = new Vector3(0, 0.04, -0.04)
-const FOV = 27
+/*
+ * The camera lives in `layout.ts`, not here.
+ *
+ * The interface projects seats through the same one to place names and the bid
+ * as ordinary DOM, and two cameras that were meant to be identical are two
+ * cameras that will disagree the first time one of them is retuned.
+ */
+const LOOK_AT = new Vector3(0, 0.03, -0.04)
 
 export type CupState = 'covered' | 'shaking' | 'lifted'
 
@@ -80,8 +85,8 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
   const scene = new Scene()
   scene.environment = roomEnvironment(renderer)
 
-  const camera = new PerspectiveCamera(FOV, 1, 0.1, 20)
-  camera.position.copy(EYE)
+  const camera = new PerspectiveCamera(CAMERA.fov, 1, 0.1, 20)
+  camera.position.set(0, CAMERA.height, CAMERA.distance)
   camera.lookAt(LOOK_AT)
 
   scene.add(makeRoom())
@@ -138,14 +143,8 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
   let last = 0
 
   function seatPosition(index: number, seats: number): Vector3 {
-    // A quarter turn puts index 0 nearest the viewer; from there the ring runs
-    // the way seats are numbered.
-    const angle = Math.PI * 0.5 + (index / seats) * Math.PI * 2
-    return new Vector3(
-      Math.cos(angle) * SEAT_RADIUS,
-      0,
-      Math.sin(angle) * SEAT_RADIUS,
-    )
+    const angle = seatAngle(index, seats)
+    return new Vector3(Math.cos(angle) * SEAT_RADIUS, 0, Math.sin(angle) * SEAT_RADIUS)
   }
 
   /** How long the cup takes to come off the dice. */

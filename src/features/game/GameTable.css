@@ -104,6 +104,10 @@
 .board__centre {
   /* Laid over the brass inlay, from the same projection that draws it. */
   position: absolute;
+  display: flex;
+  justify-content: center;
+  translate: -50% -50%;
+  pointer-events: none;
 }
 
 /* Seats are placed by the camera, so this is only the plane they live in. */
@@ -113,6 +117,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
+  pointer-events: none;
 }
 
 /* -----------------------------------------------------------------------------

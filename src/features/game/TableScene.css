@@ -5,3 +5,20 @@
   width: 100%;
   height: 100%;
 }
+
+/*
+ * The scene fades out at the top.
+ *
+ * Without it the canvas reads as a photograph pasted on the page: a hard
+ * rectangle with a visible edge where the rendered room stops and the page's
+ * own background starts. Fading the join makes them one room.
+ */
+.scene {
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    #000 14%,
+    #000 88%,
+    transparent 100%
+  );
+}

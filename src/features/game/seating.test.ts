@@ -16,28 +16,25 @@ function table(count: number, youAt: number): TablePlayer[] {
 
 const pct = (v: string) => Number.parseFloat(v)
 
-describe('where everybody sits', () => {
-  // The one thing this has to get right: you are at the edge you are sitting
-  // at, whatever seat the database gave you.
-  it('puts you at the near edge whoever you are', () => {
+describe('who sits where', () => {
+  // The one thing this has to get right: you sit at the edge you are sitting
+  // at, whatever seat the room gave you.
+  it('puts you nearest the viewer whoever you are', () => {
     for (let youAt = 0; youAt < 6; youAt += 1) {
       const seats = placeSeats(table(6, youAt))
       const you = seats.find((seat) => seat.player.isYou)
-      expect(you?.side).toBe('near')
-      expect(pct(you!.left)).toBeCloseTo(50, 0)
-      // Nearest the viewer means lowest on screen and largest.
+      expect(you?.index).toBe(0)
+      expect(pct(you!.badge.left)).toBeCloseTo(50, 0)
+      // Nearest means lowest on screen.
       for (const other of seats.filter((s) => !s.player.isYou)) {
-        expect(pct(you!.top)).toBeGreaterThan(pct(other.top))
-        expect(you!.scale).toBeGreaterThan(other.scale)
+        expect(pct(you!.badge.top)).toBeGreaterThan(pct(other.badge.top))
       }
     }
   })
 
-  // Turn order should be visible rather than worked out, so the player
-  // clockwise from you must be clockwise from you on screen.
+  // Turn order should be visible rather than worked out.
   it('keeps everyone in their order around the ring', () => {
-    const seats = placeSeats(table(6, 2))
-    expect(seats.map((seat) => seat.player.id)).toEqual([
+    expect(placeSeats(table(6, 2)).map((seat) => seat.player.id)).toEqual([
       'p2',
       'p3',
       'p4',
@@ -47,26 +44,45 @@ describe('where everybody sits', () => {
     ])
   })
 
-  it('spreads two to six players evenly', () => {
+  it('gives two to six players a place each, and no two the same', () => {
     for (const count of [2, 3, 4, 5, 6]) {
       const seats = placeSeats(table(count, 0))
       expect(seats).toHaveLength(count)
-      const spots = new Set(seats.map((s) => `${s.left},${s.top}`))
+      const spots = new Set(seats.map((s) => `${s.badge.left},${s.badge.top}`))
       expect(spots.size).toBe(count)
     }
   })
 
-  // Cups nearer the viewer have to be painted over the ones behind them.
-  // Compared in order rather than pairwise: two seats mirrored across the table
-  // sit at the same depth and their screen positions differ only by floating
-  // point, which is not a stacking question.
-  it('stacks near seats in front of far ones', () => {
+  // Badges sit outside the table so they never cover it, and the far ones are
+  // higher up the screen than the near ones because the camera is low.
+  it('lays the badges out around the table, far ones highest', () => {
     const seats = placeSeats(table(6, 0))
-    expect([...seats].sort((a, b) => b.depth - a.depth)[0].player.isYou).toBe(true)
+    const tops = seats.map((seat) => pct(seat.badge.top))
+    expect(Math.min(...tops)).toBeLessThan(Math.max(...tops))
+    for (const seat of seats) {
+      expect(pct(seat.badge.left)).toBeGreaterThan(-20)
+      expect(pct(seat.badge.left)).toBeLessThan(120)
+    }
+  })
 
-    const byTop = [...seats].sort((a, b) => pct(a.top) - pct(b.top))
-    for (let i = 1; i < byTop.length; i += 1) {
-      expect(byTop[i].depth).toBeGreaterThanOrEqual(byTop[i - 1].depth)
+  /*
+   * The one thing that made the table unreadable: a badge sitting on the cup it
+   * belongs to. It is guarded here rather than left to the eye, because the
+   * anchor is a projection and a change to the camera moves every badge at once.
+   */
+  it('hangs every badge clear of its own cup, and never off the frame', () => {
+    for (const count of [2, 3, 4, 5, 6]) {
+      const seats = placeSeats(table(count, 0))
+      for (const seat of seats) {
+        // Away from the table, not over it: yours drops below your cup, and
+        // everybody else's rises above theirs.
+        expect(seat.badge.translate).toBe(
+          seat.player.isYou ? '-50% 10px' : '-50% calc(-100% - 10px)',
+        )
+        // Far enough inside the frame that a name is still a name.
+        expect(pct(seat.badge.left)).toBeGreaterThanOrEqual(15)
+        expect(pct(seat.badge.left)).toBeLessThanOrEqual(85)
+      }
     }
   })
 

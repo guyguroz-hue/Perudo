@@ -1,6 +1,4 @@
 import type { CSSProperties } from 'react'
-import { Cup } from '../../components/Cup'
-import type { CupState } from '../../components/Cup'
 import { Die } from '../../components/Die'
 // A player's colour follows the seat they took in the room, not their place in
 // whatever order this list happens to be in, so it never changes when somebody
@@ -10,71 +8,85 @@ import type { SeatPlacement } from './seating'
 import './PlayerSeat.css'
 
 /**
- * One player, at their place on the table.
+ * A player, at their place around the table.
  *
- * Their cup and their name are one object, not a card floating beside the
- * table — the point of seating people is that identity is attached to a
- * position, and a player recognises Dana by the purple cup in the upper left
- * before they read the word "Dana".
+ * Ordinary DOM standing outside the table's rim, projected to exactly where
+ * that person would be sitting. It is not drawn into the scene, because a name
+ * that shrank with distance would be unreadable at the far side and a name
+ * that did not would look pasted on — this way the table has perspective and
+ * the writing does not.
  *
  * The dice beside the name are a count, in the player's colour. They are blanks
  * because the values were never sent to this browser.
  */
-export function PlayerSeat({
-  placement,
-  cup,
-}: {
-  placement: SeatPlacement
-  cup: CupState
-}) {
-  const { player, left, top, scale, depth, side } = placement
+export function PlayerSeat({ placement }: { placement: SeatPlacement }) {
+  const { player, badge } = placement
   const tone = toneForSeat(player.seatIndex)
+  const style = { ...badge, '--seat-tone': tone } as CSSProperties
 
-  // The cup stands on this point, so the seat is anchored at its own bottom
-  // centre rather than at its middle.
-  const style = {
-    left,
-    top,
-    zIndex: depth,
-    '--pseat-scale': scale.toFixed(3),
-  } as CSSProperties
+  // You are not a face across the table from yourself. Your seat says what the
+  // table is waiting for; your dice are in your hand below.
+  if (player.isYou) {
+    return (
+      <li className={`badge badge--you${player.hasTurn ? ' badge--turn' : ''}`} style={style}>
+        <span className="badge__status">
+          {player.isEliminated ? 'Out' : player.hasTurn ? 'Your turn' : 'You'}
+        </span>
+      </li>
+    )
+  }
 
   return (
     <li
       className={[
-        'pseat',
-        `pseat--${side}`,
-        player.hasTurn && !player.isEliminated ? 'pseat--turn' : '',
-        player.isEliminated ? 'pseat--out' : '',
-        player.isYou ? 'pseat--you' : '',
+        'badge',
+        player.hasTurn && !player.isEliminated ? 'badge--turn' : '',
+        player.isEliminated ? 'badge--out' : '',
       ]
         .filter(Boolean)
         .join(' ')}
       style={style}
     >
-      <span className="pseat__cup">
-        {player.isEliminated ? (
-          <span className="pseat__empty" aria-hidden="true" />
-        ) : (
-          <Cup tone={tone} state={cup} active={player.hasTurn} size="var(--pseat-cup)" label="" />
-        )}
+      <span className="badge__avatar" aria-hidden="true">
+        {initials(player.name)}
       </span>
-
-      <span className="pseat__tag" style={{ '--pseat-tone': tone } as CSSProperties}>
-        <span className="pseat__name">{player.name}</span>
+      <span className="badge__tag">
+        <span className="badge__name">{player.name}</span>
         {player.isEliminated ? (
-          <span className="pseat__gone">out</span>
+          <span className="badge__gone">out</span>
         ) : (
-          <span className="pseat__count" aria-label={`${player.diceCount} dice`}>
-            <span className="pseat__number">{player.diceCount}</span>
-            <span className="pseat__pips" aria-hidden="true">
-              {Array.from({ length: player.diceCount }, (_, i) => (
-                <Die key={i} hidden tone={tone} size={9} label="" />
-              ))}
-            </span>
+          <span className="badge__dice" aria-label={`${player.diceCount} dice`}>
+            {Array.from({ length: player.diceCount }, (_, i) => (
+              <Die key={i} hidden tone={tone} size={10} label="" />
+            ))}
           </span>
         )}
       </span>
     </li>
   )
+}
+
+/**
+ * Up to two letters, taken the way a person would say a name.
+ *
+ * Players type their own display name, so this has to cope with one word, three
+ * words, an emoji, or a script with no capitals at all — `Intl.Segmenter` takes
+ * the first character of a word rather than the first code unit, which is the
+ * difference between "אב" and half a surrogate pair.
+ */
+function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return '?'
+
+  const first = firstCharacter(words[0])
+  if (words.length === 1) return first.toUpperCase()
+  return (first + firstCharacter(words[words.length - 1])).toUpperCase()
+}
+
+function firstCharacter(word: string): string {
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    const segmenter = new Intl.Segmenter()
+    for (const { segment } of segmenter.segment(word)) return segment
+  }
+  return [...word][0] ?? ''
 }

@@ -36,24 +36,25 @@ interface Bokeh {
 }
 
 /*
- * Placed around the middle of the panorama rather than the top.
+ * Placed in the strip the camera actually shows.
  *
- * The camera is looking slightly down at the table, so what shows behind it is
- * the band at eye level. Lights painted above that are lights nobody in this
- * game will ever see.
+ * Between the top of the frame and the far edge of the floor there is about a
+ * fifth of the picture of open room, and that is the whole of it: everything
+ * higher is cropped, everything lower is behind the floor. Lights painted
+ * outside that band are lights nobody in this game will ever see.
  */
 const BOKEH: readonly Bokeh[] = [
-  { u: 0.79, v: 0.560, r: 0.055, colour: '#ffbe6e', alpha: 0.62 },
-  { u: 0.71, v: 0.680, r: 0.03, colour: '#ffcf93', alpha: 0.42 },
-  { u: 0.87, v: 0.670, r: 0.022, colour: '#ffae55', alpha: 0.38 },
-  { u: 0.93, v: 0.590, r: 0.036, colour: '#ff9c3f', alpha: 0.3 },
-  { u: 0.11, v: 0.640, r: 0.045, colour: '#7fa8ff', alpha: 0.38 },
-  { u: 0.2, v: 0.590, r: 0.026, colour: '#a9c4ff', alpha: 0.3 },
-  { u: 0.04, v: 0.690, r: 0.03, colour: '#6f93e8', alpha: 0.26 },
-  { u: 0.4, v: 0.630, r: 0.02, colour: '#ffd9a8', alpha: 0.2 },
-  { u: 0.58, v: 0.660, r: 0.028, colour: '#ffc78a', alpha: 0.24 },
-  { u: 0.3, v: 0.670, r: 0.018, colour: '#9fb8ff', alpha: 0.18 },
-  { u: 0.5, v: 0.610, r: 0.014, colour: '#ffe0b8', alpha: 0.16 },
+  { u: 0.79, v: 0.605, r: 0.055, colour: '#ffbe6e', alpha: 0.62 },
+  { u: 0.71, v: 0.655, r: 0.03, colour: '#ffcf93', alpha: 0.42 },
+  { u: 0.87, v: 0.648, r: 0.022, colour: '#ffae55', alpha: 0.38 },
+  { u: 0.93, v: 0.618, r: 0.036, colour: '#ff9c3f', alpha: 0.3 },
+  { u: 0.11, v: 0.632, r: 0.045, colour: '#7fa8ff', alpha: 0.38 },
+  { u: 0.2, v: 0.608, r: 0.026, colour: '#a9c4ff', alpha: 0.3 },
+  { u: 0.04, v: 0.66, r: 0.03, colour: '#6f93e8', alpha: 0.26 },
+  { u: 0.4, v: 0.628, r: 0.02, colour: '#ffd9a8', alpha: 0.2 },
+  { u: 0.58, v: 0.648, r: 0.028, colour: '#ffc78a', alpha: 0.24 },
+  { u: 0.3, v: 0.652, r: 0.018, colour: '#9fb8ff', alpha: 0.18 },
+  { u: 0.5, v: 0.615, r: 0.014, colour: '#ffe0b8', alpha: 0.16 },
 ]
 
 function backdropTexture(width = 2048): CanvasTexture {
@@ -90,13 +91,21 @@ function backdropTexture(width = 2048): CanvasTexture {
   // A little bounce off the ceiling.
   wash(width * 0.5, height * 0.2, width * 0.5, '#2b2740', 0.5)
 
-  // The line where the furniture stops and the floor starts. Not a horizon —
-  // a room has a darker band at eye level where the seating is.
-  const band = ctx.createLinearGradient(0, height * 0.78, 0, height)
-  band.addColorStop(0, 'rgba(0,0,0,0)')
-  band.addColorStop(1, 'rgba(0,0,0,0.7)')
+  /*
+   * Where the room goes down into the floor.
+   *
+   * The floor is a disc, and a disc has an edge. Painted the same colour the
+   * floor is, and reaching it before the floor's far rim comes into frame, the
+   * edge stops being a line across the picture and becomes the far end of a
+   * dark room. Getting this wrong is what makes a render look like two images
+   * stacked on top of each other.
+   */
+  const band = ctx.createLinearGradient(0, height * 0.66, 0, height * 0.76)
+  band.addColorStop(0, 'rgba(9, 7, 14, 0)')
+  band.addColorStop(0.55, 'rgba(9, 7, 14, 0.74)')
+  band.addColorStop(1, 'rgb(12, 10, 16)')
   ctx.fillStyle = band
-  ctx.fillRect(0, height * 0.78, width, height * 0.22)
+  ctx.fillRect(0, height * 0.66, width, height * 0.34)
 
   // The lights themselves, thrown out of focus. Two passes: a soft halo and a
   // brighter core, because that is what a lens actually does to a point.
@@ -118,6 +127,29 @@ function backdropTexture(width = 2048): CanvasTexture {
   const texture = new CanvasTexture(canvas)
   texture.colorSpace = SRGBColorSpace
   return texture
+}
+
+/**
+ * How the floor stops.
+ *
+ * Opaque to well past the table, then gone. A hard rim reads as the edge of a
+ * platter; a dissolve reads as a floor running out into an unlit room.
+ */
+function floorFade(size = 256): CanvasTexture {
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (ctx === null) throw new Error('no 2d context for the floor')
+
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+  g.addColorStop(0, '#fff')
+  g.addColorStop(0.52, '#fff')
+  g.addColorStop(1, '#000')
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, size, size)
+
+  return new CanvasTexture(canvas)
 }
 
 /** The soft dark pool a table sits in, rather than a shadow of one. */
@@ -153,17 +185,37 @@ export function makeRoom(): Group {
    * lighting it would flatten the bokeh into grey discs.
    */
   const shell = new Mesh(
-    new PlaneGeometry(17, 9.9),
+    new PlaneGeometry(30.8, 17.9),
     new MeshBasicMaterial({ map: backdropTexture(), toneMapped: false }),
   )
-  shell.position.set(0, 1.5, -5.4)
+  /*
+   * Far enough back that the floor never reaches it.
+   *
+   * Standing closer, the backdrop cut straight through the floor — and the
+   * intersection of an opaque wall and a flat plane is a hard horizontal line
+   * across the middle of the picture, which is the single most reliable way to
+   * make a render look like two images stacked on top of each other. Pushed
+   * out past the floor's own edge, the floor dissolves into open room instead,
+   * and the wall is only ever the thing behind it.
+   *
+   * The size grows with the distance, along the same ray from the camera, so
+   * the frame it was painted for is still the frame it fills.
+   */
+  shell.position.set(0, 1.866, -12)
   group.add(shell)
 
   // The floor. Without something under the table it reads as a disc in space,
   // and the shadow it casts has nowhere to land.
   const floor = new Mesh(
-    new CircleGeometry(7, 64),
-    new MeshStandardMaterial({ color: new Color('#0c0a10'), roughness: 0.62, metalness: 0.1 }),
+    new CircleGeometry(9, 96),
+    new MeshStandardMaterial({
+      color: new Color('#0c0a10'),
+      roughness: 0.62,
+      metalness: 0.1,
+      alphaMap: floorFade(),
+      transparent: true,
+      depthWrite: false,
+    }),
   )
   floor.rotation.x = -Math.PI / 2
   floor.position.y = -0.78
