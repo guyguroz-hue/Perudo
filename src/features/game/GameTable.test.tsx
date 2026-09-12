@@ -44,7 +44,6 @@ describe('waiting is a state, not a curtain', () => {
     }
     show(waiting)
 
-    expect(screen.getByText('Alice is thinking')).toBeTruthy()
     // Everything worth looking at is still there — and because a Burst is legal
     // out of turn, so are the actions. They just say what they would be.
     expect(theBid().textContent).toContain('at least')
@@ -52,12 +51,64 @@ describe('waiting is a state, not a curtain', () => {
     expect(screen.getByRole('button', { name: /Burst Lie/ })).toBeTruthy()
   })
 
-  // Said once, at your seat. The strip above the table names whoever is
-  // thinking only when that is somebody else.
+  // Said once, at your seat. Whose turn it is needs no words under the table.
   it('says plainly when the turn is yours', () => {
     const { container } = show(BASE)
     expect(container.querySelector('.badge--you')?.textContent).toBe('Your turn')
     expect(screen.getByRole('button', { name: 'Bid' })).toBeTruthy()
+  })
+
+  /*
+   * The move is announced to everyone, including whoever made it.
+   *
+   * This line used to give way to "so-and-so is thinking" whenever the turn was
+   * not yours — and the turn moves the instant you act, so the one person
+   * guaranteed never to see a move announced was the person who had just made
+   * it. On a Bull that is not a slight but a bug: a Bull leaves every number
+   * where it was, so with nothing saying otherwise, calling one is
+   * indistinguishable from nothing happening.
+   */
+  it('says what just happened whoever is to play', () => {
+    show(BASE)
+    expect(screen.getByText('Alice bid 4 fives')).toBeTruthy()
+
+    cleanup()
+    show({
+      ...BASE,
+      players: BASE.players.map((p) => ({ ...p, hasTurn: p.id === 'alice' })),
+      lastEvent: 'Dana called Bull on 4 fives — exactly',
+    })
+    expect(screen.getByText('Dana called Bull on 4 fives — exactly')).toBeTruthy()
+  })
+})
+
+describe('a Bull on the table', () => {
+  // It changes no number at all, so everything that is not a number has to
+  // change instead — or it reads as nothing having happened.
+  it('signs the claim in the Bull caller’s name, with its own mark', () => {
+    const { container } = show({ ...BASE, round: normalRound(bid(4, 5, 'alice', 'carl')) })
+
+    const mark = container.querySelector('.bid__bull')
+    expect(mark).toBeTruthy()
+    expect(mark?.textContent).toContain('Carl')
+    expect(container.querySelector('.bid--bulled')).toBeTruthy()
+    expect(theBid().textContent).toContain('exactly')
+  })
+
+  it('says nothing of the kind on an ordinary bid', () => {
+    const { container } = show(BASE)
+    expect(container.querySelector('.bid__bull')).toBeNull()
+    expect(container.querySelector('.bid--bulled')).toBeNull()
+  })
+
+  // A second Bull is refused by the server (R-010), so it is not offered. A
+  // control that can only come back as an error is a bad way to learn a rule.
+  it('spends the Bull button once the bid has been Bulled', () => {
+    show({ ...BASE, round: normalRound(bid(4, 5, 'alice', 'carl')) })
+    const spent = screen.getByRole('button', { name: /already been called/ })
+    expect(spent.hasAttribute('disabled')).toBe(true)
+    // Lie is still on the table: a Bulled claim can be doubted like any other.
+    expect(screen.getByRole('button', { name: /Lie/ })).toBeTruthy()
   })
 })
 

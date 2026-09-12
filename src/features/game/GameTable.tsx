@@ -166,19 +166,22 @@ export function GameTable({
           ))}
         </ul>
 
-        {/* Whose turn it is lives at the seat, where a table puts it. This says
-            it in words only when the seat is somebody else's — your own badge
-            already carries "Your turn", and saying it twice is one announcement
-            too many. It shares the bottom of the table with the log, because
-            both are commentary on a move rather than a move. */}
+        {/*
+          * What just happened. Always.
+          *
+          * This used to give way to "so-and-so is thinking" whenever the turn
+          * was not yours, which meant the one person guaranteed not to see a
+          * move announced was the person who had just made it — the turn moves
+          * on the instant you act. A Bull is where that became a bug rather
+          * than a slight: it leaves the numbers exactly as they were, so with
+          * no line saying so, calling one is indistinguishable from nothing
+          * happening at all.
+          *
+          * Whose turn it is does not need words here. It is at the seat, where
+          * a table puts it: the badge lights, and your own says "Your turn".
+          */}
         <p className="board__say" aria-live="polite">
-          {reveal !== null
-            ? ''
-            : holder === null
-              ? 'Dealing'
-              : holder.isYou
-                ? (view.lastEvent ?? '')
-                : `${holder.name} is thinking`}
+          {reveal !== null ? '' : holder === null ? 'Dealing' : (view.lastEvent ?? '')}
         </p>
       </div>
 

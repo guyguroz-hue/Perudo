@@ -21,6 +21,17 @@ import './CurrentBid.css'
  * quantity and the light around it, and leaves the numbers alone. It is also
  * the one time a name belongs here, because the claim has changed hands.
  */
+/** The same mark the Bull button carries, so the two are one idea. */
+function Bullseye() {
+  return (
+    <svg className="bid__mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.2" />
+      <circle cx="12" cy="12" r="4.4" stroke="currentColor" strokeWidth="2.2" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+    </svg>
+  )
+}
+
 export function CurrentBid({
   bid,
   bullCallerName,
@@ -40,11 +51,22 @@ export function CurrentBid({
 
   return (
     <div className={`bid${bulled ? ' bid--bulled' : ''}`}>
-      {/* Who made a plain bid is in the log under the table, and printing it
-          here too put the same name on the screen twice. A Bull is different:
-          it takes the claim over (GAME_RULES §8.3), so whose claim this now is
-          has changed, and the middle of the table is where that is said. */}
-      {bulled && <span className="bid__by">Bull · {bullCallerName ?? 'someone'}</span>}
+      {/*
+        * Who made a plain bid is in the log under the table, and printing it
+        * here too put the same name on the screen twice.
+        *
+        * A Bull is different, and it is the one thing on this table that has to
+        * announce itself. It takes the claim over (GAME_RULES §8.3) — so whose
+        * claim this is has changed — and it does that without touching a single
+        * number. Left as quiet as a bid, calling one looks like nothing
+        * happened, which is exactly how it read.
+        */}
+      {bulled && (
+        <span className="bid__bull">
+          <Bullseye />
+          Bull · {bullCallerName ?? 'someone'}
+        </span>
+      )}
       {/* One line. The open timber between the far cup and your own is only so
           tall, and a bid stacked three high grew up into the cup across the
           table. Read across, it fits the gap and still reads as a sentence. */}

@@ -33,6 +33,16 @@ export function ChallengeActions({
   // Only a Burst Lie can ever hand a die back, and never above five (§9.3).
   const canWinADie = burst && ownDiceCount < MAX_DICE
 
+  /*
+   * A bid can only be Bulled once.
+   *
+   * What a second Bull on the same bid would mean is not decided, and it
+   * decides who pays (R-010) — so the server refuses one. Offered anyway, the
+   * button was a move that could only ever come back as an error, which is a
+   * worse way to learn a rule than a control that is plainly spent.
+   */
+  const bulled = bid.bull !== null
+
   return (
     <div className="challenge">
       <button
@@ -59,12 +69,16 @@ export function ChallengeActions({
       <button
         type="button"
         className="challenge__bull"
-        disabled={busy}
+        disabled={busy || bulled}
         onClick={onBull}
-        aria-label={`Bull: I say there are exactly ${bid.quantity}`}
+        aria-label={
+          bulled
+            ? 'Bull has already been called on this bid'
+            : `Bull: I say there are exactly ${bid.quantity}`
+        }
       >
         <Bullseye />
-        <span className="challenge__name">Bull</span>
+        <span className="challenge__name">{bulled ? 'Bulled' : 'Bull'}</span>
         <span className="challenge__claim">
           <span className="challenge__reading">exactly</span>
           <span className="challenge__count">{bid.quantity}</span>
