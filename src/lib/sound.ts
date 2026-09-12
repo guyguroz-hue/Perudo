@@ -28,7 +28,7 @@ import type { Ambient } from './ambient'
 /** Where a real track lives, if the project has been given one. */
 const MUSIC_URL = '/audio/table.mp3'
 
-export type SoundName = 'shake' | 'lift' | 'tap'
+export type SoundName = 'shake' | 'lift' | 'tap' | 'win'
 
 let context: AudioContext | null = null
 let master: GainNode | null = null
@@ -110,6 +110,35 @@ function rattle(at: number, seconds: number, count: number) {
   }
 }
 
+/** One struck note, ringing on. Used only where something has been won. */
+function chime(at: number, hz: number) {
+  const ctx = context
+  if (ctx === null || master === null) return
+
+  const gain = ctx.createGain()
+  gain.gain.setValueAtTime(0.0001, at)
+  gain.gain.exponentialRampToValueAtTime(0.2, at + 0.012)
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + 1.5)
+
+  for (const [partial, level] of [
+    [1, 1],
+    [2, 0.32],
+    [3.01, 0.14],
+  ] as const) {
+    const osc = ctx.createOscillator()
+    osc.type = 'sine'
+    osc.frequency.value = hz * partial
+    const mix = ctx.createGain()
+    mix.gain.value = level
+    osc.connect(mix)
+    mix.connect(gain)
+    osc.start(at)
+    osc.stop(at + 1.7)
+  }
+
+  gain.connect(master)
+}
+
 /** The soft wooden knock of a cup set back down, or lifted off. */
 function knock(at: number, pitch: number) {
   const ctx = context
@@ -135,6 +164,20 @@ export function play(name: SoundName, seconds = 1.1) {
   const ctx = ensure()
   if (ctx === null) return
   const now = ctx.currentTime
+
+  if (name === 'win') {
+    /*
+     * Three notes and done.
+     *
+     * A table of friends knows who won before the screen says so, so this is
+     * an acknowledgement rather than a fanfare — the same chord the room has
+     * been humming under the game, said out loud once.
+     */
+    for (const [i, step] of [0, 7, 12].entries()) {
+      chime(now + i * 0.13, 220 * Math.pow(2, step / 12))
+    }
+    return
+  }
 
   if (name === 'shake') {
     // Six cups going at once, so the count is generous — but they are quiet

@@ -21,7 +21,7 @@
 .preview__note {
   margin: 0;
   font-size: var(--text-sm);
-  color: var(--bone-faint);
+  color: var(--ink-faint);
 }
 
 .preview__tabs,
@@ -38,7 +38,7 @@
   border: 1px solid var(--wood);
   border-radius: var(--radius-full);
   background: rgb(0 0 0 / 0.2);
-  color: var(--bone-dim);
+  color: var(--ink-dim);
   font-size: var(--text-sm);
   cursor: pointer;
 }

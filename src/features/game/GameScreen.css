@@ -13,7 +13,7 @@
 .game__waiting {
   margin: 0;
   text-align: center;
-  color: var(--bone-faint);
+  color: var(--ink-faint);
 }
 
 .game__error,
@@ -27,7 +27,7 @@
 
 .game__error {
   background: rgb(192 71 47 / 0.18);
-  color: var(--danger-bright);
+  color: var(--lie);
 }
 
 /* A rule the house has not decided yet. Distinct from an error, because it is

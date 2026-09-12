@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Atoms } from './Atoms'
 import { Finish } from './Finish'
 import { RenderPreview } from './RenderPreview'
@@ -33,11 +33,17 @@ export function PreviewScreen() {
   // this screen exists precisely to be poked at quickly.
   const [acted, setActed] = useState<string | null>(null)
 
+  // Held so a replay started and then abandoned — another scenario picked, the
+  // tab closed — does not land its answer on a screen that has moved on.
+  const held = useRef(0)
+  useEffect(() => () => window.clearTimeout(held.current), [])
+
   function play(index: number) {
     setRevealIndex(index)
     setPlaying(null)
     setRun((n) => n + 1)
-    window.setTimeout(() => setPlaying(REVEALS[index].data), 900)
+    window.clearTimeout(held.current)
+    held.current = window.setTimeout(() => setPlaying(REVEALS[index].data), 900)
   }
 
   return (

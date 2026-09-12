@@ -1,64 +1,145 @@
+/*
+ * The end of a game.
+ *
+ * Quiet rather than triumphant. A table of friends knows who won before this
+ * screen says so, and confetti over a result they already watched arrive is a
+ * game congratulating itself. What is worth showing is the shape of the finish:
+ * who was still holding dice, and how many.
+ */
 .finish {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  max-width: 30rem;
+  max-width: 26rem;
   margin: 0 auto;
   padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-control);
+  backdrop-filter: blur(12px);
+  text-align: center;
 }
 
-.finish__crown {
+/* The game's own mark, in the metal every cup is trimmed with. */
+.finish__mark {
   margin: 0;
-  font-size: var(--text-3xl);
-  line-height: 1;
+  color: var(--brass);
+}
+
+.finish__mark svg {
+  width: 44px;
+  height: auto;
+  filter: drop-shadow(0 3px 12px rgb(212 162 76 / 0.45));
+}
+
+.finish--yours .finish__mark {
   color: var(--brass-bright);
+  animation: finish-lands var(--t-medium) var(--ease-arrive);
+}
+
+@keyframes finish-lands {
+  from { opacity: 0; scale: 0.7; rotate: -12deg; }
+  to { opacity: 1; scale: 1; rotate: 0deg; }
 }
 
 .finish__who {
+  margin: 0;
+  font-family: var(--font-display);
   font-size: var(--text-2xl);
-  text-align: center;
+  font-weight: 700;
+  letter-spacing: var(--track-display);
+  line-height: 1.1;
+}
+
+.finish--yours .finish__who {
+  color: var(--win);
 }
 
 .finish__note {
   margin: 0;
-  text-align: center;
   font-size: var(--text-sm);
-  color: var(--bone-dim);
+  color: var(--ink-dim);
 }
 
+/* -----------------------------------------------------------------------------
+ * Where everybody finished
+ * ---------------------------------------------------------------------------*/
 .finish__standings {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 4px;
   width: 100%;
-  margin: 0;
+  margin: var(--space-2) 0 0;
   padding: 0;
   list-style: none;
 }
 
-.finish__standings li {
+.finish__place {
+  --seat-tone: var(--p6);
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  background: rgb(0 0 0 / 0.18);
-  color: var(--bone-dim);
+  gap: var(--space-3);
+  padding: 8px var(--space-3);
+  border-radius: var(--radius);
+  background: rgb(255 255 255 / 0.04);
+  font-size: var(--text-sm);
 }
 
-.finish__winner {
-  border: 1px solid var(--brass);
-  background: rgb(201 162 39 / 0.14) !important;
-  color: var(--bone) !important;
+/* The winner's row, lit in their own colour rather than in a generic gold. */
+.finish__place--won {
+  background: color-mix(in srgb, var(--seat-tone) 22%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--seat-tone) 55%, transparent);
+}
+
+.finish__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finish__dot {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--seat-tone);
+  box-shadow: 0 0 0 2px rgb(0 0 0 / 0.35);
 }
 
 .finish__you {
-  color: var(--bone-faint);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 0.1);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Dice rather than a number: the same blanks that stand for a hand everywhere
+   else in the product, so a standing reads at a glance. */
+.finish__left {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 3px;
+}
+
+.finish__out {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
 .finish__next {
   margin: 0;
-  font-size: var(--text-sm);
-  color: var(--bone-faint);
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
 }

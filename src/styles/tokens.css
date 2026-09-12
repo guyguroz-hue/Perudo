@@ -234,8 +234,9 @@
 /*
  * Bridge to the old palette.
  *
- * The lobby, the name screen, the reveal and the result screens have not been
- * redesigned yet, and they are built from tokens the new system does not have.
+ * The lobby, the name screen and the way in have not been redesigned yet, and
+ * they are built from tokens the new system does not have. The table, the
+ * reveal and the end of a game are done and no longer appear here.
  * Rather than leave them referencing names that resolve to nothing — which
  * fails silently and looks like a rendering bug — each old name points at its
  * nearest new equivalent until that screen is rebuilt.
