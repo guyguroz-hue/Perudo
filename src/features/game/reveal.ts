@@ -54,3 +54,24 @@ export function claimOwner(data: RevealData): string {
 export function reading(data: RevealData): 'at least' | 'exactly' {
   return data.bullCallerName === null ? 'at least' : 'exactly'
 }
+
+/**
+ * Standings for a reveal that has already arrived.
+ *
+ * The live game reads these from the table, where they are public and known
+ * before the challenge is answered. This is for the case where the reveal is
+ * the only thing to hand.
+ */
+export function standingsFor(
+  data: RevealData,
+): { id: PlayerId; name: string; diceCount: number }[] {
+  return data.hands.map((hand) => ({
+    id: hand.id,
+    name: hand.name,
+    diceCount: hand.dice.length,
+  }))
+}
+
+export function claimFor(data: RevealData): RevealClaim {
+  return { quantity: data.quantity, face: data.face, reading: reading(data) }
+}

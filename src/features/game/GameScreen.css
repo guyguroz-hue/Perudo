@@ -1,0 +1,38 @@
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.game__bar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.game__waiting {
+  margin: 0;
+  text-align: center;
+  color: var(--bone-faint);
+}
+
+.game__error,
+.game__blocked {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: var(--text-sm);
+}
+
+.game__error {
+  background: rgb(192 71 47 / 0.18);
+  color: var(--danger-bright);
+}
+
+/* A rule the house has not decided yet. Distinct from an error, because it is
+   not a fault and retrying will not help — somebody has to answer it. */
+.game__blocked {
+  background: rgb(201 162 39 / 0.14);
+  color: var(--brass-bright);
+}

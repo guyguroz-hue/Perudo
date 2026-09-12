@@ -1,4 +1,5 @@
-import type { RevealClaim, RevealData } from './reveal'
+import { claimFor, standingsFor } from './reveal'
+import type { RevealData } from './reveal'
 import type { TableView } from './view'
 
 /**
@@ -112,22 +113,7 @@ export interface RevealScenario {
   readonly data: RevealData
 }
 
-/** Standings are public, so they are what the reveal shows during the pause. */
-export function standingsFor(data: RevealData) {
-  return data.hands.map((hand) => ({
-    id: hand.id,
-    name: hand.name,
-    diceCount: hand.dice.length,
-  }))
-}
-
-export function claimFor(data: RevealData): RevealClaim {
-  return {
-    quantity: data.quantity,
-    face: data.face,
-    reading: data.bullCallerName === null ? 'at least' : 'exactly',
-  }
-}
+export { claimFor, standingsFor }
 
 export const REVEALS: readonly RevealScenario[] = [
   {

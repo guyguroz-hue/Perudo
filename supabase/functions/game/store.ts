@@ -116,10 +116,9 @@ export class Store implements GameStore {
   async liveRound(gameId: string): Promise<RoundRow | null> {
     const { data, error } = await this.#db
       .from('rounds')
-      .select(
-        'id, round_number, type, locked_face, status, bid_quantity, bid_face, ' +
-          'bid_player_id, bull_player_id, turn_player_id, farewell_queue, version',
-      )
+      // One literal on purpose: supabase-js parses this string at type level,
+      // and a concatenation it cannot read statically degrades to an error type.
+      .select('id, round_number, type, locked_face, status, bid_quantity, bid_face, bid_player_id, bull_player_id, turn_player_id, farewell_queue, version')
       .eq('game_id', gameId)
       .neq('status', 'resolved')
       .maybeSingle()

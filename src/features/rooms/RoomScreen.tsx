@@ -8,12 +8,12 @@ import { useAuth } from '../auth/useAuth'
 import { endRoom, fetchGame, kickPlayer, leaveRoom, returnToLobby, startGame } from './api'
 import { Countdown } from './Countdown'
 import { toRoomError } from './errors'
-import { GameView } from './GameView'
+import { GameScreen } from '../game/GameScreen'
 import { RoomCode } from './RoomCode'
 import { RoomTable } from './RoomTable'
 import { useRoom } from './useRoom'
 import { MIN_PLAYERS, SEAT_COUNT } from './types'
-import type { GamePlayer, Seat } from './types'
+import type { Seat } from './types'
 import './RoomScreen.css'
 
 /**
@@ -30,7 +30,7 @@ export function RoomScreen() {
   const youId = state.status === 'ready' ? state.userId : null
 
   const { view, connection, refresh } = useRoom(roomId, youId)
-  const [players, setPlayers] = useState<GamePlayer[]>([])
+  const [gameId, setGameId] = useState<string | null>(null)
   const [pendingKick, setPendingKick] = useState<Seat | null>(null)
   const [confirmEnd, setConfirmEnd] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +40,8 @@ export function RoomScreen() {
   const status = view.status === 'ready' ? view.room.status : null
   const sawGame = useRef(false)
 
-  // The game's own roster, which the room view does not carry.
+  // Which game is being played here. The room view does not carry it, and the
+  // game screen reads everything else for itself.
   useEffect(() => {
     if (roomId === null || youId === null) return
     if (status !== 'in_game' && status !== 'finished') return
@@ -48,7 +49,7 @@ export function RoomScreen() {
     let stale = false
     fetchGame(roomId, youId)
       .then((result) => {
-        if (!stale && result !== null) setPlayers(result.players)
+        if (!stale && result !== null) setGameId(result.game.id)
       })
       .catch(() => {
         // The room view already reports anything that matters; a roster that
@@ -140,8 +141,10 @@ export function RoomScreen() {
 
       {room.status === 'lobby' ? (
         <RoomTable seats={seats} canManage={youAreHost} onManage={setPendingKick} />
+      ) : gameId === null ? (
+        <p className="lobby__muted">Finding the game…</p>
       ) : (
-        <GameView players={players} />
+        <GameScreen gameId={gameId} youId={youId as string} />
       )}
 
       {error !== null && (

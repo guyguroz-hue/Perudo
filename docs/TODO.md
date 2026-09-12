@@ -120,10 +120,9 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-30** ~~Build the game screens~~ — `features/game/GameTable` (waiting,
       bid builder, Dudo/Bull) and `features/game/Reveal` (cups, count, result)
       exist and can be seen at **`/preview`**, driven by fixtures.
-- [ ] **T-29** `GameView` is still the placeholder. What is missing is not the
-      UI — that is built — but the round state to drive it: whose turn, the
-      current bid, your own dice. None of it can be invented client-side, so
-      this waits on the action layer (D-002).
+- [x] **T-29** ~~`GameView` is a placeholder~~ — replaced by
+      `features/game/GameScreen`, which reads the round through RLS, follows it
+      over Realtime, and acts through the Edge Function.
 - [ ] **T-31** `/preview` is reachable in production. Harmless (it touches no
       network and no database, and is the one screen that works when Supabase
       does not), and useful while the UI is being reviewed on a phone. Decide
@@ -131,9 +130,12 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-32** ~~The game action layer~~ — `supabase/functions/game/` runs the
       engine from `src/game` and applies its decisions through `apply_bid`,
       `apply_bull` and `apply_challenge`. Paste `bundle.ts` into the dashboard.
-- [ ] **T-33** Wire `GameView` to the action layer and Realtime, replacing the
-      placeholder. Blocked on R-011 (who opens the first round) and on the
-      function being deployed.
+- [x] **T-33** ~~Wire the game screen to the action layer and Realtime~~ — done.
+      A game still cannot deal its first round until **R-011** is answered and
+      the function is deployed.
+- [ ] **T-34** The reveal is rebuilt for non-challengers from the round, the
+      reveals and the challenge event. Verified by types and by reading, not yet
+      by two browsers against the live project.
 - [ ] **TD-9** `Profile` is hand-typed in `src/features/auth/types.ts`. Replace
       with Supabase generated types once the schema is applied (T-18).
 - [ ] **TD-4** No CI pipeline.

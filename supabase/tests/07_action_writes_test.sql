@@ -158,9 +158,15 @@ begin
    where game_id = v_game and user_id = 'da000000-0000-0000-0000-000000000001';
   if n <> 4 then raise exception 'FAIL: the die was not taken, got %', n; end if;
 
+  -- The log is how every player who did not press the button learns what
+  -- happened, so it has to carry the whole public result and not just that a
+  -- challenge occurred.
   select count(*) into n from public.game_events
-   where round_id = v_round and kind = 'dudo';
-  if n <> 1 then raise exception 'FAIL: the challenge was not logged'; end if;
+   where round_id = v_round and kind = 'dudo'
+     and (payload -> 'deltas' ->> 'da000000-0000-0000-0000-000000000001')::int = -1
+     and (payload ->> 'actual_count')::int = 3
+     and (payload ->> 'claim_holds')::boolean = false;
+  if n <> 1 then raise exception 'FAIL: the challenge was not logged in full'; end if;
 
   v_new := (v_out ->> 'new_round_id')::uuid;
   if v_new is null then raise exception 'FAIL: no next round was opened'; end if;

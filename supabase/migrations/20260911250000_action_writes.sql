@@ -195,9 +195,14 @@ begin
   insert into public.game_events (game_id, round_id, actor_id, kind, payload)
   values (
     v_game_id, p_round_id, p_challenger, p_kind,
+    -- Public, all of it. Dice COUNTS are public information, so the die
+    -- changes belong in the log — and they have to be, because this event is
+    -- how every player who did not press the button learns what happened. A
+    -- reveal only the challenger can see is not a reveal.
     jsonb_build_object(
       'actual_count', p_actual_count,
       'claim_holds', p_claim_holds,
+      'deltas', p_deltas,
       'eliminated', to_jsonb(p_eliminated)
     )
   );
