@@ -74,10 +74,15 @@ describe('who sits where', () => {
     for (const count of [2, 3, 4, 5, 6]) {
       const seats = placeSeats(table(count, 0))
       for (const seat of seats) {
-        // Away from the table, not over it: yours drops below your cup, and
-        // everybody else's rises above theirs.
-        expect(seat.badge.translate).toBe(
-          seat.player.isYou ? '-50% 10px' : '-50% calc(-100% - 10px)',
+        /*
+         * Away from the table, not over it. Yours drops below your cup and
+         * everybody else's rises above theirs — and a badge at the side of the
+         * table also runs outward, because a name is wider than a cup and one
+         * centred on a side chair lands on the next chair's cup.
+         */
+        const vertical = seat.player.isYou ? '10px' : 'calc(-100% - 10px)'
+        expect(seat.badge.translate).toMatch(
+          new RegExp(`^(-88%|-50%|-12%) ${vertical.replace(/[()-]/g, '\\$&')}$`),
         )
         // Far enough inside the frame that a name is still a name.
         expect(pct(seat.badge.left)).toBeGreaterThanOrEqual(15)

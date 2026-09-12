@@ -37,7 +37,7 @@ export const SEAT_HEX: readonly string[] = [
   '#3b82f6',
   '#e5346b',
   '#f59e0b',
-  '#2b3444',
+  '#14b8c6',
 ]
 
 export function hexForSeat(seat: number): string {

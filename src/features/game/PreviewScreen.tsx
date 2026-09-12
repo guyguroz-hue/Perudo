@@ -3,7 +3,8 @@ import { Atoms } from './Atoms'
 import { Finish } from './Finish'
 import { RenderPreview } from './RenderPreview'
 import { GameTable } from './GameTable'
-import { ENDINGS, REVEALS, SCENARIOS, claimFor, tableFor } from './fixtures'
+import { RoomTable } from '../rooms/RoomTable'
+import { ENDINGS, LOBBIES, REVEALS, SCENARIOS, claimFor, tableFor } from './fixtures'
 import type { RevealData } from './reveal'
 import './PreviewScreen.css'
 
@@ -21,7 +22,10 @@ import './PreviewScreen.css'
  * checked against it in one place.
  */
 export function PreviewScreen() {
-  const [tab, setTab] = useState<'table' | 'reveal' | 'end' | 'atoms' | 'render'>('table')
+  const [tab, setTab] = useState<'table' | 'reveal' | 'end' | 'lobby' | 'atoms' | 'render'>(
+    'table',
+  )
+  const [lobby, setLobby] = useState(0)
   const [ending, setEnding] = useState(0)
   const [scenario, setScenario] = useState(SCENARIOS[0])
   const [revealIndex, setRevealIndex] = useState(0)
@@ -84,6 +88,14 @@ export function PreviewScreen() {
           <button
             type="button"
             role="tab"
+            aria-selected={tab === 'lobby'}
+            onClick={() => setTab('lobby')}
+          >
+            Lobby
+          </button>
+          <button
+            type="button"
+            role="tab"
             aria-selected={tab === 'atoms'}
             onClick={() => setTab('atoms')}
           >
@@ -100,7 +112,28 @@ export function PreviewScreen() {
         </div>
       </header>
 
-      {tab === 'render' ? (
+      {tab === 'lobby' ? (
+        <>
+          <nav className="preview__picks">
+            {LOBBIES.map((option, index) => (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={index === lobby}
+                onClick={() => setLobby(index)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </nav>
+          <p className="preview__note">{LOBBIES[lobby].note}</p>
+          <RoomTable
+            seats={LOBBIES[lobby].seats}
+            canManage={LOBBIES[lobby].seats.some((s) => s.is_host && s.is_you)}
+            onManage={(seat) => setActed(`Manage ${seat.display_name}`)}
+          />
+        </>
+      ) : tab === 'render' ? (
         <RenderPreview />
       ) : tab === 'atoms' ? (
         <Atoms />

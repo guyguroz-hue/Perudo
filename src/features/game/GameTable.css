@@ -26,6 +26,10 @@
  * percentages of this box by the projection.
  */
 .board__stage {
+  /* Nothing on this table may put a scrollbar on the page. A badge hung outward
+     from a chair at the very edge is clipped rather than allowed to widen the
+     document; `clip` rather than `hidden` so the vertical axis stays free. */
+  overflow-x: clip;
   position: relative;
   /*
    * Edge to edge.

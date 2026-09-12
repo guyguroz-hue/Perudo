@@ -5,6 +5,7 @@ import { Die } from '../../components/Die'
 // is eliminated and the list shortens.
 import { toneForSeat } from './colors'
 import type { SeatPlacement } from './seating'
+import '../../components/TableBadge.css'
 import './PlayerSeat.css'
 
 /**

@@ -1,49 +1,155 @@
-/* Six seats around an ellipse. Positions are explicit rather than computed:
-   six is a fixed, hard limit, so a formula would only hide the arrangement.
-
-   The seats sit ON the boundary, so the box is inset from the container to keep
-   avatars and names from clipping at the screen edge on a narrow phone. */
-.table {
-  position: relative;
+/*
+ * The lobby's table.
+ *
+ * The game's stage, standing in a room that is not playing yet. Everything that
+ * places a seat is the camera's, in three/layout, so a chair is in the same
+ * place here as it will be once the dice are dealt.
+ */
+.lobby-table {
   width: 100%;
-  max-width: 20rem;
-  margin: 0 auto var(--space-5);
-  padding: 0 3.5rem;
-  aspect-ratio: 1 / 1.05;
 }
 
-.table__felt {
+.lobby-table__stage {
+  /* Nothing on this table may put a scrollbar on the page. A badge hung outward
+     from a chair at the very edge is clipped rather than allowed to widen the
+     document; `clip` rather than `hidden` so the vertical axis stays free. */
+  overflow-x: clip;
+  position: relative;
+  width: min(100vw, 34rem);
+  margin-inline: calc((100% - min(100vw, 34rem)) / 2);
+  container-type: inline-size;
+}
+
+.lobby-table__seats {
   position: absolute;
-  inset: 7% 15%;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* -----------------------------------------------------------------------------
+ * A lobby badge is one line
+ * ---------------------------------------------------------------------------*/
+/*
+ * Short, because six of them fit around one table.
+ *
+ * The game's badge stacks a face over a name over a row of dice, and at six
+ * seats a stack that tall reaches the cup belonging to the next chair along. A
+ * lobby badge has no dice to carry and no turn to announce, so it lies down:
+ * face and name on one line, which is short enough that every chair keeps its
+ * own label to itself.
+ */
+.lobby-table__seats .badge {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border-radius: var(--radius-full);
+  background: rgb(8 7 12 / 0.86);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.6);
+}
+
+.lobby-table__seats .badge__avatar {
+  width: 26px;
+  height: 26px;
+  font-size: var(--text-xs);
+}
+
+.lobby-table__seats .badge__tag {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.lobby-table__seats .badge__name {
+  font-size: var(--text-xs);
+}
+
+/* -----------------------------------------------------------------------------
+ * What a lobby badge carries that a game badge does not
+ * ---------------------------------------------------------------------------*/
+/* An empty chair. Drawn as an invitation rather than as a gap: the ring is
+   dashed and open, and the mark in it is a plus, not a face. */
+.lobby-table__seats .badge--open {
+  background: rgb(8 7 12 / 0.5);
+  box-shadow: none;
+}
+
+.badge--open .badge__avatar {
+  width: 22px;
+  height: 22px;
+  background: none;
+  box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.2);
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+.badge--open .badge__name {
+  font-weight: 500;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  font-size: var(--text-2xs);
+  color: var(--ink-faint);
+}
+
+.badge--open {
+  opacity: 0.75;
+}
+
+/* Whoever runs the room. Brass, like everything else that belongs to the house
+   rather than to a player. */
+.badge__host {
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: rgb(212 162 76 / 0.2);
+  box-shadow: inset 0 0 0 1px rgb(212 162 76 / 0.4);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--brass-bright);
+}
+
+.badge__mine {
+  margin-left: 5px;
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* The host's handle on another player. Off the badge's corner, small, and only
+   rendered for somebody who can actually use it. */
+.badge__menu {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
-  /* The felt has to read as a surface, not a hole. A warmer, lighter centre
-     falling to a dark rim does that; matching the page background does not. */
-  background:
-    radial-gradient(ellipse at 50% 38%, #2c5a3c 0%, #1d4029 55%, #12271b 100%);
-  box-shadow:
-    0 0 0 5px var(--wood-dark),
-    0 0 0 8px var(--leather),
-    0 0 0 9px rgb(0 0 0 / 0.35),
-    inset 0 2px 14px rgb(0 0 0 / 0.45),
-    var(--shadow-lg);
+  background: rgb(12 10 16 / 0.9);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
+  color: var(--ink-dim);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
-.table__seat {
-  position: absolute;
-  transform: translate(-50%, -50%);
+.badge__menu:active {
+  scale: 0.9;
 }
 
-/* Seat 0 sits nearest the viewer — the player's own place at a real table. */
-.table__seat--0 { left: 50%; top: 92%; }
-.table__seat--1 { left: 16%; top: 71%; }
-.table__seat--2 { left: 11%; top: 30%; }
-.table__seat--3 { left: 50%; top: 8%;  }
-.table__seat--4 { left: 89%; top: 30%; }
-.table__seat--5 { left: 84%; top: 71%; }
-
-@media (max-width: 23rem) {
-  .table {
-    max-width: 17rem;
-    padding: 0 2.75rem;
-  }
+/* A badge is otherwise inert — it is a label on a table, not a control. */
+.lobby-table__seats .badge {
+  pointer-events: none;
 }

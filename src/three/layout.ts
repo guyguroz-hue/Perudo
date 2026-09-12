@@ -68,9 +68,10 @@ export const BADGE_GAP = '10px'
  * How close to the frame a badge may be pushed.
  *
  * A seat at the side of the table projects almost to the edge, and a name you
- * cannot read is not a name.
+ * cannot read is not a name. Wide enough that a badge hung outward from the
+ * anchor still has its own width of room before the frame.
  */
-export const BADGE_MARGIN = 15
+export const BADGE_MARGIN = 21
 
 /** The brass ring inlaid in the middle, which frames the bid. */
 export const INLAY_RADIUS = 0.34
@@ -136,10 +137,25 @@ export function badgeAnchor(index: number, count: number, lifted = false): Badge
   // A lifted cup climbs into the badge that was floating over it, so the badge
   // moves up with it and the gap between them stays the gap it was.
   const anchor = project(x, near ? 0 : CUP_LID + (lifted ? CUP_LIFT : 0), z)
+
+  /*
+   * Which way the badge runs.
+   *
+   * Centred on the seat is right for the two chairs on the table's axis and
+   * wrong for every other one: a name is wider than a cup, so a badge centred
+   * on a chair at the side of the table reaches across the wood and lands on
+   * the cup belonging to the next chair along. Hung outward from the middle it
+   * runs off the table instead, which is where there is nothing to cover.
+   */
+  const side = Math.abs(x) < 0.08 ? 'centre' : x < 0 ? 'left' : 'right'
+  const across = side === 'centre' ? '-50%' : side === 'left' ? '-88%' : '-12%'
+
   return {
     left: `${clamp(BADGE_MARGIN, Number.parseFloat(anchor.left), 100 - BADGE_MARGIN)}%`,
     top: anchor.top,
-    translate: near ? `-50% ${BADGE_GAP}` : `-50% calc(-100% - ${BADGE_GAP})`,
+    translate: near
+      ? `${across} ${BADGE_GAP}`
+      : `${across} calc(-100% - ${BADGE_GAP})`,
   }
 }
 

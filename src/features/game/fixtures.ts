@@ -307,3 +307,79 @@ export const ENDINGS: readonly {
     },
   },
 ]
+
+/**
+ * Rooms, for looking at the lobby without one.
+ *
+ * The lobby is the same table the game is played on, so it is reviewed the same
+ * way: the real component, driven by fixtures, on a real phone.
+ */
+export interface LobbyScenario {
+  readonly id: string
+  readonly label: string
+  readonly note: string
+  readonly seats: {
+    seat: number
+    display_name: string
+    is_host: boolean
+    is_you: boolean
+    user_id: string
+  }[]
+}
+
+const sitter = (seat: number, name: string, host = false, you = false) => ({
+  seat,
+  display_name: name,
+  is_host: host,
+  is_you: you,
+  user_id: `u${seat}`,
+})
+
+export const LOBBIES: readonly LobbyScenario[] = [
+  {
+    id: 'alone',
+    label: 'Just you',
+    note: 'One player, five open chairs. Nothing to start yet.',
+    seats: [sitter(0, 'Dana', true, true)],
+  },
+  {
+    id: 'two',
+    label: 'Enough to start',
+    note: 'Two players — the minimum a game can begin with.',
+    seats: [sitter(0, 'Dana', true, true), sitter(1, 'Alice')],
+  },
+  {
+    id: 'four',
+    label: 'Four, one chair apart',
+    note: 'A gap in the ring: seat three left, and nobody has taken it.',
+    seats: [
+      sitter(0, 'Dana', true, true),
+      sitter(1, 'Alice'),
+      sitter(2, 'Carl'),
+      sitter(4, 'Maya'),
+    ],
+  },
+  {
+    id: 'full',
+    label: 'Full house',
+    note: 'Six players. The seventh is told the room is full.',
+    seats: [
+      sitter(0, 'Dana', true, true),
+      sitter(1, 'Alice'),
+      sitter(2, 'Carl'),
+      sitter(3, 'Maya'),
+      sitter(4, 'Noam'),
+      sitter(5, 'Yuval'),
+    ],
+  },
+  {
+    id: 'guest',
+    label: 'You are not the host',
+    note: 'The same table seen from another chair — you sit nearest whoever you are.',
+    seats: [
+      sitter(0, 'Dana', true),
+      sitter(1, 'Alice'),
+      sitter(2, 'Carl', false, true),
+    ],
+  },
+]
