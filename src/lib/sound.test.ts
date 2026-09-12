@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { resumeFrom } from './ambient'
 import { isWanted, play, setWanted, startMusic } from './sound'
 
 afterEach(() => {
@@ -36,5 +37,24 @@ describe('a game with no audio', () => {
 
     setWanted(true)
     expect(isWanted()).toBe(true)
+  })
+})
+
+describe('the bed, coming back from a sleeping phone', () => {
+  /*
+   * A tab in the background stops firing timers. The scheduler hands notes to
+   * the audio thread ahead of time, so when it wakes it is holding a moment
+   * that has long since passed — and everything scheduled from there is dated
+   * in the past, which a browser plays all at once.
+   */
+  it('starts again from now when it has fallen far behind', () => {
+    expect(resumeFrom(10, 600)).toBeCloseTo(600.2)
+  })
+
+  // A few hundred milliseconds of lag is the normal case and has to be left
+  // alone: that is the lookahead doing its job, not a tab waking up.
+  it('leaves ordinary scheduling lag alone', () => {
+    expect(resumeFrom(12.4, 12.9)).toBe(12.4)
+    expect(resumeFrom(15, 12)).toBe(15)
   })
 })

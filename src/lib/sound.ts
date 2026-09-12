@@ -15,12 +15,17 @@
  * download, which matters more here than anywhere — this is a game people open
  * on a phone on mobile data.
  *
- * Music is a file, because music is not something to synthesise. It is loaded
- * if it is there and silently absent if it is not, so the product works today
- * and gets a soundtrack the moment one is dropped in.
+ * Music comes from one of two places. If a track has been dropped in at
+ * `/audio/table.mp3` it plays that. If there is no file — the normal case — it
+ * plays a bed generated here, which has no loop to hear the seam of and nothing
+ * to download or license. The file always wins, so adding one is the whole of
+ * what it takes to replace this.
  */
 
-/** Where the loop lives, if the project has one. */
+import { startAmbient } from './ambient'
+import type { Ambient } from './ambient'
+
+/** Where a real track lives, if the project has been given one. */
 const MUSIC_URL = '/audio/table.mp3'
 
 export type SoundName = 'shake' | 'lift' | 'tap'
@@ -37,6 +42,7 @@ let music: HTMLAudioElement | null = null
  * would build another element and another node for a track that is not there.
  */
 let musicTried = false
+let ambient: Ambient | null = null
 let wanted = true
 
 /** How loud each layer sits under the other. Music is a room, not a track. */
@@ -172,10 +178,14 @@ export function isWanted(): boolean {
 }
 
 /**
- * Start the music, if there is any.
+ * Start the music.
  *
- * A missing file is the normal case until somebody adds one, so it fails
- * quietly: no error, no retry, no message about a soundtrack nobody promised.
+ * A track if the project has one, the generated bed if it has not. Which of the
+ * two it is turns on whether the file loads, so there is nothing to configure
+ * and no list to keep in step: drop a file in and it takes over.
+ *
+ * Fades up rather than starting at level, so it arrives as a room being entered
+ * rather than as a track being switched on.
  */
 export function startMusic() {
   if (musicTried || typeof window === 'undefined') return
@@ -183,23 +193,39 @@ export function startMusic() {
   if (ctx === null) return
   musicTried = true
 
-  const element = new Audio(MUSIC_URL)
-  element.loop = true
-  element.crossOrigin = 'anonymous'
-  element.preload = 'auto'
-  element.addEventListener('error', () => {
-    music = null
-  })
-
-  const source = ctx.createMediaElementSource(element)
   musicGain = ctx.createGain()
-  // Fades up rather than starting at level, so it arrives as a room being
-  // entered rather than as a track being switched on.
   musicGain.gain.setValueAtTime(0, ctx.currentTime)
   musicGain.gain.setTargetAtTime(wanted ? MUSIC_LEVEL : 0, ctx.currentTime, 1.6)
-  source.connect(musicGain)
   musicGain.connect(ctx.destination)
+  const out = musicGain
 
-  music = element
-  if (wanted) void element.play().catch(() => {})
+  const element = new Audio(MUSIC_URL)
+  element.loop = true
+  element.preload = 'auto'
+
+  // A missing file is the normal case, not a fault, so it is never reported —
+  // the bed simply starts instead.
+  element.addEventListener('error', () => {
+    music = null
+    if (ambient === null) ambient = startAmbient(ctx, out)
+  })
+
+  element.addEventListener(
+    'canplay',
+    () => {
+      // A real track outranks the bed, including one that arrives late.
+      ambient?.stop()
+      ambient = null
+      music = element
+      if (wanted) void element.play().catch(() => {})
+    },
+    { once: true },
+  )
+
+  try {
+    ctx.createMediaElementSource(element).connect(out)
+  } catch {
+    // Some browsers refuse a source for a file they could not open at all.
+    ambient = startAmbient(ctx, out)
+  }
 }
