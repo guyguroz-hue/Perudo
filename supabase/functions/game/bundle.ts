@@ -109,6 +109,17 @@ function checkNormalBid(round, next) {
 //#endregion
 //#region src/game/resolution.ts
 /**
+* Who is still in the game.
+*
+* The caller hands over everybody who ever sat down, because that is what the
+* table is — a player who is out keeps their chair and their name. Every rule
+* below is about the players still holding dice, so the distinction is drawn
+* once, here, rather than remembered at each use.
+*/
+function active(players) {
+	return players.filter((player) => player.diceCount > 0);
+}
+/**
 * Resolve a challenge against the current bid.
 *
 * Everything here is server-authoritative: the count, the verdict and the die
@@ -122,11 +133,13 @@ function resolveChallenge(input) {
 	const { round, players, actualCount, challengerId, kind } = input;
 	const bid = round.bid;
 	if (bid === null) throw new Error("resolveChallenge called with no active bid");
+	if ((bid.bull?.callerId ?? bid.bidderId) === challengerId) throw new Error(`resolveChallenge called with ${challengerId} challenging their own claim`);
 	const isBull = bid.bull !== null;
 	const claimHolds = isBull ? actualCount === bid.quantity : actualCount >= bid.quantity;
-	const dieDeltas = isBull ? resolveBull(bid.bull.callerId, claimHolds, players) : resolvePlainBid(bid.bidderId, claimHolds, challengerId, kind);
+	const dieDeltas = isBull ? resolveBull(bid.bull.callerId, claimHolds, active(players)) : resolvePlainBid(bid.bidderId, claimHolds, challengerId, kind);
 	if (isBull && kind === "burst_lie" && !claimHolds) dieDeltas.set(challengerId, (dieDeltas.get(challengerId) ?? 0) + 1);
-	return buildOutcome(actualCount, claimHolds, dieDeltas, players, isBull ? claimHolds ? bid.bull.callerId : challengerId : claimHolds ? bid.bidderId : challengerId);
+	const provedRight = isBull ? claimHolds ? bid.bull.callerId : challengerId : claimHolds ? bid.bidderId : challengerId;
+	return buildOutcome(actualCount, claimHolds, dieDeltas, active(players), provedRight);
 }
 /**
 * Ordinary bid, read as "at least" (GAME_RULES §7 and §9.2).
@@ -150,6 +163,12 @@ function resolvePlainBid(bidderId, bidHolds, challengerId, kind) {
 * Correct: every other active player loses a die and the caller loses nothing —
 * the challenger included, since they are among "every participant except the
 * Bull caller".
+*
+* "Active" is load-bearing and was once merely descriptive. Charged against
+* everybody who ever sat at the table, a correct Bull sends a die to players
+* who have none, and the write that applies it is refused by the database for
+* taking a count below zero — so from the first elimination onward, every
+* correct Bull left the round unresolvable.
 *
 * False: the caller alone pays. Declaring an exact count is a strong claim, and
 * being wrong costs only the player who made it.
@@ -646,8 +665,19 @@ function asString(value, name) {
 	if (typeof value !== "string" || value === "") throw new GameError("BAD_REQUEST", `${name} is required.`);
 	return value;
 }
+/**
+* The largest quantity the database can hold.
+*
+* A storage limit, not a rule. The house rules set no ceiling on a bid — one
+* above the dice on the table is legal and simply loses — so nothing here
+* decides what is playable. What it does is turn a number no column can take
+* into a refusal the player can read, instead of an overflow deep in a write
+* that surfaces as "something broke".
+*/
+const LARGEST_QUANTITY = 32767;
 function asInt(value, name) {
 	if (typeof value !== "number" || !Number.isInteger(value)) throw new GameError("BAD_REQUEST", `${name} must be a whole number.`);
+	if (value < 1 || value > LARGEST_QUANTITY) throw new GameError("BAD_REQUEST", `${name} is out of range.`);
 	return value;
 }
 function asFace(value) {

@@ -3,16 +3,6 @@ import type { ChallengeKind } from './types'
 import { resolveChallenge } from './resolution'
 import { bid, blanks, challengeWithHands, hand, normalRound } from './testing'
 
-/** Resolves a challenge on a table where the only player loses their last die. */
-function buildEmptyTableOutcome() {
-  return challengeWithHands({
-    round: normalRound(bid(9, 5, 'alice')),
-    hands: [hand('alice', 2)],
-    challengerId: 'alice',
-    kind: 'lie',
-  })
-}
-
 // Four relevant fives on this table: three fives plus one wild one. So a bid of
 // "4 fives" holds, and "5 fives" does not.
 const table = [hand('alice', 5, 5, 2), hand('bob', 5, 1, 3)]
@@ -299,11 +289,19 @@ describe('simultaneous elimination (R-004)', () => {
     // Normal Lie and Burst Lie each cost exactly one player a die; a correct
     // Bull spares its caller; a false Bull costs only its caller. Some player
     // always survives. The branch is kept because "no winner" is the rule we
-    // were given (R-004), and a future rule could make it reachable — but it is
-    // asserted directly rather than through a scenario that cannot occur.
-    const outcome = buildEmptyTableOutcome()
+    // were given (R-004), and a future rule could make it reachable — so it is
+    // asserted by handing the engine a table with nobody left on it, rather
+    // than through a sequence of play that cannot occur.
+    const outcome = resolveChallenge({
+      round: normalRound(bid(9, 5, 'alice')),
+      players: [],
+      actualCount: 0,
+      challengerId: 'bob',
+      kind: 'lie',
+    })
     expect(outcome.winnerId).toBeNull()
     expect(outcome.gameOver).toBe(true)
+    expect(outcome.eliminated).toEqual([])
   })
 
   it('keeps playing while two or more players still hold dice', () => {
@@ -592,5 +590,80 @@ describe('the engine resolves from counts alone', () => {
     })
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
     expect(outcome.dieDeltas.get('bob')).toBeUndefined()
+  })
+})
+
+/*
+ * A table with an empty chair at it.
+ *
+ * Everyone who ever sat down stays in the list the engine is handed — a player
+ * who is out keeps their chair and their name, and the turn ring, the badges
+ * and the reveal all still refer to them. Every rule in this file is about the
+ * players still holding dice, and one of them used to forget that.
+ */
+describe('players who are already out', () => {
+  const table = [
+    { playerId: 'alice', diceCount: 2 },
+    { playerId: 'bob', diceCount: 2 },
+    { playerId: 'ghost', diceCount: 0 },
+  ]
+
+  /*
+   * The one that broke games.
+   *
+   * A correct Bull charges "every participant except the Bull caller" (§8.3).
+   * Charged against the whole table rather than the players still in it, that
+   * sends a die to somebody who has none — and the write that applies it is
+   * refused by the database for taking a count below zero. So from the first
+   * elimination onward, every correct Bull left the round unresolvable: the
+   * challenge could not be applied, and the game could not continue.
+   */
+  it('are not charged by a correct Bull', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(4, 5, 'alice', 'bob')),
+      players: table,
+      actualCount: 4,
+      challengerId: 'alice',
+      kind: 'lie',
+    })
+
+    expect(outcome.claimHolds).toBe(true)
+    expect(outcome.dieDeltas.get('alice')).toBe(-1)
+    expect(outcome.dieDeltas.get('bob')).toBeUndefined()
+    expect(outcome.dieDeltas.has('ghost')).toBe(false)
+  })
+
+  // Nor reported as though they had just gone out. They went out a round ago,
+  // and the reveal announces what this resolution did.
+  it('are not reported as eliminated again', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(9, 5, 'alice')),
+      players: table,
+      actualCount: 0,
+      challengerId: 'bob',
+      kind: 'lie',
+    })
+
+    expect(outcome.eliminated).toEqual([])
+    expect(outcome.gameOver).toBe(false)
+  })
+
+  // And they are not counted when deciding whether anybody has won.
+  it('do not keep a finished game running', () => {
+    const outcome = resolveChallenge({
+      round: normalRound(bid(9, 5, 'alice')),
+      players: [
+        { playerId: 'alice', diceCount: 1 },
+        { playerId: 'bob', diceCount: 3 },
+        { playerId: 'ghost', diceCount: 0 },
+      ],
+      actualCount: 0,
+      challengerId: 'bob',
+      kind: 'lie',
+    })
+
+    expect(outcome.eliminated).toEqual(['alice'])
+    expect(outcome.winnerId).toBe('bob')
+    expect(outcome.gameOver).toBe(true)
   })
 })

@@ -7,6 +7,18 @@ export interface PlayerStanding {
   readonly diceCount: number
 }
 
+/**
+ * Who is still in the game.
+ *
+ * The caller hands over everybody who ever sat down, because that is what the
+ * table is — a player who is out keeps their chair and their name. Every rule
+ * below is about the players still holding dice, so the distinction is drawn
+ * once, here, rather than remembered at each use.
+ */
+function active(players: readonly PlayerStanding[]): readonly PlayerStanding[] {
+  return players.filter((player) => player.diceCount > 0)
+}
+
 export interface ChallengeInput {
   /** Must carry an active bid; challenging nothing is not a move. */
   readonly round: RoundState
@@ -89,12 +101,31 @@ export function resolveChallenge(input: ChallengeInput): ChallengeOutcome {
     throw new Error('resolveChallenge called with no active bid')
   }
 
+  /*
+   * Nobody challenges their own claim.
+   *
+   * The action layer refuses this before it gets here, and that is where a
+   * player is told why. This is the engine refusing to compute an answer to a
+   * question with no answer: every branch below asks "was the claim right, and
+   * who was proved right by that" — and when the challenger is the claimant,
+   * both answers name the same player, so the round would resolve by taking a
+   * die from somebody and handing them the next round for it.
+   *
+   * A Bull takes the claim over (GAME_RULES §8.3), so once one is on the table
+   * it is the Bull caller who cannot challenge, and the original bidder who
+   * can.
+   */
+  const claimOwnerId = bid.bull?.callerId ?? bid.bidderId
+  if (claimOwnerId === challengerId) {
+    throw new Error(`resolveChallenge called with ${challengerId} challenging their own claim`)
+  }
+
   const isBull = bid.bull !== null
 
   const claimHolds = isBull ? actualCount === bid.quantity : actualCount >= bid.quantity
 
   const dieDeltas = isBull
-    ? resolveBull(bid.bull!.callerId, claimHolds, players)
+    ? resolveBull(bid.bull!.callerId, claimHolds, active(players))
     : resolvePlainBid(bid.bidderId, claimHolds, challengerId, kind)
 
   // A Bull is an ordinary bet, so Burst Lie behaves against it exactly as it
@@ -117,7 +148,7 @@ export function resolveChallenge(input: ChallengeInput): ChallengeOutcome {
       ? bid.bidderId
       : challengerId
 
-  return buildOutcome(actualCount, claimHolds, dieDeltas, players, provedRight)
+  return buildOutcome(actualCount, claimHolds, dieDeltas, active(players), provedRight)
 }
 
 /**
@@ -152,6 +183,12 @@ function resolvePlainBid(
  * Correct: every other active player loses a die and the caller loses nothing —
  * the challenger included, since they are among "every participant except the
  * Bull caller".
+ *
+ * "Active" is load-bearing and was once merely descriptive. Charged against
+ * everybody who ever sat at the table, a correct Bull sends a die to players
+ * who have none, and the write that applies it is refused by the database for
+ * taking a count below zero — so from the first elimination onward, every
+ * correct Bull left the round unresolvable.
  *
  * False: the caller alone pays. Declaring an exact count is a strong claim, and
  * being wrong costs only the player who made it.

@@ -143,9 +143,23 @@ function asString(value: unknown, name: string): string {
   return value
 }
 
+/**
+ * The largest quantity the database can hold.
+ *
+ * A storage limit, not a rule. The house rules set no ceiling on a bid — one
+ * above the dice on the table is legal and simply loses — so nothing here
+ * decides what is playable. What it does is turn a number no column can take
+ * into a refusal the player can read, instead of an overflow deep in a write
+ * that surfaces as "something broke".
+ */
+const LARGEST_QUANTITY = 32767
+
 function asInt(value: unknown, name: string): number {
   if (typeof value !== 'number' || !Number.isInteger(value)) {
     throw new GameError('BAD_REQUEST', `${name} must be a whole number.`)
+  }
+  if (value < 1 || value > LARGEST_QUANTITY) {
+    throw new GameError('BAD_REQUEST', `${name} is out of range.`)
   }
   return value
 }
