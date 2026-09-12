@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { Cup } from '../../components/Cup'
 import { Die } from '../../components/Die'
 import { countsToward } from '../../game'
@@ -116,7 +117,11 @@ export function Reveal({
         {seated.map((player) => {
           const dice = data?.hands.find((hand) => hand.id === player.id)?.dice ?? null
           return (
-            <li key={player.id} className="reveal__hand">
+            <li
+              key={player.id}
+              className="reveal__hand"
+              style={{ '--stack-width': `${stackWidth(player.diceCount)}px` } as CSSProperties}
+            >
               <span className="reveal__stack">
                 {dice !== null && data !== null && showDice && (
                   <span className="reveal__dice">
@@ -172,6 +177,28 @@ function cupWidth(diceCount: number): number {
   return Math.min(3, Math.max(1, diceCount)) * 26 + 14
 }
 
+/**
+ * How wide one player's column is, set before anything is in it.
+ *
+ * The cup is positioned absolutely and the dice do not exist yet, so until this
+ * was given a width the box measured four pixels across — and it clips, so for
+ * the whole held beat and the whole lift there was a four-pixel sliver of cup
+ * on screen. The drama of the reveal is the cup coming off; it has to be wide
+ * enough to hold the cup from the first frame, and it must not change width
+ * when the dice arrive, because everything below it would jump.
+ *
+ * A die's cell is its 22px face plus the padding and the ring that goes round
+ * it when it counts — the three numbers are in `.reveal__die`, and this is the
+ * only place outside that rule that needs to know them.
+ */
+const DIE_CELL = 22 + 3 * 2 + 2 * 2
+const DIE_GAP = 2
+
+function stackWidth(diceCount: number): number {
+  const across = Math.min(3, Math.max(1, diceCount))
+  return Math.max(cupWidth(diceCount), across * DIE_CELL + (across - 1) * DIE_GAP)
+}
+
 function Result({ data, onDone }: { data: RevealData; onDone?: () => void }) {
   const changed = data.hands.filter((hand) => (data.deltas[hand.id] ?? 0) !== 0)
 
@@ -182,7 +209,7 @@ function Result({ data, onDone }: { data: RevealData; onDone?: () => void }) {
       </p>
       <p className="reveal__because">
         {data.challengerName} called{' '}
-        {data.challengeKind === 'burst_dudo' ? 'Burst Dudo' : 'Dudo'} on {reading(data)}{' '}
+        {data.challengeKind === 'burst_lie' ? 'Burst Lie' : 'Lie'} on {reading(data)}{' '}
         {data.quantity} — there {data.actualCount === 1 ? 'was' : 'were'}
         {'\u00a0'}
         {data.actualCount}

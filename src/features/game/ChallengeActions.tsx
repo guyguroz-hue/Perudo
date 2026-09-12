@@ -4,7 +4,7 @@ import { MAX_DICE } from '../../game'
 import './ChallengeActions.css'
 
 /**
- * Dudo and Bull.
+ * Lie and Bull.
  *
  * Both challenge the current bid and they mean opposite things about it, so
  * they are not two buttons with different words on them. They differ in
@@ -19,7 +19,7 @@ export function ChallengeActions({
   burst,
   ownDiceCount,
   busy = false,
-  onDudo,
+  onLie,
   onBull,
 }: {
   bid: ActiveBid
@@ -27,26 +27,26 @@ export function ChallengeActions({
   burst: boolean
   ownDiceCount: number
   busy?: boolean
-  onDudo: () => void
+  onLie: () => void
   onBull: () => void
 }) {
-  // Only a Burst Dudo can ever hand a die back, and never above five (§9.3).
+  // Only a Burst Lie can ever hand a die back, and never above five (§9.3).
   const canWinADie = burst && ownDiceCount < MAX_DICE
 
   return (
     <div className="challenge">
       <button
         type="button"
-        className="challenge__dudo"
+        className="challenge__lie"
         disabled={busy}
-        onClick={onDudo}
-        aria-label={`${burst ? 'Burst Dudo' : 'Dudo'}: I say there are fewer than ${bid.quantity}${
+        onClick={onLie}
+        aria-label={`${burst ? 'Burst Lie' : 'Lie'}: I say there are fewer than ${bid.quantity}${
           canWinADie ? ', and win a die if I am right' : ''
         }`}
       >
         <CrossMark />
         <span className="challenge__name">
-          {burst ? 'Burst Dudo' : 'Dudo'}
+          {burst ? 'Burst Lie' : 'Lie'}
           {canWinADie && <b className="challenge__prize" aria-hidden="true">+1</b>}
         </span>
         <span className="challenge__claim">

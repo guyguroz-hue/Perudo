@@ -60,6 +60,12 @@
   display: grid;
   align-items: end;
   justify-items: center;
+  /* Wide enough for the cup before the cup is the only thing in it. The cup is
+     positioned absolutely and the dice are not there yet, so without this the
+     box measures nothing and clips the cup away over exactly the beat the
+     reveal exists for. Set from the hand's size in Reveal.tsx, and fixed for
+     the whole sequence so nothing under it jumps when the dice arrive. */
+  width: var(--stack-width, 92px);
   min-height: 122px;
   padding: 2px;
   transition: min-height var(--duration) var(--ease);
@@ -84,7 +90,9 @@
 }
 
 /* Three across, so five dice are a block rather than a row the width of the
-   screen — and so the cup that covers them is cup-shaped. */
+   screen — and so the cup that covers them is cup-shaped. A die's cell is the
+   face plus this padding and this ring; `stackWidth` in Reveal.tsx measures the
+   column from the same three numbers. */
 .reveal__dice {
   display: grid;
   grid-template-columns: repeat(3, auto);

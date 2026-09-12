@@ -9,7 +9,7 @@ function buildEmptyTableOutcome() {
     round: normalRound(bid(9, 5, 'alice')),
     hands: [hand('alice', 2)],
     challengerId: 'alice',
-    kind: 'dudo',
+    kind: 'lie',
   })
 }
 
@@ -26,21 +26,21 @@ function challenge(quantity: number, kind: ChallengeKind, challengerId = 'bob') 
   })
 }
 
-// PART 63 — normal Dudo
-describe('normal Dudo (GAME_RULES §7)', () => {
+// PART 63 — normal Lie
+describe('normal Lie (GAME_RULES §7)', () => {
   it('counts the table correctly, wildcards included', () => {
-    expect(challenge(4, 'dudo').actualCount).toBe(4)
+    expect(challenge(4, 'lie').actualCount).toBe(4)
   })
 
   it('costs the challenger a die when the bid holds', () => {
-    const outcome = challenge(4, 'dudo')
+    const outcome = challenge(4, 'lie')
     expect(outcome.claimHolds).toBe(true)
     expect(outcome.dieDeltas.get('bob')).toBe(-1)
     expect(outcome.dieDeltas.get('alice')).toBeUndefined()
   })
 
   it('costs the bidder a die when the bid is false', () => {
-    const outcome = challenge(5, 'dudo')
+    const outcome = challenge(5, 'lie')
     expect(outcome.claimHolds).toBe(false)
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
     expect(outcome.dieDeltas.get('bob')).toBeUndefined()
@@ -48,30 +48,30 @@ describe('normal Dudo (GAME_RULES §7)', () => {
 
   it('never grants a die, on either verdict', () => {
     for (const quantity of [4, 5]) {
-      for (const delta of challenge(quantity, 'dudo').dieDeltas.values()) {
+      for (const delta of challenge(quantity, 'lie').dieDeltas.values()) {
         expect(delta).toBeLessThan(0)
       }
     }
   })
 })
 
-// PART 66 — Burst Dudo
-describe('Burst Dudo (GAME_RULES §9.2)', () => {
+// PART 66 — Burst Lie
+describe('Burst Lie (GAME_RULES §9.2)', () => {
   it('takes a die from the bidder and grants one to the caller when the bid is false', () => {
-    const outcome = challenge(5, 'burst_dudo')
+    const outcome = challenge(5, 'burst_lie')
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
     expect(outcome.dieDeltas.get('bob')).toBe(1)
   })
 
   it('costs the caller a die when the bid holds, with no gain anywhere', () => {
-    const outcome = challenge(4, 'burst_dudo')
+    const outcome = challenge(4, 'burst_lie')
     expect(outcome.dieDeltas.get('bob')).toBe(-1)
     expect([...outcome.dieDeltas.values()].every((d) => d < 0)).toBe(true)
   })
 
   it('is the only move in the game that can hand a player a die', () => {
-    expect(challenge(5, 'burst_dudo').dieDeltas.get('bob')).toBe(1)
-    expect(challenge(5, 'dudo').dieDeltas.get('bob')).toBeUndefined()
+    expect(challenge(5, 'burst_lie').dieDeltas.get('bob')).toBe(1)
+    expect(challenge(5, 'lie').dieDeltas.get('bob')).toBeUndefined()
   })
 })
 
@@ -85,7 +85,7 @@ describe('Bull (GAME_RULES §8)', () => {
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(exact.actualCount).toBe(4)
     expect(exact.claimHolds).toBe(true)
@@ -97,7 +97,7 @@ describe('Bull (GAME_RULES §8)', () => {
       round: normalRound(bid(3, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(inexact.claimHolds).toBe(false)
     expect(inexact.dieDeltas.get('bob')).toBe(-1)
@@ -108,7 +108,7 @@ describe('Bull (GAME_RULES §8)', () => {
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
     expect(outcome.dieDeltas.get('carol')).toBe(-1)
@@ -122,7 +122,7 @@ describe('Bull (GAME_RULES §8)', () => {
       round: normalRound(bid(3, 5, 'carol')),
       hands: bullTable,
       challengerId: 'alice',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.claimHolds).toBe(true)
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
@@ -136,7 +136,7 @@ describe('elimination and victory (GAME_RULES §11)', () => {
       round: normalRound(bid(9, 5, 'alice')),
       hands: [hand('alice', 5), blanks('bob', 3)],
       challengerId: 'bob',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.eliminated).toEqual(['alice'])
   })
@@ -146,13 +146,13 @@ describe('elimination and victory (GAME_RULES §11)', () => {
       round: normalRound(bid(9, 5, 'alice')),
       hands: [hand('alice', 5), blanks('bob', 3)],
       challengerId: 'bob',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.winnerId).toBe('bob')
   })
 
   it('does not declare a winner while two players still hold dice', () => {
-    expect(challenge(5, 'dudo').winnerId).toBeNull()
+    expect(challenge(5, 'lie').winnerId).toBeNull()
   })
 })
 
@@ -163,7 +163,7 @@ describe('Farewell Round trigger (GAME_RULES §10)', () => {
       round: normalRound(bid(9, 5, 'alice')),
       hands: [hand('alice', 5, 5), blanks('bob', 3)],
       challengerId: 'bob',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
     expect(outcome.farewellQueue).toEqual(['alice'])
@@ -175,18 +175,18 @@ describe('Farewell Round trigger (GAME_RULES §10)', () => {
       round: normalRound(bid(1, 5, 'alice')),
       hands: [hand('alice', 5, 2, 2), hand('bob', 4)],
       challengerId: 'bob',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.dieDeltas.get('bob')).toBe(-1)
     expect(outcome.farewellQueue).toEqual([])
   })
 
-  it('does not trigger on a die gained by Burst Dudo', () => {
+  it('does not trigger on a die gained by Burst Lie', () => {
     const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'alice')),
       hands: [blanks('alice', 3), hand('bob', 6)],
       challengerId: 'bob',
-      kind: 'burst_dudo',
+      kind: 'burst_lie',
     })
     expect(outcome.dieDeltas.get('bob')).toBe(1)
     expect(outcome.farewellQueue).toEqual([])
@@ -203,7 +203,7 @@ describe('a false Bull (GAME_RULES §8.4)', () => {
       round: normalRound(bid(2, 5, 'alice', 'bob')),
       hands: table,
       challengerId: 'carol',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.actualCount).toBe(4)
     expect(outcome.claimHolds).toBe(false)
@@ -218,7 +218,7 @@ describe('a false Bull (GAME_RULES §8.4)', () => {
       round: normalRound(bid(3, 5, 'alice', 'bob')),
       hands: table,
       challengerId: 'carol',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.claimHolds).toBe(false)
     expect(outcome.dieDeltas.get('bob')).toBe(-1)
@@ -229,7 +229,7 @@ describe('a false Bull (GAME_RULES §8.4)', () => {
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: table,
       challengerId: 'carol',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.dieDeltas.get('bob')).toBeUndefined()
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
@@ -245,20 +245,20 @@ describe('simultaneous Farewell Rounds (R-003)', () => {
       round: normalRound(bid(2, 5, 'alice', 'carol')),
       hands: [hand('alice', 5, 2), hand('bob', 5, 3), blanks('carol', 4)],
       challengerId: 'bob',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.farewellQueue).toEqual(['alice', 'bob'])
   })
 
   it('grants a fresh Farewell Round to a player knocked back down after regaining a die', () => {
-    // Bob holds two dice — he was on one, won a die back with a Burst Dudo, and
+    // Bob holds two dice — he was on one, won a die back with a Burst Lie, and
     // is now knocked down again. Crossing the boundary a second time earns a
     // second Farewell Round.
     const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'bob')),
       hands: [blanks('alice', 3), hand('bob', 5, 2)],
       challengerId: 'alice',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.dieDeltas.get('bob')).toBe(-1)
     expect(outcome.farewellQueue).toEqual(['bob'])
@@ -272,7 +272,7 @@ describe('simultaneous elimination (R-004)', () => {
       round: normalRound(bid(2, 5, 'alice', 'carol')),
       hands: [hand('alice', 5), hand('bob', 5), blanks('carol', 4)],
       challengerId: 'bob',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.eliminated).toEqual(['alice', 'bob'])
     expect(outcome.gameOver).toBe(true)
@@ -285,7 +285,7 @@ describe('simultaneous elimination (R-004)', () => {
       round: normalRound(bid(2, 5, 'alice', 'bob')),
       hands: [hand('alice', 5), hand('bob', 1)],
       challengerId: 'alice',
-      kind: 'dudo',
+      kind: 'lie',
     })
     // The Bull is correct (two relevant dice), so Alice loses her last die and
     // Bob, who called it, keeps his.
@@ -296,7 +296,7 @@ describe('simultaneous elimination (R-004)', () => {
 
   it('reports no winner if nobody is left holding dice', () => {
     // NOTE: no sequence of the current rules can actually reach this state.
-    // Normal Dudo and Burst Dudo each cost exactly one player a die; a correct
+    // Normal Lie and Burst Lie each cost exactly one player a die; a correct
     // Bull spares its caller; a false Bull costs only its caller. Some player
     // always survives. The branch is kept because "no winner" is the rule we
     // were given (R-004), and a future rule could make it reachable — but it is
@@ -307,14 +307,14 @@ describe('simultaneous elimination (R-004)', () => {
   })
 
   it('keeps playing while two or more players still hold dice', () => {
-    const outcome = challenge(5, 'dudo')
+    const outcome = challenge(5, 'lie')
     expect(outcome.gameOver).toBe(false)
     expect(outcome.winnerId).toBeNull()
   })
 })
 
-// R-006 — Burst Dudo aimed at a Bull
-describe('Burst Dudo against a Bull (R-006)', () => {
+// R-006 — Burst Lie aimed at a Bull
+describe('Burst Lie against a Bull (R-006)', () => {
   // Four fives on this table.
   const bullTable = [hand('alice', 5, 5, 2), hand('bob', 5, 1, 3), hand('carol', 4, 4, 6)]
 
@@ -323,7 +323,7 @@ describe('Burst Dudo against a Bull (R-006)', () => {
       round: normalRound(bid(2, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
-      kind: 'burst_dudo',
+      kind: 'burst_lie',
     })
     expect(outcome.claimHolds).toBe(false)
     expect(outcome.dieDeltas.get('carol')).toBe(1)
@@ -336,7 +336,7 @@ describe('Burst Dudo against a Bull (R-006)', () => {
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
-      kind: 'burst_dudo',
+      kind: 'burst_lie',
     })
     expect(outcome.dieDeltas.get('carol')).toBe(-1)
   })
@@ -348,22 +348,22 @@ describe('Burst Dudo against a Bull (R-006)', () => {
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
-      kind: 'burst_dudo',
+      kind: 'burst_lie',
     })
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
     expect(outcome.dieDeltas.get('carol')).toBe(-1)
     expect(outcome.dieDeltas.has('bob')).toBe(false)
   })
 
-  it('matches a normal Dudo except for the gain', () => {
-    const asDudo = challengeWithHands({
+  it('matches a normal Lie except for the gain', () => {
+    const asLie = challengeWithHands({
       round: normalRound(bid(2, 5, 'alice', 'bob')),
       hands: bullTable,
       challengerId: 'carol',
-      kind: 'dudo',
+      kind: 'lie',
     })
-    expect(asDudo.dieDeltas.get('bob')).toBe(-1)
-    expect(asDudo.dieDeltas.has('carol')).toBe(false)
+    expect(asLie.dieDeltas.get('bob')).toBe(-1)
+    expect(asLie.dieDeltas.has('carol')).toBe(false)
   })
 })
 
@@ -374,7 +374,7 @@ describe('the five-dice ceiling (R-007)', () => {
       round: normalRound(bid(9, 5, 'alice')),
       hands: [blanks('alice', 3), hand('bob', 6, 6, 6, 6, 6)],
       challengerId: 'bob',
-      kind: 'burst_dudo',
+      kind: 'burst_lie',
     })
     // Bob was right, but he is already holding five.
     expect(outcome.claimHolds).toBe(false)
@@ -387,17 +387,17 @@ describe('the five-dice ceiling (R-007)', () => {
       round: normalRound(bid(9, 5, 'alice')),
       hands: [blanks('alice', 3), hand('bob', 6, 6, 6, 6)],
       challengerId: 'bob',
-      kind: 'burst_dudo',
+      kind: 'burst_lie',
     })
     expect(outcome.dieDeltas.get('bob')).toBe(1)
   })
 
-  it('caps a Burst Dudo against a Bull too', () => {
+  it('caps a Burst Lie against a Bull too', () => {
     const outcome = challengeWithHands({
       round: normalRound(bid(1, 5, 'alice', 'alice')),
       hands: [hand('alice', 5, 5), hand('bob', 6, 6, 6, 6, 6)],
       challengerId: 'bob',
-      kind: 'burst_dudo',
+      kind: 'burst_lie',
     })
     // Two fives on the table, so the Bull of one is false and Alice pays.
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
@@ -408,16 +408,16 @@ describe('the five-dice ceiling (R-007)', () => {
 // R-002 — who opens the next round
 describe('the next round opens with whoever was proved right (R-002)', () => {
   it('hands it to the challenger when the bid was false', () => {
-    expect(challenge(5, 'dudo').nextStarterId).toBe('bob')
+    expect(challenge(5, 'lie').nextStarterId).toBe('bob')
   })
 
   it('hands it to the bidder when the bid stood', () => {
-    expect(challenge(4, 'dudo').nextStarterId).toBe('alice')
+    expect(challenge(4, 'lie').nextStarterId).toBe('alice')
   })
 
-  it('works the same way for a Burst Dudo', () => {
-    expect(challenge(5, 'burst_dudo').nextStarterId).toBe('bob')
-    expect(challenge(4, 'burst_dudo').nextStarterId).toBe('alice')
+  it('works the same way for a Burst Lie', () => {
+    expect(challenge(5, 'burst_lie').nextStarterId).toBe('bob')
+    expect(challenge(4, 'burst_lie').nextStarterId).toBe('alice')
   })
 
   it('hands it to the Bull caller when the count was exact', () => {
@@ -425,7 +425,7 @@ describe('the next round opens with whoever was proved right (R-002)', () => {
       round: normalRound(bid(4, 5, 'alice', 'bob')),
       hands: table,
       challengerId: 'alice',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.claimHolds).toBe(true)
     expect(outcome.nextStarterId).toBe('bob')
@@ -436,7 +436,7 @@ describe('the next round opens with whoever was proved right (R-002)', () => {
       round: normalRound(bid(2, 5, 'alice', 'bob')),
       hands: table,
       challengerId: 'alice',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.claimHolds).toBe(false)
     expect(outcome.nextStarterId).toBe('alice')
@@ -446,7 +446,7 @@ describe('the next round opens with whoever was proved right (R-002)', () => {
     // Whoever was right never loses a die, so the starter always still holds
     // dice. This is the property the round transition depends on.
     for (const quantity of [4, 5]) {
-      for (const kind of ['dudo', 'burst_dudo'] as const) {
+      for (const kind of ['lie', 'burst_lie'] as const) {
         const outcome = challenge(quantity, kind)
         expect(outcome.eliminated).not.toContain(outcome.nextStarterId)
       }
@@ -460,7 +460,7 @@ describe('the next round opens with whoever was proved right (R-002)', () => {
       round: normalRound(bid(9, 5, 'alice')),
       hands: [hand('alice', 5, 5), blanks('bob', 3)],
       challengerId: 'bob',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.nextStarterId).toBe('bob')
     expect(outcome.farewellQueue).toEqual(['alice'])
@@ -488,19 +488,19 @@ describe('a Farewell Round permits Burst and Bull (R-008)', () => {
       round: farewell(3),
       hands: table,
       challengerId: 'bob',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.actualCount).toBe(2)
     expect(outcome.claimHolds).toBe(false)
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
   })
 
-  it('allows a Burst Dudo, gain included', () => {
+  it('allows a Burst Lie, gain included', () => {
     const outcome = challengeWithHands({
       round: farewell(3),
       hands: table,
       challengerId: 'carol',
-      kind: 'burst_dudo',
+      kind: 'burst_lie',
     })
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
     expect(outcome.dieDeltas.get('carol')).toBe(1)
@@ -511,7 +511,7 @@ describe('a Farewell Round permits Burst and Bull (R-008)', () => {
       round: farewell(2, 'bob'),
       hands: table,
       challengerId: 'carol',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(exact.claimHolds).toBe(true)
     expect(exact.dieDeltas.get('alice')).toBe(-1)
@@ -522,19 +522,19 @@ describe('a Farewell Round permits Burst and Bull (R-008)', () => {
       round: farewell(4, 'bob'),
       hands: table,
       challengerId: 'carol',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(wrong.claimHolds).toBe(false)
     expect(wrong.dieDeltas.get('bob')).toBe(-1)
     expect(wrong.dieDeltas.size).toBe(1)
   })
 
-  it('allows a Bull challenged by a Burst Dudo', () => {
+  it('allows a Bull challenged by a Burst Lie', () => {
     const outcome = challengeWithHands({
       round: farewell(4, 'bob'),
       hands: table,
       challengerId: 'carol',
-      kind: 'burst_dudo',
+      kind: 'burst_lie',
     })
     expect(outcome.dieDeltas.get('bob')).toBe(-1)
     expect(outcome.dieDeltas.get('carol')).toBe(1)
@@ -554,7 +554,7 @@ describe('the engine resolves from counts alone', () => {
       ],
       actualCount: 4,
       challengerId: 'bob',
-      kind: 'dudo',
+      kind: 'lie',
     })
     expect(outcome.claimHolds).toBe(false)
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
@@ -571,7 +571,7 @@ describe('the engine resolves from counts alone', () => {
       ],
       actualCount: 2,
       challengerId: 'bob',
-      kind: 'dudo',
+      kind: 'lie',
     })
     // A correct Bull: everyone but Carol loses one.
     expect(outcome.eliminated).toEqual(['bob'])
@@ -588,7 +588,7 @@ describe('the engine resolves from counts alone', () => {
       ],
       actualCount: 0,
       challengerId: 'bob',
-      kind: 'burst_dudo',
+      kind: 'burst_lie',
     })
     expect(outcome.dieDeltas.get('alice')).toBe(-1)
     expect(outcome.dieDeltas.get('bob')).toBeUndefined()

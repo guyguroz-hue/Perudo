@@ -37,13 +37,13 @@ export function GameTable({
   view,
   busy = false,
   onBid,
-  onDudo,
+  onLie,
   onBull,
 }: {
   view: TableView
   busy?: boolean
   onBid: (bid: ProposedBid) => void
-  onDudo: () => void
+  onLie: () => void
   onBull: () => void
 }) {
   const holder = turnHolder(view)
@@ -134,7 +134,7 @@ export function GameTable({
                 burst={burst}
                 ownDiceCount={self.diceCount}
                 busy={busy}
-                onDudo={onDudo}
+                onLie={onLie}
                 onBull={onBull}
               />
             )}

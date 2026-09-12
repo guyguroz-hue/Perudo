@@ -22,7 +22,7 @@ export const FACES: readonly Face[] = [1, 2, 3, 4, 5, 6]
 /**
  * The hard ceiling on a player's dice (R-007).
  *
- * Burst Dudo is the only move that hands a die back, and it may never take a
+ * Burst Lie is the only move that hands a die back, and it may never take a
  * player above this — not even one who started below it. No situation in the
  * game produces a sixth die.
  */
@@ -79,7 +79,7 @@ export interface RoundState {
   readonly bid: ActiveBid | null
 }
 
-export type ChallengeKind = 'dudo' | 'burst_dudo'
+export type ChallengeKind = 'lie' | 'burst_lie'
 
 /** Why a proposed bid was refused. Stable codes so the UI can explain itself. */
 export type BidRejection =

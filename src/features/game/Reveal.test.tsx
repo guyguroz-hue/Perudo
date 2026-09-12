@@ -27,7 +27,7 @@ const DATA: RevealData = {
   bidderName: 'Alice',
   bullCallerName: null,
   challengerName: 'Bob',
-  challengeKind: 'dudo',
+  challengeKind: 'lie',
   hands: [
     { id: 'alice', name: 'Alice', dice: [5, 5, 1, 3, 2] },
     { id: 'bob', name: 'Bob', dice: [4, 6, 6, 2, 3] },

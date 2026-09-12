@@ -107,7 +107,7 @@ Two decisions from slice 1 worth carrying forward:
 - **Elimination is a generated column** (`is_eliminated = dice_count = 0`), so
   the drift PART 77 warns about is structurally impossible rather than merely
   policed by convention.
-- **`game_players.dice_count` has no upper bound yet.** Burst Dudo grants a die
+- **`game_players.dice_count` has no upper bound yet.** Burst Lie grants a die
   and whether a player may exceed their starting count is unresolved (R-007);
   adding a ceiling now would be inventing a rule.
 
@@ -149,8 +149,8 @@ The browser never writes game state directly. It submits an **action**; the
 server authenticates, validates, transitions, logs, and returns safe data.
 
 Planned actions: `CREATE_ROOM`, `JOIN_ROOM`, `LEAVE_ROOM`, `SET_READY`,
-`START_GAME`, `START_ROUND`, `MAKE_BID`, `DECLARE_BULL`, `DUDO`, `BURST_BID`,
-`BURST_DUDO`.
+`START_GAME`, `START_ROUND`, `MAKE_BID`, `DECLARE_BULL`, `LIE`, `BURST_BID`,
+`BURST_LIE`.
 
 Every action validates, in order: authenticated identity → room membership →
 game membership → player active & not eliminated → game status → round status
@@ -219,7 +219,7 @@ account must never be blocked by a room it once hosted.
 ## 8. Realtime (PROPOSED — Phase 4)
 
 Supabase Realtime distributes public state changes: membership, presence,
-bids, Bull, Dudo, Burst, reveals, die changes, elimination, Farewell
+bids, Bull, Lie, Burst, reveals, die changes, elimination, Farewell
 transitions, round changes, completion.
 
 **The `player_dice` table must be excluded from the Realtime publication.**
@@ -267,7 +267,7 @@ Its public surface:
 | `types.ts` | `Face`, `ActiveBid`, `RoundState`, rejection codes |
 | `counting.ts` | Wildcard counting, and its suspension during a Farewell Round |
 | `bids.ts` | Bid legality, `ceil(n/2)` and `2n+1` transitions, face locking |
-| `resolution.ts` | Dudo, Burst Dudo, correct Bull, elimination, Farewell trigger |
+| `resolution.ts` | Lie, Burst Lie, correct Bull, elimination, Farewell trigger |
 | `errors.ts` | `UnresolvedRuleError` |
 
 A Bull is modelled as a declaration hanging off the current bid rather than a

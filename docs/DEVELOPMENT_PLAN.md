@@ -54,7 +54,7 @@ step and also waits on R-001…R-004 for its round-state columns.
 - [x] Pure `src/game` module: no React, no Supabase, no randomness, no clock.
 - [x] Counting with the normal-round wildcard and the Farewell suspension of it.
 - [x] Bid legality: progression, `ceil(n/2)`, `2n+1`, Farewell face locking.
-- [x] Resolution: normal Dudo, Burst Dudo die gain, correct Bull.
+- [x] Resolution: normal Lie, Burst Lie die gain, correct Bull.
 - [x] Elimination, victory, Farewell trigger.
 - [x] `UnresolvedRuleError` on every undefined branch (R-001/R-003/R-004/R-006).
 - [x] 55 Vitest cases covering PARTS 61–68.
@@ -133,7 +133,7 @@ even while the network block (R-NET) is unresolved.
 | B-4 | Implement false-Bull resolution | R-001 |
 | B-5 | Implement round-transition / next-starter logic | R-002, R-003, R-004 |
 | B-6 | Implement Bull eligibility & Burst interaction | R-005, R-006 |
-| B-7 | Implement Burst Dudo die gain | R-007 (ceiling) |
+| B-7 | Implement Burst Lie die gain | R-007 (ceiling) |
 
 ## Known risks
 
@@ -164,7 +164,7 @@ cross-room RLS isolation, client write refusal, profile ownership, signed-out
 access and the Realtime publication surface. All passing.
 
 ✅ **Engine:** `npm test` — 55 Vitest cases across counting, bid legality,
-Perudo transitions, Dudo, Burst Dudo, Bull, Farewell and elimination, plus
+Perudo transitions, Lie, Burst Lie, Bull, Farewell and elimination, plus
 assertions that every undefined rule raises instead of guessing.
 ⚠️ **Against live Supabase:** verified by hand, not automated. Anonymous
 sign-in, the session, and the RLS-protected read of `profiles` are confirmed

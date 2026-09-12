@@ -97,12 +97,12 @@ export function resolveChallenge(input: ChallengeInput): ChallengeOutcome {
     ? resolveBull(bid.bull!.callerId, claimHolds, players)
     : resolvePlainBid(bid.bidderId, claimHolds, challengerId, kind)
 
-  // A Bull is an ordinary bet, so Burst Dudo behaves against it exactly as it
+  // A Bull is an ordinary bet, so Burst Lie behaves against it exactly as it
   // does against any other bid: being right about a false claim wins a die back
   // (R-006). The two rules compose without conflict — when the Bull is correct,
   // "everyone except the caller loses one" already charges the mistaken
   // challenger their die, so only the gain needs adding here.
-  if (isBull && kind === 'burst_dudo' && !claimHolds) {
+  if (isBull && kind === 'burst_lie' && !claimHolds) {
     dieDeltas.set(challengerId, (dieDeltas.get(challengerId) ?? 0) + 1)
   }
 
@@ -123,7 +123,7 @@ export function resolveChallenge(input: ChallengeInput): ChallengeOutcome {
 /**
  * Ordinary bid, read as "at least" (GAME_RULES §7 and §9.2).
  *
- * Normal Dudo never grants a die. Burst Dudo is the only move in the game that
+ * Normal Lie never grants a die. Burst Lie is the only move in the game that
  * can, and only when the bid it challenged was false.
  */
 function resolvePlainBid(
@@ -140,7 +140,7 @@ function resolvePlainBid(
   }
 
   deltas.set(bidderId, -1)
-  if (kind === 'burst_dudo') {
+  if (kind === 'burst_lie') {
     deltas.set(challengerId, (deltas.get(challengerId) ?? 0) + 1)
   }
   return deltas
@@ -214,7 +214,7 @@ function buildOutcome(
     //
     // Keying on the transition rather than on "holds one die" gives the rest of
     // the rule for free: a player parked on one die does not keep earning
-    // rounds, while one who wins a die back with Burst Dudo and is later knocked
+    // rounds, while one who wins a die back with Burst Lie and is later knocked
     // down again crosses the boundary afresh and is owed another (R-003).
     if (after === 1 && delta < 0) {
       farewellQueue.push(player.playerId)

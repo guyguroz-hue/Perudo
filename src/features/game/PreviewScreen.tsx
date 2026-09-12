@@ -140,7 +140,7 @@ export function PreviewScreen() {
             onBid={(bid) =>
               setActed(`Bid ${bid.quantity} × ${bid.face === 1 ? 'Perudo' : bid.face}`)
             }
-            onDudo={() => setActed('Dudo')}
+            onLie={() => setActed('Lie')}
             onBull={() => setActed('Bull')}
           />
         </>

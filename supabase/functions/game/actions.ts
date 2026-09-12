@@ -177,10 +177,10 @@ export async function challenge(
   }
 
   // Derived, never sent by the client: a Burst is by definition acting out of
-  // turn, and only a Burst Dudo can win a die back (GAME_RULES §9.2).
+  // turn, and only a Burst Lie can win a die back (GAME_RULES §9.2).
   const kind: ChallengeKind = isBurst(round.turn_player_id, actor.id)
-    ? 'burst_dudo'
-    : 'dudo'
+    ? 'burst_lie'
+    : 'lie'
 
   const actualCount = await store.countFace(round.id, state.bid.face)
 

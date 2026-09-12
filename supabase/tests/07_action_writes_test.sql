@@ -141,7 +141,7 @@ begin
 
   v_out := public.apply_challenge(
     v_round, v_v,
-    'da000000-0000-0000-0000-000000000002', 'dudo',
+    'da000000-0000-0000-0000-000000000002', 'lie',
     3, false,
     jsonb_build_object('da000000-0000-0000-0000-000000000001', -1),
     array[]::uuid[],
@@ -162,7 +162,7 @@ begin
   -- happened, so it has to carry the whole public result and not just that a
   -- challenge occurred.
   select count(*) into n from public.game_events
-   where round_id = v_round and kind = 'dudo'
+   where round_id = v_round and kind = 'lie'
      and (payload -> 'deltas' ->> 'da000000-0000-0000-0000-000000000001')::int = -1
      and (payload ->> 'actual_count')::int = 3
      and (payload ->> 'claim_holds')::boolean = false;
@@ -207,7 +207,7 @@ begin
 
   perform public.apply_challenge(
     v_round, v_v,
-    'da000000-0000-0000-0000-000000000001', 'dudo',
+    'da000000-0000-0000-0000-000000000001', 'lie',
     2, false,
     jsonb_build_object(
       'da000000-0000-0000-0000-000000000002', -5,
@@ -284,7 +284,7 @@ begin
   begin
     -- And this one hands out dice and ends games.
     perform public.apply_challenge(
-      v_round, 0, 'da000000-0000-0000-0000-000000000002', 'dudo', 0, false,
+      v_round, 0, 'da000000-0000-0000-0000-000000000002', 'lie', 0, false,
       '{}'::jsonb, array[]::uuid[], false, null, null, 'normal', array[]::uuid[]);
     raise exception 'FAIL: a client resolved a challenge';
   exception when insufficient_privilege then null;

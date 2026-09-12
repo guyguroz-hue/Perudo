@@ -76,13 +76,13 @@ obvious, never to be trusted about them.
 
 ---
 
-## 3. Dudo and Bull are not two buttons with different words
+## 3. Lie and Bull are not two buttons with different words
 
 Both challenge the current bid. They mean opposite things about it:
 
 | | Claim being challenged | Reading |
 |---|---|---|
-| **Dudo** | "there are at least this many" | I don't believe you |
+| **Lie** | "there are at least this many" | I don't believe you |
 | **Bull** | "there are exactly this many" | I think you are precisely right |
 
 They must be distinguishable **at a glance**, through several channels at once:
@@ -178,7 +178,7 @@ them.
 |---|---|---|
 | The table, waiting and acting | `features/game/GameTable` | `/preview` → Table |
 | Building a bid | `features/game/BidBuilder` | inside the table |
-| Dudo and Bull | `features/game/ChallengeActions` | inside the table |
+| Lie and Bull | `features/game/ChallengeActions` | inside the table |
 | The reveal | `features/game/Reveal` | `/preview` → Reveal |
 | The cup | `components/Cup` | inside the reveal |
 

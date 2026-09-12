@@ -59,10 +59,10 @@ export function describeEvent(event: GameEvent): string | null {
       return bid === null
         ? `${actorName} burst in with Bull`
         : `${actorName} burst in with Bull on ${bid} — exactly`
-    case 'dudo':
-      return `${actorName} called Dudo`
-    case 'burst_dudo':
-      return `${actorName} burst in with Dudo`
+    case 'lie':
+      return `${actorName} called Lie`
+    case 'burst_lie':
+      return `${actorName} burst in with Lie`
     default:
       // An event kind this build does not know about says nothing, rather than
       // printing a raw identifier at a player.

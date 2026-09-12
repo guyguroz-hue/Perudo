@@ -125,13 +125,13 @@ function resolveChallenge(input) {
 	const isBull = bid.bull !== null;
 	const claimHolds = isBull ? actualCount === bid.quantity : actualCount >= bid.quantity;
 	const dieDeltas = isBull ? resolveBull(bid.bull.callerId, claimHolds, players) : resolvePlainBid(bid.bidderId, claimHolds, challengerId, kind);
-	if (isBull && kind === "burst_dudo" && !claimHolds) dieDeltas.set(challengerId, (dieDeltas.get(challengerId) ?? 0) + 1);
+	if (isBull && kind === "burst_lie" && !claimHolds) dieDeltas.set(challengerId, (dieDeltas.get(challengerId) ?? 0) + 1);
 	return buildOutcome(actualCount, claimHolds, dieDeltas, players, isBull ? claimHolds ? bid.bull.callerId : challengerId : claimHolds ? bid.bidderId : challengerId);
 }
 /**
 * Ordinary bid, read as "at least" (GAME_RULES §7 and §9.2).
 *
-* Normal Dudo never grants a die. Burst Dudo is the only move in the game that
+* Normal Lie never grants a die. Burst Lie is the only move in the game that
 * can, and only when the bid it challenged was false.
 */
 function resolvePlainBid(bidderId, bidHolds, challengerId, kind) {
@@ -141,7 +141,7 @@ function resolvePlainBid(bidderId, bidHolds, challengerId, kind) {
 		return deltas;
 	}
 	deltas.set(bidderId, -1);
-	if (kind === "burst_dudo") deltas.set(challengerId, (deltas.get(challengerId) ?? 0) + 1);
+	if (kind === "burst_lie") deltas.set(challengerId, (deltas.get(challengerId) ?? 0) + 1);
 	return deltas;
 }
 /**
@@ -342,7 +342,7 @@ async function challenge(store, actor, gameId) {
 	const state = roundState(round);
 	if (state.bid === null) throw new GameError("NO_BID_TO_CHALLENGE", "There is nothing on the table to doubt.");
 	if ((state.bid.bull?.callerId ?? state.bid.bidderId) === actor.id) throw new GameError("SELF_CHALLENGE", "That claim is yours.");
-	const kind = isBurst(round.turn_player_id, actor.id) ? "burst_dudo" : "dudo";
+	const kind = isBurst(round.turn_player_id, actor.id) ? "burst_lie" : "lie";
 	const actualCount = await store.countFace(round.id, state.bid.face);
 	const outcome = resolveChallenge({
 		round: state,

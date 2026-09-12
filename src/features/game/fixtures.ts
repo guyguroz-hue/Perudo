@@ -117,8 +117,8 @@ export { claimFor, standingsFor }
 
 export const REVEALS: readonly RevealScenario[] = [
   {
-    id: 'dudo-wins',
-    label: 'Dudo — the bid was short',
+    id: 'lie-wins',
+    label: 'Lie — the bid was short',
     data: {
       roundType: 'normal',
       quantity: 6,
@@ -126,7 +126,7 @@ export const REVEALS: readonly RevealScenario[] = [
       bidderName: 'Alice',
       bullCallerName: null,
       challengerName: 'Dana',
-      challengeKind: 'dudo',
+      challengeKind: 'lie',
       hands: [
         { id: 'alice', name: 'Alice', dice: [5, 2, 3, 6, 4] },
         { id: 'you', name: 'Dana', dice: [1, 3, 6, 2] },
@@ -141,7 +141,7 @@ export const REVEALS: readonly RevealScenario[] = [
   },
   {
     id: 'burst-gains',
-    label: 'Burst Dudo — a die comes back',
+    label: 'Burst Lie — a die comes back',
     data: {
       roundType: 'normal',
       quantity: 9,
@@ -149,7 +149,7 @@ export const REVEALS: readonly RevealScenario[] = [
       bidderName: 'Maya',
       bullCallerName: null,
       challengerName: 'Dana',
-      challengeKind: 'burst_dudo',
+      challengeKind: 'burst_lie',
       hands: [
         { id: 'alice', name: 'Alice', dice: [3, 2, 2, 6, 4] },
         { id: 'you', name: 'Dana', dice: [1, 3, 6, 2] },
@@ -172,7 +172,7 @@ export const REVEALS: readonly RevealScenario[] = [
       bidderName: 'Alice',
       bullCallerName: 'Carl',
       challengerName: 'Dana',
-      challengeKind: 'dudo',
+      challengeKind: 'lie',
       hands: [
         { id: 'alice', name: 'Alice', dice: [2, 2, 3, 6, 4] },
         { id: 'you', name: 'Dana', dice: [1, 3, 6, 2] },
@@ -195,7 +195,7 @@ export const REVEALS: readonly RevealScenario[] = [
       bidderName: 'Carl',
       bullCallerName: null,
       challengerName: 'Alice',
-      challengeKind: 'dudo',
+      challengeKind: 'lie',
       hands: [
         { id: 'carl', name: 'Carl', dice: [3] },
         { id: 'alice', name: 'Alice', dice: [3, 1, 1, 6, 4] },
@@ -236,7 +236,7 @@ export const ENDINGS: readonly {
           : { ...p, diceCount: 0, isEliminated: true, hasTurn: false },
       ),
       yourHand: null,
-      lastEvent: 'Dana called Dudo',
+      lastEvent: 'Dana called Lie',
     },
   },
   {
@@ -252,7 +252,7 @@ export const ENDINGS: readonly {
           : { ...p, diceCount: 0, isEliminated: true, hasTurn: false },
       ),
       yourHand: null,
-      lastEvent: 'Maya burst in with Dudo',
+      lastEvent: 'Maya burst in with Lie',
     },
   },
   {

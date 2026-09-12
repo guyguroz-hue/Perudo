@@ -31,7 +31,7 @@ function theBid(): HTMLElement {
 }
 
 function show(view: TableView) {
-  const handlers = { onBid: vi.fn(), onDudo: vi.fn(), onBull: vi.fn() }
+  const handlers = { onBid: vi.fn(), onLie: vi.fn(), onBull: vi.fn() }
   const result = render(<GameTable view={view} {...handlers} />)
   return { ...result, ...handlers }
 }
@@ -49,7 +49,7 @@ describe('waiting is a state, not a curtain', () => {
     // out of turn, so are the actions. They just say what they would be.
     expect(theBid().textContent).toContain('at least')
     expect(screen.getByRole('button', { name: 'Burst bid' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Burst Dudo/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Burst Lie/ })).toBeTruthy()
   })
 
   // Said once, at your seat. The strip above the table names whoever is
@@ -84,7 +84,7 @@ describe('what the screen is allowed to know', () => {
       ),
     })
     expect(screen.getByText('You are out. Watching.')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /Bid|Dudo|Bull/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Bid|Lie|Bull/ })).toBeNull()
   })
 })
 

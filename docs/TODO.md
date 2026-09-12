@@ -24,7 +24,7 @@ Completed items are marked `[x]` and kept, not deleted.
 ## 🟠 High priority
 
 - [x] **T-6** ~~Resolve D-003 / D-004~~ — anonymous auth; `main` as trunk.
-- [x] **T-7a** ~~Resolve R-005/R-006~~ — Bull may burst; Burst Dudo composes.
+- [x] **T-7a** ~~Resolve R-005/R-006~~ — Bull may burst; Burst Lie composes.
 - [x] **T-7b** ~~Resolve R-008~~ — both permitted; engine already correct.
 - [x] **T-8** ~~Resolve R-007~~ — five dice, enforced in engine and database.
 - [x] **T-8b** ~~Confirm R-009~~ — quantity anchors, face is free when it rises.
@@ -118,7 +118,7 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **TD-8** ~~`Seated` placeholder screen~~ — replaced by the real lobby.
 - [x] **T-28** ~~Wire the Start button~~ — starts a real game.
 - [x] **T-30** ~~Build the game screens~~ — `features/game/GameTable` (waiting,
-      bid builder, Dudo/Bull) and `features/game/Reveal` (cups, count, result)
+      bid builder, Lie/Bull) and `features/game/Reveal` (cups, count, result)
       exist and can be seen at **`/preview`**, driven by fixtures.
 - [x] **T-29** ~~`GameView` is a placeholder~~ — replaced by
       `features/game/GameScreen`, which reads the round through RLS, follows it

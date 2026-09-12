@@ -125,7 +125,7 @@ winner**.
 ### ✅ R-002 — who opens the next round (2026-09-11)
 **Whoever was proved right**, with a Farewell Round taking precedence.
 Two answers had been given that disagreed — "whoever lost a die" and "whoever
-won the bet" — which name different players in an ordinary Dudo. Resolved in
+won the bet" — which name different players in an ordinary Lie. Resolved in
 favour of the winner.
 *Consequence:* the starter is always a surviving player, since being right never
 costs a die, so the round transition needs no fallback. Alternatives
@@ -136,8 +136,8 @@ A Bull is a bet like any other, so it may be declared **out of turn as a Burst**
 *Consequence:* turn validation must treat Bull the same as a Burst bid; the
 action layer, not the engine, enforces this.
 
-### ✅ R-006 — Burst Dudo against a Bull (2026-09-11)
-Burst Dudo works against a Bull exactly as against any other bid. The two rules
+### ✅ R-006 — Burst Lie against a Bull (2026-09-11)
+Burst Lie works against a Bull exactly as against any other bid. The two rules
 turned out to **compose without conflict**: when the Bull is false the caller
 pays and the burster gains; when it is exact, "everyone except the Bull caller
 loses one" already charges the mistaken burster their die, so only the gain
@@ -147,7 +147,7 @@ Bull. That reading was chosen because nothing in the rule suspends the Bull
 resolution — worth confirming if the intent was a two-player duel instead.
 
 ### ✅ R-007 — dice ceiling (2026-09-11)
-**Five dice, never more, in any situation.** A Burst Dudo won by a player already
+**Five dice, never more, in any situation.** A Burst Lie won by a player already
 at five grants nothing; the loser still loses theirs.
 *Consequence:* enforced in the database as well as the engine, so a bug in the
 action layer cannot mint a sixth die. `games.starting_dice` was narrowed from

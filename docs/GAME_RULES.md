@@ -94,16 +94,21 @@ previous_perudo_quantity * 2 + 1
 | 5                | 11                  |
 | 6                | 13                  |
 
-## 7. Dudo (normal) ✅
+## 7. Lie (normal) ✅
 
-Dudo / "Liar" challenges the **current active bid**. Dice are revealed.
+> Called **Dudo** in the traditional game, and still written that way in any
+> rulebook you look this up in. The product says **Lie** everywhere, because a
+> player who has never met the game has to be able to read the button.
+
+Lie challenges the **current active bid**: it says the bid is a lie, and there
+are fewer of that face on the table than it claims. Dice are revealed.
 
 | Outcome            | Consequence            |
 |--------------------|------------------------|
 | Bid is **FALSE**   | **Bidder** loses 1 die |
-| Bid is **TRUE**    | **Dudo caller** loses 1 die |
+| Bid is **TRUE**    | **Lie caller** loses 1 die |
 
-**Normal Dudo NEVER grants a die.** Die gain is only possible via Burst Dudo (§11).
+**Normal Lie NEVER grants a die.** Die gain is only possible via Burst Lie (§11).
 
 ## 8. Bull
 
@@ -127,7 +132,7 @@ There is only ever **one** current active bid.
 
 Any later valid bid **completely supersedes** the Bull.
 
-> A: `7 fives` → B: Bull → C: `8 fives` → D: `9 sixes` → A: Dudo
+> A: `7 fives` → B: Bull → C: `8 fives` → D: `9 sixes` → A: Lie
 > A is challenging **`9 sixes`**, not `7 fives`. The earlier Bull is irrelevant.
 
 Historical Bulls remain in the event log, but authoritative game state holds
@@ -174,27 +179,27 @@ The backend must track **separately**:
 When Burst activity stops, normal clockwise play resumes with the player
 **AFTER the LAST BURST PLAYER**. This must be explicit in authoritative state.
 
-### 9.2 Burst Dudo ✅
+### 9.2 Burst Lie ✅
 
-A player may Burst Dudo out of turn.
+A player may Burst Lie out of turn.
 
 | Outcome            | Consequence                                      |
 |--------------------|--------------------------------------------------|
-| Challenged bid **FALSE** | Bidder **−1 die**; Burst-Dudo caller **+1 die** |
-| Challenged bid **TRUE**  | Burst-Dudo caller **−1 die**                    |
+| Challenged bid **FALSE** | Bidder **−1 die**; Burst-Lie caller **+1 die** |
+| Challenged bid **TRUE**  | Burst-Lie caller **−1 die**                    |
 
-**Only Burst Dudo can generate a die gain**, and never above five (§9.3).
+**Only Burst Lie can generate a die gain**, and never above five (§9.3).
 Server-authoritative.
 
-### 9.4 Burst Dudo against a Bull ✅ (resolved by R-006)
+### 9.4 Burst Lie against a Bull ✅ (resolved by R-006)
 
-A Bull is an ordinary bet, so Burst Dudo works against it exactly as it works
+A Bull is an ordinary bet, so Burst Lie works against it exactly as it works
 against any other bid — the two rules compose without conflict:
 
 | Bull | Consequence |
 |---|---|
-| **False** | Bull caller **−1**; Burst-Dudo caller **+1** |
-| **Exact** | Everyone except the Bull caller **−1**, the Burst-Dudo caller among them |
+| **False** | Bull caller **−1**; Burst-Lie caller **+1** |
+| **Exact** | Everyone except the Bull caller **−1**, the Burst-Lie caller among them |
 
 Note the second row: **bursting does not shield the rest of the table** from a
 correct Bull. The mistaken challenger's −1 is simply their share of "everyone
@@ -202,7 +207,7 @@ except the caller", so no separate penalty is needed.
 
 ### 9.3 Die-gain ceiling ✅ (resolved by R-007)
 
-**No player may ever hold more than five dice, in any situation.** A Burst Dudo
+**No player may ever hold more than five dice, in any situation.** A Burst Lie
 won by a player already holding five wins them nothing; the die is simply not
 granted. The loser still loses theirs.
 
@@ -217,7 +222,7 @@ The trigger is the **transition** down to one die, not the state of holding one:
 
 - A player parked on a single die does **not** earn a new Farewell Round each
   time around. It happens once per descent.
-- A player who drops to one die, wins a die back with Burst Dudo, and is later
+- A player who drops to one die, wins a die back with Burst Lie, and is later
   knocked down to one again **does** earn a fresh Farewell Round. They crossed
   the boundary a second time.
 
@@ -242,7 +247,7 @@ engine uses seat order, which is deterministic and replayable.
 
 **Both are fully permitted.** A Farewell Round changes what counts and what may
 be bid — the face is locked and Perudo is not wild — but it does not change who
-may act or how a challenge resolves. Burst, Burst Dudo and Bull all behave
+may act or how a challenge resolves. Burst, Burst Lie and Bull all behave
 exactly as they do in a normal round.
 
 ## 11. Elimination ✅
@@ -267,7 +272,7 @@ seating, hosting or who made the room affects it.
 | Bull exact | the **Bull caller** |
 | Bull false | the **challenger** |
 
-This holds for Burst Dudo as well. Being right never costs a die, so the player
+This holds for Burst Lie as well. Being right never costs a die, so the player
 it names is always still holding dice.
 
 **A Farewell Round takes precedence:** a player knocked down to one die opens
@@ -285,7 +290,7 @@ player is left holding dice they win; if none are, the game ends with **no
 winner**.
 
 > Worth noting: under the current rules the no-winner case appears
-> **unreachable**. Normal Dudo and Burst Dudo each cost exactly one player a die,
+> **unreachable**. Normal Lie and Burst Lie each cost exactly one player a die,
 > a correct Bull spares its caller, and a false Bull costs only its caller — so
 > somebody always survives. The rule is implemented regardless.
 
@@ -300,7 +305,7 @@ Every rule that was deliberately left open has been decided:
 | R-003 | Simultaneous Farewell Rounds are queued; the trigger is the descent | §10 |
 | R-004 | No tiebreak on elimination; an eliminated player never wins | §11 |
 | R-005 | A Bull may be declared out of turn, as a Burst | §8.5 |
-| R-006 | Burst Dudo against a Bull composes with the Bull resolution | §9.4 |
+| R-006 | Burst Lie against a Bull composes with the Bull resolution | §9.4 |
 | R-007 | Five dice, never more | §9.3 |
 | R-008 | Burst and Bull are permitted in a Farewell Round | §10 |
 | R-009 | The quantity anchors a bid and may never fall | §4 |

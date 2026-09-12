@@ -78,7 +78,7 @@ Proposed split:
 | Action kind | Runs as | Why |
 |---|---|---|
 | Room & membership — create, join, leave, kick, start, end, rematch, host transfer | **`SECURITY DEFINER` plpgsql RPC** | Transactional, row-locked, single round trip, no game rules so nothing is duplicated |
-| Game actions — bid, Bull, Dudo, Burst | **Edge Function running `src/game`** | One rule engine, as decided |
+| Game actions — bid, Bull, Lie, Burst | **Edge Function running `src/game`** | One rule engine, as decided |
 
 This is a **clarification, not a reversal** of D-002: no game rule is being
 moved into SQL. Approved 2026-09-11.

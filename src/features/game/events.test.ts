@@ -40,9 +40,9 @@ describe('one line of what just happened', () => {
   })
 
   it('needs no bid to describe a challenge', () => {
-    expect(describeEvent({ kind: 'dudo', actorName: 'Bob' })).toBe('Bob called Dudo')
-    expect(describeEvent({ kind: 'burst_dudo', actorName: 'Bob' })).toBe(
-      'Bob burst in with Dudo',
+    expect(describeEvent({ kind: 'lie', actorName: 'Bob' })).toBe('Bob called Lie')
+    expect(describeEvent({ kind: 'burst_lie', actorName: 'Bob' })).toBe(
+      'Bob burst in with Lie',
     )
   })
 

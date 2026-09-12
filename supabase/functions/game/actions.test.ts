@@ -156,7 +156,7 @@ describe('a bid is judged by the same rules the client greys out', () => {
 describe('acting out of turn', () => {
   // The client never says whether it is bursting: it is derived from whose turn
   // it actually is, so a client cannot claim a Burst it did not make — which
-  // matters, because only a Burst Dudo can win a die back.
+  // matters, because only a Burst Lie can win a die back.
   it('is a Burst, and the client is not asked', async () => {
     const store = new Fake({ round: { turn_player_id: 'bob' } })
     await placeBid(store, { id: 'carl' }, 'g1', 4, 6)
@@ -217,14 +217,14 @@ describe('Bull', () => {
 })
 
 describe('challenging', () => {
-  it('is a plain Dudo in turn and a Burst Dudo out of it', async () => {
+  it('is a plain Lie in turn and a Burst Lie out of it', async () => {
     const inTurn = new Fake({ round: { turn_player_id: 'bob' } })
     await challenge(inTurn, { id: 'bob' }, 'g1')
-    expect(inTurn.challenges[0].p_kind).toBe('dudo')
+    expect(inTurn.challenges[0].p_kind).toBe('lie')
 
     const outOfTurn = new Fake({ round: { turn_player_id: 'bob' } })
     await challenge(outOfTurn, { id: 'carl' }, 'g1')
-    expect(outOfTurn.challenges[0].p_kind).toBe('burst_dudo')
+    expect(outOfTurn.challenges[0].p_kind).toBe('burst_lie')
   })
 
   it('refuses to let you challenge your own bid', async () => {

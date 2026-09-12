@@ -209,7 +209,7 @@ async function challengeEvent(roundId: string) {
     .from('game_events')
     .select('actor_id, kind, payload')
     .eq('round_id', roundId)
-    .in('kind', ['dudo', 'burst_dudo'])
+    .in('kind', ['lie', 'burst_lie'])
     .order('id', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -219,7 +219,7 @@ async function challengeEvent(roundId: string) {
   const row = data as { actor_id: PlayerId | null; kind: string; payload: Record<string, unknown> }
   return {
     actor_id: row.actor_id,
-    kind: row.kind === 'burst_dudo' ? ('burst_dudo' as const) : ('dudo' as const),
+    kind: row.kind === 'burst_lie' ? ('burst_lie' as const) : ('lie' as const),
     actual_count: Number(row.payload.actual_count ?? 0),
     claim_holds: row.payload.claim_holds === true,
     deltas: (row.payload.deltas ?? {}) as Record<PlayerId, number>,

@@ -101,7 +101,7 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
         view={game.view}
         busy={game.busy}
         onBid={(bid) => void game.bid(bid)}
-        onDudo={() => void game.doubt()}
+        onLie={() => void game.doubt()}
         onBull={() => void game.bull()}
       />
     </div>

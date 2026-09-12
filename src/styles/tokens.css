@@ -138,8 +138,8 @@
 
   /* The two challenges. Different hues, and they carry different icons and
      different shapes as well — colour alone is not a distinction. */
-  --dudo: #e5346b;
-  --dudo-deep: #6d0f2c;
+  --lie: #e5346b;
+  --lie-deep: #6d0f2c;
   --bull: #2f6bf5;
   --bull-deep: #12306f;
 
@@ -248,7 +248,7 @@
   --bone-faint: var(--ink-faint);
   --brass-dim: var(--brass-deep);
   --danger: var(--loss);
-  --danger-bright: var(--dudo);
+  --danger-bright: var(--lie);
   --felt-edge: var(--room-deep);
   --felt-raised: var(--room-lift);
   --font-numeric: var(--font-display);
