@@ -1,4 +1,5 @@
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace, type Texture } from 'three'
+import { CROWN_PATH } from './crown'
 
 /**
  * Textures, generated rather than downloaded.
@@ -133,6 +134,8 @@ export function woodTexture(size = 1024): { map: Texture; rough: Texture } {
   ctx.putImageData(image, 0, 0)
   roughCtx.putImageData(roughImage, 0, 0)
 
+  brand(ctx, roughCtx, size)
+
   const map = new CanvasTexture(canvas)
   map.colorSpace = SRGBColorSpace
   map.wrapS = RepeatWrapping
@@ -144,5 +147,132 @@ export function woodTexture(size = 1024): { map: Texture; rough: Texture } {
   rough.wrapT = RepeatWrapping
   rough.anisotropy = 8
 
+  /*
+   * Stamped again once the display face has loaded.
+   *
+   * The scene is usually built after the fonts are in, but not always — and a
+   * table branded in the fallback face while the rest of the product is in
+   * Outfit is worse than one branded a moment late. Cheap: the grain is already
+   * in the canvas and is not touched, only the mark is redrawn over it.
+   */
+  if (typeof document !== 'undefined' && document.fonts !== undefined && !hasDisplayFace()) {
+    void document.fonts.ready.then(() => {
+      brand(ctx, roughCtx, size)
+      map.needsUpdate = true
+      rough.needsUpdate = true
+    })
+  }
+
   return { map, rough }
+}
+
+/** Whether the product's own display face is loaded and usable on a canvas. */
+function hasDisplayFace(): boolean {
+  try {
+    return document.fonts.check('700 100px Outfit')
+  } catch {
+    return false
+  }
+}
+
+/**
+ * The maker's mark, cut into the middle of the table.
+ *
+ * Engraved rather than printed, and that is the whole of the work: a carve is
+ * dark in the groove, catches a highlight on the edge the light falls on, and
+ * is rougher than the lacquer around it because the finish was cut through. All
+ * three are done here — the third into the roughness map, which is what stops
+ * it reading as a sticker when the table turns under the light.
+ *
+ * It is in the timber rather than on an object of its own, so it costs nothing
+ * to draw, takes the table's own lighting for free, and cannot drift out of
+ * position: the tabletop's texture coordinates are planar and centred, so the
+ * middle of this canvas is the middle of the table.
+ *
+ * Small on purpose. It is a mark on a table somebody plays on, not a title
+ * card, and the bid sits above it.
+ */
+function brand(ctx: CanvasRenderingContext2D, roughCtx: CanvasRenderingContext2D, size: number) {
+  const mid = size / 2
+  // A quarter of the texture, so it sits well inside the ring of cups. Larger,
+  // it stops being a mark on a table and becomes a title card.
+  const width = size * 0.25
+
+  /*
+   * Set a little toward the player rather than dead centre.
+   *
+   * The bid floats over the middle of the table, and a mark directly under it
+   * loses its crown to the bid's own shadow. The tabletop's texture is planar
+   * and the mesh is laid flat, so the bottom of this canvas is the near edge:
+   * down here is toward whoever is sitting at the table.
+   */
+  const forward = size * 0.055
+
+  const draw = (target: CanvasRenderingContext2D, colour: string, dx: number, dy: number) => {
+    target.save()
+    target.translate(mid + dx, mid + forward + dy)
+    target.fillStyle = colour
+    target.strokeStyle = colour
+
+    // The crown, above the word, from the same paths the cups are stamped with.
+    const crown = width * 0.34
+    const scale = crown / 32
+    target.save()
+    target.translate(-crown / 2, -width * 0.26)
+    target.scale(scale, scale)
+    for (const d of CROWN_PATH) target.fill(new Path2D(d))
+    target.restore()
+
+    // The word, tracked wide the way a brand burned into wood is.
+    const face = hasDisplayFace() ? 'Outfit' : 'Impact, Haettenschweiler, sans-serif'
+    target.font = `700 ${Math.round(width * 0.19)}px ${face}`
+    target.textAlign = 'center'
+    target.textBaseline = 'middle'
+    letterspaced(target, 'PERUDO', 0, width * 0.12, width * 0.055)
+
+    // A rule under it, which is what makes a wordmark look struck rather than
+    // typed.
+    target.lineWidth = Math.max(1, width * 0.012)
+    target.beginPath()
+    target.moveTo(-width * 0.34, width * 0.26)
+    target.lineTo(width * 0.34, width * 0.26)
+    target.stroke()
+    target.restore()
+  }
+
+  // The carve: a highlight below and to the right where the light catches the
+  // far wall of the groove, then the groove itself over it.
+  const lift = Math.max(1, size * 0.0022)
+  ctx.globalAlpha = 0.5
+  draw(ctx, 'rgba(255, 226, 180, 0.55)', lift, lift)
+  ctx.globalAlpha = 0.62
+  draw(ctx, 'rgba(26, 14, 6, 0.9)', 0, 0)
+  ctx.globalAlpha = 1
+
+  // Cut through the lacquer, so the mark scatters where the table reflects.
+  roughCtx.globalAlpha = 0.55
+  draw(roughCtx, '#ffffff', 0, 0)
+  roughCtx.globalAlpha = 1
+}
+
+/**
+ * Text with air between the letters.
+ *
+ * Canvas has no letter-spacing worth relying on, and the tracking is most of
+ * what separates a mark burned into a table from a word typed onto one.
+ */
+function letterspaced(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  tracking: number,
+) {
+  const widths = [...text].map((c) => ctx.measureText(c).width)
+  const total = widths.reduce((a, b) => a + b, 0) + tracking * (text.length - 1)
+  let cursor = x - total / 2
+  for (const [i, glyph] of [...text].entries()) {
+    ctx.fillText(glyph, cursor + widths[i] / 2, y)
+    cursor += widths[i] + tracking
+  }
 }
