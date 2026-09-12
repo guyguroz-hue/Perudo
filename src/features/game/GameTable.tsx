@@ -8,6 +8,7 @@ import { ChallengeActions } from './ChallengeActions'
 import { CurrentBid } from './CurrentBid'
 import { PlayerSeat } from './PlayerSeat'
 import { TableScene } from './TableScene'
+import { useDealShake } from './dealing'
 import { placeSeats, sceneSeats } from './seating'
 import type { TableView } from './view'
 import { turnHolder, wouldBurst, you } from './view'
@@ -51,16 +52,37 @@ export function GameTable({
   const burst = wouldBurst(view)
   const yourTurn = holder !== null && holder.isYou
   const canAct = self !== null && !self.isEliminated
-  const seats = placeSeats(view.players)
+  /*
+   * Held across renders.
+   *
+   * Handing the renderer a new array is handing it a new table: it rebuilds
+   * every cup, which throws away any animation in flight — so a shake that
+   * happened to span an unrelated render restarted from the beginning. Seats
+   * only actually change when somebody goes out.
+   */
+  const seats = useMemo(() => placeSeats(view.players), [view.players])
   const bid = view.round.bid
   // Every bid is a claim about this number, so it belongs beside the bid rather
   // than being counted off the seats each time somebody wants to weigh one.
   const onTable = diceOnTable(view.players.map((p) => ({ diceCount: p.diceCount })))
 
-  const cups = useMemo(() => sceneSeats(seats, view.yourHand), [seats, view.yourHand])
+  /*
+   * The deal.
+   *
+   * Six cups shaken at once for a beat, whenever the round number moves. It is
+   * the only announcement a new round gets: the dice under the cups are already
+   * different, and a banner saying so would be a banner covering the table.
+   */
+  const shaking = useDealShake(view.roundNumber)
+  const cups = useMemo(
+    () => sceneSeats(seats, view.yourHand, shaking),
+    [seats, view.yourHand, shaking],
+  )
 
   return (
-    <div className={`board${yourTurn ? ' board--yours' : ''}`}>
+    <div
+      className={`board${yourTurn ? ' board--yours' : ''}${shaking ? ' board--dealing' : ''}`}
+    >
       <div className="board__stage" style={{ aspectRatio: STAGE_ASPECT }}>
         <TableScene seats={cups} />
 

@@ -54,6 +54,7 @@ export function placeSeats(players: readonly TablePlayer[]): SeatPlacement[] {
 export function sceneSeats(
   seats: readonly SeatPlacement[],
   yourHand: readonly Face[] | null,
+  shaking = false,
 ): SceneSeat[] {
   return seats
     .filter((seat) => !seat.player.isEliminated)
@@ -63,5 +64,9 @@ export function sceneSeats(
       count: seat.count,
       colour: hexForSeat(seat.player.seatIndex),
       dice: seat.player.isYou ? (yourHand ?? undefined) : undefined,
+      // Every cup at once, because every cup was dealt at once. Shaking them
+      // one after another would say the deal is going round the table, and it
+      // is not — the server deals the whole round in one write.
+      state: shaking ? ('shaking' as const) : ('covered' as const),
     }))
 }

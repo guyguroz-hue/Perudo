@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { Cup } from '../../components/Cup'
 import { Die } from '../../components/Die'
 import { countsToward } from '../../game'
+import { usePrefersReducedMotion } from '../../lib/motion'
 import { toneForSeat } from './colors'
 import type { RevealClaim, RevealData } from './reveal'
 import { claimOwner, reading } from './reveal'
@@ -247,22 +248,3 @@ function Result({ data, onDone }: { data: RevealData; onDone?: () => void }) {
  * Motion here is dramatic, never load-bearing: with it switched off the reveal
  * arrives at its result immediately and says exactly the same thing.
  */
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(() => query()?.matches ?? false)
-
-  useEffect(() => {
-    const media = query()
-    if (media === null) return
-    const update = () => setReduced(media.matches)
-    media.addEventListener('change', update)
-    return () => media.removeEventListener('change', update)
-  }, [])
-
-  return reduced
-}
-
-function query(): MediaQueryList | null {
-  return typeof window === 'undefined' || typeof window.matchMedia !== 'function'
-    ? null
-    : window.matchMedia('(prefers-reduced-motion: reduce)')
-}
