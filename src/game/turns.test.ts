@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { isBurst, nextActive } from './turns'
+import { chooseStarter, isBurst, nextActive } from './turns'
 import type { Seated } from './turns'
+import type { Bytes } from './random'
 
 const table: readonly Seated[] = [
   { playerId: 'a', seat: 0, diceCount: 3 },
@@ -56,5 +57,63 @@ describe('what counts as a Burst', () => {
 
   it('is not a Burst when nobody holds the turn', () => {
     expect(isBurst(null, 'c')).toBe(false)
+  })
+})
+
+describe('who opens the first round (R-011)', () => {
+  /** Hands out a fixed script of bytes, so a draw can be made to land anywhere. */
+  function scripted(...values: number[]): Bytes {
+    let i = 0
+    return () => new Uint8Array([values[i++ % values.length]])
+  }
+
+  it('draws from the players holding dice, in seat order', () => {
+    // Three active players (b holds nothing), so the draw is over 0..2.
+    expect(chooseStarter(table, scripted(0))).toBe('a')
+    expect(chooseStarter(table, scripted(1))).toBe('c')
+    expect(chooseStarter(table, scripted(2))).toBe('d')
+  })
+
+  it('never draws a player who is out', () => {
+    for (let byte = 0; byte < 255; byte += 1) {
+      expect(chooseStarter(table, scripted(byte))).not.toBe('b')
+    }
+  })
+
+  // The same bias roll_die() rejects in SQL. With three candidates, 255 is the
+  // one byte that would fold unevenly, so it is drawn again instead.
+  it('redraws rather than folding the tail of the byte range', () => {
+    expect(chooseStarter(table, scripted(255, 1))).toBe('c')
+  })
+
+  it('is uniform across a lot of draws', () => {
+    const bytes: Bytes = (n) => crypto.getRandomValues(new Uint8Array(n))
+    const counts = new Map<string, number>()
+    const draws = 12_000
+    for (let i = 0; i < draws; i += 1) {
+      const id = chooseStarter(table, bytes)
+      counts.set(id, (counts.get(id) ?? 0) + 1)
+    }
+
+    expect(counts.size).toBe(3)
+    // Expect 4000 each. A fair draw stays well inside 10%; folding the tail of
+    // the byte range would show up as one candidate running ahead.
+    for (const count of counts.values()) {
+      expect(count).toBeGreaterThan((draws / 3) * 0.9)
+      expect(count).toBeLessThan((draws / 3) * 1.1)
+    }
+  })
+
+  it('refuses a table with nobody left', () => {
+    const empty = table.map((p) => ({ ...p, diceCount: 0 }))
+    expect(() => chooseStarter(empty, scripted(0))).toThrow(/nobody holding dice/)
+  })
+
+  it('does not draw at all when there is only one candidate', () => {
+    const alone = table.map((p) => (p.playerId === 'a' ? p : { ...p, diceCount: 0 }))
+    const refuse: Bytes = () => {
+      throw new Error('drew a byte for a choice of one')
+    }
+    expect(chooseStarter(alone, refuse)).toBe('a')
   })
 })

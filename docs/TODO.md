@@ -131,8 +131,7 @@ Completed items are marked `[x]` and kept, not deleted.
       engine from `src/game` and applies its decisions through `apply_bid`,
       `apply_bull` and `apply_challenge`. Paste `bundle.ts` into the dashboard.
 - [x] **T-33** ~~Wire the game screen to the action layer and Realtime~~ — done.
-      A game still cannot deal its first round until **R-011** is answered and
-      the function is deployed.
+      A game deals its first round once the function is deployed.
 - [ ] **T-34** The reveal is rebuilt for non-challengers from the round, the
       reveals and the challenge event. Verified by types and by reading, not yet
       by two browsers against the live project.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { callBull, challenge, placeBid } from './actions'
+import { callBull, challenge, openRound, placeBid } from './actions'
 import type { BidWrite, BullWrite, GameRow, GameStore, PlayerRow, RoundRow } from './store'
 import type { PlayerId, RoundType } from '../../../src/game'
 
@@ -16,6 +16,8 @@ interface Scene {
   game?: Partial<GameRow>
   players?: PlayerRow[]
   round?: Partial<RoundRow>
+  /** A game that has started but has not been dealt a round yet. */
+  noRound?: boolean
   count?: number
 }
 
@@ -27,7 +29,7 @@ class Fake implements GameStore {
 
   #game: GameRow
   #players: PlayerRow[]
-  #round: RoundRow
+  #round: RoundRow | null
   #count: number
 
   constructor(scene: Scene = {}) {
@@ -43,7 +45,7 @@ class Fake implements GameStore {
       seat('bob', 1, 5),
       seat('carl', 2, 5),
     ]
-    this.#round = {
+    this.#round = scene.noRound === true ? null : {
       id: 'rd1',
       round_number: 1,
       type: 'normal',
@@ -94,6 +96,40 @@ class Fake implements GameStore {
 function seat(id: string, n: number, dice: number): PlayerRow {
   return { user_id: id, seat: n, dice_count: dice, display_name: id }
 }
+
+describe('opening the first round', () => {
+  // R-011: drawn at random. Every fixed answer — the host, the lowest seat —
+  // hands somebody an advantage decided by seating or by who made the room.
+  it('draws a starter from the players, not from the seating', async () => {
+    const seen = new Set<string>()
+    for (let i = 0; i < 200; i += 1) {
+      const store = new Fake({ noRound: true })
+      await openRound(store, { id: 'bob' }, 'g1')
+      seen.add(store.opened[0].starter)
+    }
+    expect(seen).toEqual(new Set(['alice', 'bob', 'carl']))
+  })
+
+  it('opens a normal round', async () => {
+    const store = new Fake({ noRound: true })
+    await openRound(store, { id: 'bob' }, 'g1')
+    expect(store.opened[0].type).toBe('normal')
+  })
+
+  // Several clients reach this the instant a game starts. The unique index on
+  // live rounds settles a real race; this settles the common one without
+  // asking the database.
+  it('returns the round already under way instead of dealing a second', async () => {
+    const store = new Fake()
+    expect(await openRound(store, { id: 'bob' }, 'g1')).toEqual({ roundId: 'rd1' })
+    expect(store.opened).toHaveLength(0)
+  })
+
+  it('turns away somebody who is not in the game', async () => {
+    const store = new Fake({ noRound: true })
+    await expect(openRound(store, { id: 'zoe' }, 'g1')).rejects.toThrow(/not in this game/)
+  })
+})
 
 describe('a bid is judged by the same rules the client greys out', () => {
   it('records a legal raise', async () => {

@@ -251,6 +251,11 @@ exactly as they do in a normal round.
 - Eliminated players are no longer active participants and cannot act.
 - The **last active player wins**; the game is marked complete.
 
+### Who opens the **first** round ✅ (resolved by R-011)
+
+**Drawn at random** from the players at the table, uniformly. Nothing about
+seating, hosting or who made the room affects it.
+
 ### Who opens the next round ✅ (resolved by R-002)
 
 **Whoever was proved right opens the next round.**

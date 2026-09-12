@@ -194,6 +194,24 @@ function buildOutcome(actualCount, claimHolds, dieDeltas, players, provedRight) 
 	};
 }
 //#endregion
+//#region src/game/random.ts
+/**
+* A uniform random integer in `[0, bound)`.
+*
+* Values at or above the largest multiple of `bound` are drawn again rather
+* than folded in. A byte taken modulo 6 without that step favours 0–3 by about
+* a fifth — the same bias `roll_die()` rejects in SQL, for the same reason.
+*/
+function randomBelow(bound, bytes) {
+	if (!Number.isInteger(bound) || bound < 1 || bound > 256) throw new Error(`randomBelow needs a whole bound in 1..256, got ${bound}`);
+	if (bound === 1) return 0;
+	const limit = 256 - 256 % bound;
+	for (;;) {
+		const byte = bytes(1)[0];
+		if (byte < limit) return byte % bound;
+	}
+}
+//#endregion
 //#region src/game/turns.ts
 /**
 * The next player clockwise after `afterId` who still holds dice.
@@ -213,6 +231,22 @@ function nextActive(players, afterId) {
 /** Whether acting now would be a Burst: legal, but out of turn (§9.1, §8.5). */
 function isBurst(turnHolderId, actorId) {
 	return turnHolderId !== null && turnHolderId !== actorId;
+}
+/**
+* Who opens the very first round of a game — chosen at random (R-011).
+*
+* The house rules say who opens every round after a resolution: whoever was
+* proved right (R-002). They say nothing about the first, and every fixed
+* answer hands somebody an advantage decided by seating or by who happened to
+* create the room. A draw hands it to nobody.
+*
+* Uniform, and from cryptographic bytes rather than `Math.random`: this decides
+* a real advantage, and a predictable draw is not a draw.
+*/
+function chooseStarter(players, bytes) {
+	const active = [...players].filter((player) => player.diceCount > 0).sort((a, b) => a.seat - b.seat);
+	if (active.length === 0) throw new Error("chooseStarter called with nobody holding dice");
+	return active[randomBelow(active.length, bytes)].playerId;
 }
 //#endregion
 //#region supabase/functions/game/errors.ts
@@ -240,26 +274,24 @@ function fromPostgres(message) {
 //#endregion
 //#region supabase/functions/game/actions.ts
 /**
-* Who opens the very first round of a game.
+* Cryptographic bytes, for the one draw this layer makes.
 *
-* UNRESOLVED (R-011). The house rules say who opens every round *after* a
-* resolution (R-002) and say nothing about the first, and the two obvious
-* answers — the host, or the lowest seat — name different players whenever the
-* host has migrated.
-*
-* Deliberately not guessed: this throws rather than picking one. It is a
-* one-line change once the answer exists, which is why it is a function.
+* Deno has WebCrypto; so does every browser, so this is the same source the
+* engine's own tests run against.
 */
-function firstStarter(_players) {
-	throw new UnresolvedRuleError("R-011", "who opens the first round of a game — the host, or the lowest seat");
-}
+const bytes = (n) => crypto.getRandomValues(new Uint8Array(n));
 async function openRound(store, actor, gameId) {
 	requireActive((await store.game(gameId)).status);
 	const players = await store.players(gameId);
 	requirePlayer(players, actor.id);
 	const live = await store.liveRound(gameId);
 	if (live !== null) return { roundId: live.id };
-	return { roundId: await store.openRound(gameId, "normal", firstStarter(players)) };
+	const starter = chooseStarter(players.map((player) => ({
+		playerId: player.user_id,
+		seat: player.seat,
+		diceCount: player.dice_count
+	})), bytes);
+	return { roundId: await store.openRound(gameId, "normal", starter) };
 }
 async function placeBid(store, actor, gameId, quantity, face) {
 	const { game, round, seated } = await liveState(store, gameId, actor);

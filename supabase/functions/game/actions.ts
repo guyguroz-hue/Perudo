@@ -1,6 +1,7 @@
 import {
   UnresolvedRuleError,
   checkBid,
+  chooseStarter,
   isBurst,
   nextActive,
   resolveChallenge,
@@ -27,22 +28,12 @@ export interface Actor {
 }
 
 /**
- * Who opens the very first round of a game.
+ * Cryptographic bytes, for the one draw this layer makes.
  *
- * UNRESOLVED (R-011). The house rules say who opens every round *after* a
- * resolution (R-002) and say nothing about the first, and the two obvious
- * answers — the host, or the lowest seat — name different players whenever the
- * host has migrated.
- *
- * Deliberately not guessed: this throws rather than picking one. It is a
- * one-line change once the answer exists, which is why it is a function.
+ * Deno has WebCrypto; so does every browser, so this is the same source the
+ * engine's own tests run against.
  */
-function firstStarter(_players: readonly PlayerRow[]): PlayerId {
-  throw new UnresolvedRuleError(
-    'R-011',
-    'who opens the first round of a game — the host, or the lowest seat',
-  )
-}
+const bytes = (n: number) => crypto.getRandomValues(new Uint8Array(n))
 
 export async function openRound(
   store: GameStore,
@@ -57,7 +48,18 @@ export async function openRound(
   const live = await store.liveRound(gameId)
   if (live !== null) return { roundId: live.id }
 
-  const roundId = await store.openRound(gameId, 'normal', firstStarter(players))
+  // Who opens the very first round is drawn at random (R-011). Every fixed
+  // answer — the host, the lowest seat — hands somebody an advantage decided by
+  // seating or by who happened to create the room.
+  const starter = chooseStarter(
+    players.map((player) => ({
+      playerId: player.user_id,
+      seat: player.seat,
+      diceCount: player.dice_count,
+    })),
+    bytes,
+  )
+  const roundId = await store.openRound(gameId, 'normal', starter)
   return { roundId }
 }
 

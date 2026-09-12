@@ -253,27 +253,34 @@ kept for the log and for display rather than for computing anything.
 
 ---
 
+### ✅ R-011 — who opens the first round: **drawn at random** (2026-09-12)
+
+R-002 says who opens every round after a resolution. Nothing said who opens the
+first, and the two obvious answers — the host, or the lowest seat — name
+different players whenever the host has migrated, and both hand somebody an
+advantage decided by seating or by who happened to create the room.
+
+Answered by the owner: **a completely random draw, so that it is fair.** A draw
+gives the advantage to nobody rather than giving it to somebody by accident.
+
+*Consequence:* `chooseStarter` in `src/game/turns.ts`, uniform over the players
+holding dice, from cryptographic bytes rather than `Math.random` — this decides
+a real advantage, and a predictable draw is not a draw. Bytes at or above the
+largest multiple of the candidate count are drawn again rather than folded in,
+the same bias `roll_die()` rejects in SQL.
+
+*Why it is not in the database, unlike the dice:* dice live in Postgres because
+they must stay secret, not because they must be random. Who opens is public the
+moment it is decided, so it only has to be unbiased — and in the engine it can
+be tested, which uniformity in SQL cannot easily be.
+
+---
+
 ## ❓ STILL OPEN — game rules
 
-Two, both raised rather than guessed, and both reached by building the action
-layer. Neither is a gap in the original specification: they are situations the
-rules had no reason to mention until something had to execute them.
-
-### ❓ R-011 — who opens the **first** round of a game — **BLOCKING**
-
-R-002 says who opens every round after a resolution. Nothing says who opens the
-first one, and the two obvious answers name different players whenever the host
-has migrated:
-
-| Answer | Who that is |
-|---|---|
-| **The host** | whoever holds the room now, which may not be who created it |
-| **The lowest seat** | seat 0, which is whoever created the room |
-
-*Status:* `firstStarter` in `supabase/functions/game/actions.ts` throws
-`UnresolvedRuleError` rather than picking. **A game cannot open a round until
-this is answered**, which is deliberate — a first-mover advantage decided by
-accident is still decided.
+One, raised rather than guessed, and reached by building the action layer. It
+is not a gap in the original specification: it is a situation the rules had no
+reason to mention until something had to execute it.
 
 ### ❓ R-010 — a second Bull on the same bid
 

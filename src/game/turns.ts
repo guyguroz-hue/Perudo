@@ -1,3 +1,5 @@
+import { randomBelow } from './random'
+import type { Bytes } from './random'
 import type { PlayerId } from './types'
 
 /**
@@ -51,4 +53,28 @@ export function nextActive(players: readonly Seated[], afterId: PlayerId): Playe
 /** Whether acting now would be a Burst: legal, but out of turn (§9.1, §8.5). */
 export function isBurst(turnHolderId: PlayerId | null, actorId: PlayerId): boolean {
   return turnHolderId !== null && turnHolderId !== actorId
+}
+
+/**
+ * Who opens the very first round of a game — chosen at random (R-011).
+ *
+ * The house rules say who opens every round after a resolution: whoever was
+ * proved right (R-002). They say nothing about the first, and every fixed
+ * answer hands somebody an advantage decided by seating or by who happened to
+ * create the room. A draw hands it to nobody.
+ *
+ * Uniform, and from cryptographic bytes rather than `Math.random`: this decides
+ * a real advantage, and a predictable draw is not a draw.
+ */
+export function chooseStarter(players: readonly Seated[], bytes: Bytes): PlayerId {
+  const active = [...players]
+    .filter((player) => player.diceCount > 0)
+    .sort((a, b) => a.seat - b.seat)
+
+  if (active.length === 0) {
+    throw new Error('chooseStarter called with nobody holding dice')
+  }
+  // Sorted by seat first, so the draw is over a stable list rather than over
+  // whatever order the database happened to return.
+  return active[randomBelow(active.length, bytes)].playerId
 }
