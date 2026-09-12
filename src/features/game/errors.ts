@@ -32,6 +32,9 @@ export class GameActionError extends Error {
  */
 const EXPLANATIONS: Record<string, string> = {
   STALE_STATE: 'Somebody got there first. Have another look.',
+  NOT_DEPLOYED:
+    'The game server is not reachable under the name this app calls. ' +
+    'Deploy the Edge Function as `game`.',
   NO_ROUND: 'The round has not started yet.',
   ROUND_ALREADY_OPEN: 'That round is already under way.',
   GAME_NOT_ACTIVE: 'This game has finished.',
@@ -53,11 +56,25 @@ export function toGameError(error: unknown): GameActionError {
 
 function read(error: unknown): { code: string; message: string } {
   if (error !== null && typeof error === 'object') {
-    const body = error as { error?: unknown; message?: unknown }
+    const body = error as { error?: unknown; message?: unknown; code?: unknown }
+
+    // Our own refusal: a stable code and a sentence written where the decision
+    // was made.
     if (typeof body.error === 'string') {
       return {
         code: body.error,
         message: typeof body.message === 'string' ? body.message : body.error,
+      }
+    }
+
+    // Supabase's gateway answering instead of the function — which is what a
+    // function deployed under a different name looks like. Worth naming,
+    // because the alternative is "Edge Function returned a non-2xx status
+    // code", which sends somebody looking for a bug in the game.
+    if (typeof body.code === 'number' && typeof body.message === 'string') {
+      return {
+        code: body.code === 404 ? 'NOT_DEPLOYED' : `HTTP_${body.code}`,
+        message: body.message,
       }
     }
   }
