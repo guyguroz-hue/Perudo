@@ -13,6 +13,7 @@ import {
 } from 'three'
 import { roomEnvironment } from './environment'
 import { CUP_HEIGHT, SEAT_RADIUS, makeCup, makeTable } from './objects'
+import { FACE_UP, DIE_SIZE, makeDie } from './die'
 import { makeRoom } from './room'
 
 /**
@@ -34,18 +35,31 @@ const EYE = new Vector3(0, 1.12, 3.15)
 const LOOK_AT = new Vector3(0, 0.04, -0.04)
 const FOV = 27
 
+export type CupState = 'covered' | 'shaking' | 'lifted'
+
 export interface SceneSeat {
   readonly id: string
   readonly colour: string
   /** 0 is the seat nearest the viewer; the rest run clockwise from it. */
   readonly index: number
   readonly count: number
+  /** What the cup is doing. */
+  readonly state?: CupState
+  /**
+   * The faces under this cup.
+   *
+   * Only ever sent for a hand the viewer is entitled to see: their own, or
+   * everybody's once a challenge has been resolved. A cup that is covered
+   * still has dice under it in the scene, because they have to be there to be
+   * uncovered — but the values only arrive when the server has released them.
+   */
+  readonly dice?: readonly number[]
 }
 
 export interface TableScene {
   /** Call when the element resizes. */
   resize: (width: number, height: number) => void
-  /** Replace who is at the table. */
+  /** Replace who is at the table, and what their cups are doing. */
   setSeats: (seats: readonly SceneSeat[]) => void
   /** Where a seat's cup meets the table, in percentages of the canvas. */
   project: (index: number, seats: number, height?: number) => { left: string; top: string }
@@ -103,6 +117,26 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
   const cups = new Group()
   scene.add(cups)
 
+  /**
+   * What each seat's cup is doing, and how far through it is.
+   *
+   * A cup is a small state machine rather than a pile of animation flags: it is
+   * covered, or it is being shaken, or it has been lifted. Everything the
+   * renderer does to it follows from which of those it is and how long it has
+   * been there.
+   */
+  interface Seated {
+    readonly cup: Group
+    readonly dice: Group
+    state: CupState
+    /** Seconds spent in the current state. */
+    elapsed: number
+  }
+
+  const seated: Seated[] = []
+  let frame = 0
+  let last = 0
+
   function seatPosition(index: number, seats: number): Vector3 {
     // A quarter turn puts index 0 nearest the viewer; from there the ring runs
     // the way seats are numbered.
@@ -114,6 +148,62 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
     )
   }
 
+  /** How long the cup takes to come off the dice. */
+  const LIFT_SECONDS = 0.55
+
+  function place(seat: Seated, dt: number) {
+    seat.elapsed += dt
+    const cup = seat.cup
+
+    if (seat.state === 'shaking') {
+      const t = seat.elapsed
+      // Three frequencies that do not divide into each other, so the cup never
+      // repeats a position — which is what makes it read as something loose
+      // moving inside rather than as a wiper blade.
+      cup.position.x = Math.sin(t * 27) * 0.012 + Math.sin(t * 17.3) * 0.006
+      cup.position.z = Math.sin(t * 23.7) * 0.01
+      cup.position.y = Math.abs(Math.sin(t * 31)) * 0.012
+      cup.rotation.z = Math.sin(t * 21.4) * 0.09
+      cup.rotation.x = Math.sin(t * 19.1) * 0.06
+      seat.dice.visible = false
+      return true
+    }
+
+    if (seat.state === 'lifted') {
+      const k = Math.min(1, seat.elapsed / LIFT_SECONDS)
+      // Ease out: a cup lifted by hand leaves quickly and arrives gently.
+      const e = 1 - Math.pow(1 - k, 3)
+      // A hand's height, not a crane's. Lifted further the cup leaves the
+      // frame, and a cup you cannot see has not been lifted — it has vanished.
+      cup.position.set(0, e * 0.26, e * 0.05)
+      cup.rotation.set(-e * 0.3, 0, e * 0.1)
+      cup.scale.setScalar(1)
+      // The dice appear the moment the rim clears them, not when the cup stops.
+      seat.dice.visible = e > 0.12
+      return k < 1
+    }
+
+    cup.position.set(0, 0, 0)
+    cup.rotation.set(0, 0, 0)
+    seat.dice.visible = false
+    return false
+  }
+
+  function tick(now: number) {
+    const dt = Math.min(0.05, (now - last) / 1000)
+    last = now
+    let busy = false
+    for (const seat of seated) busy = place(seat, dt) || busy
+    renderer.render(scene, camera)
+    frame = busy ? requestAnimationFrame(tick) : 0
+  }
+
+  function start() {
+    if (frame !== 0) return
+    last = performance.now()
+    frame = requestAnimationFrame(tick)
+  }
+
   return {
     resize(width, height) {
       renderer.setSize(width, height, false)
@@ -123,13 +213,40 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
 
     setSeats(seats) {
       cups.clear()
+      seated.length = 0
+
       seats.forEach((seat) => {
+        const group = new Group()
+        group.position.copy(seatPosition(seat.index, seats.length))
+        cups.add(group)
+
         const cup = makeCup(seat.colour)
-        cup.position.copy(seatPosition(seat.index, seats.length))
-        // Turned a little, each differently, so six identical objects do not
-        // read as a printed pattern.
-        cups.add(cup)
+        group.add(cup)
+
+        // The dice live under the cup from the moment the round is dealt. They
+        // are not created when they are revealed — a cup has to have something
+        // to be lifted off.
+        const dice = new Group()
+        dice.visible = false
+        const faces = seat.dice ?? []
+        faces.forEach((face, i) => {
+          const die = makeDie()
+          // Laid out on a small ring, so five dice under one cup do not stack.
+          const a = (i / Math.max(1, faces.length)) * Math.PI * 2 + seat.index
+          const spread = faces.length === 1 ? 0 : 0.062
+          die.position.set(Math.cos(a) * spread, DIE_SIZE / 2, Math.sin(a) * spread)
+          const [rx, ry, rz] = FACE_UP[face] ?? FACE_UP[1]
+          // The upward face is the value; the spin about it is cosmetic.
+          die.rotation.set(rx, ry + a * 0.7, rz)
+          dice.add(die)
+        })
+        group.add(dice)
+
+        seated.push({ cup, dice, state: seat.state ?? 'covered', elapsed: 0 })
       })
+
+      for (const seat of seated) place(seat, 0)
+      if (seated.some((seat) => seat.state !== 'covered')) start()
     },
 
     project(index, seats, height = 0) {
@@ -147,6 +264,7 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
     },
 
     dispose() {
+      if (frame !== 0) cancelAnimationFrame(frame)
       renderer.dispose()
     },
   }

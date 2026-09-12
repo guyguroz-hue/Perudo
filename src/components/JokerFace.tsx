@@ -1,3 +1,5 @@
+import { JOKER_EYES, JOKER_MASK } from '../three/joker'
+
 /**
  * The Perudo wildcard.
  *
@@ -21,11 +23,8 @@
 export function JokerFace({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M2.6 12.4c0-2.9 2.1-4.6 5.3-4.4 2.6.2 4.4 1.1 5.9 1.6.9.3 1.6.4 2.2.4s1.3-.1 2.2-.4c1.5-.5 3.3-1.4 5.9-1.6 3.2-.2 5.3 1.5 5.3 4.4 0 5.9-3.9 11.2-8.2 11.2-2.4 0-3.9-1.6-5.2-1.6s-2.8 1.6-5.2 1.6c-4.3 0-8.2-5.3-8.2-11.2Zm5.2 1.9c-.5 1.5.9 3.4 3.1 3.4 1.8 0 3.1-1 3.1-2.3 0-1.5-1.9-2.8-3.9-2.8-1.1 0-2 .6-2.3 1.7Zm16.4 0c.5 1.5-.9 3.4-3.1 3.4-1.8 0-3.1-1-3.1-2.3 0-1.5 1.9-2.8 3.9-2.8 1.1 0 2 .6 2.3 1.7Z"
-      />
+      {/* The silhouette and its holes, punched with the even-odd rule. */}
+      <path fillRule="evenodd" clipRule="evenodd" d={`${JOKER_MASK}${JOKER_EYES.join('')}`} />
     </svg>
   )
 }
