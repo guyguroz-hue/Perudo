@@ -1,5 +1,6 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Die } from '../../components/Die'
+import { SoundToggle } from '../../components/SoundToggle'
 import type { ActiveBid, ProposedBid } from '../../game'
 import { diceOnTable } from '../../game'
 import { INLAY_RADIUS, STAGE_ASPECT, centreAnchor, inlayWidth } from '../../three/layout'
@@ -9,10 +10,11 @@ import { CurrentBid } from './CurrentBid'
 import { PlayerSeat } from './PlayerSeat'
 import { RevealPanel } from './RevealPanel'
 import { TableScene } from './TableScene'
-import { useDealShake } from './dealing'
+import { SHAKE_MS, useDealShake } from './dealing'
 import type { RevealClaim, RevealData } from './reveal'
 import { useRevealStage } from './revealStage'
 import { placeSeats, sceneSeats } from './seating'
+import { useSound, useSoundEffect } from '../../lib/useSound'
 import type { TablePlayer, TableView } from './view'
 import { turnHolder, wouldBurst, you } from './view'
 import './GameTable.css'
@@ -88,6 +90,23 @@ export function GameTable({
   const mood = lifting ? 'revealing' : shaking ? 'dealing' : 'still'
 
   /*
+   * What the table sounds like.
+   *
+   * Sound follows the picture rather than the event that caused it: the cups
+   * are heard rattling for exactly as long as they are seen rattling, and the
+   * knock of a cup coming off lands on the frame it starts to move. Anything
+   * else is a foley track playing next to a game.
+   */
+  const sound = useSound()
+  const effect = useSoundEffect()
+  useEffect(() => {
+    if (shaking) effect('shake', SHAKE_MS / 1000)
+  }, [shaking, effect])
+  useEffect(() => {
+    if (lifting) effect('lift')
+  }, [lifting, effect])
+
+  /*
    * Held across renders.
    *
    * Handing the renderer a new array is handing it a new table: it rebuilds
@@ -118,6 +137,11 @@ export function GameTable({
           </span>
           {view.round.type === 'farewell' && <b className="board__farewell">Farewell</b>}
         </header>
+
+        {/* The opposite corner from the round number, where nothing else is. */}
+        <div className="board__sound">
+          <SoundToggle on={sound.on} onToggle={sound.toggle} />
+        </div>
 
         {/* Never narrower than the brass ring it sits in, never clipped by it
             either: the bid reads across, and a long name is worth more than a

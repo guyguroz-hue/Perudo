@@ -94,6 +94,12 @@
   font-weight: 600;
 }
 
+.board__sound {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-4);
+}
+
 .board__centre {
   /* Laid over the brass inlay, from the same projection that draws it. */
   position: absolute;
