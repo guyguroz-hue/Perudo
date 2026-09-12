@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GameTable } from './GameTable'
 import type { TableView } from './view'
@@ -79,6 +80,47 @@ describe('waiting is a state, not a curtain', () => {
       lastEvent: 'Dana called Bull on 4 fives — exactly',
     })
     expect(screen.getByText('Dana called Bull on 4 fives — exactly')).toBeTruthy()
+  })
+})
+
+describe('a challenge is one press', () => {
+  /*
+   * Bull and Lie carry no numbers, so they take no building and no confirming.
+   * A bid needs a quantity and a face chosen before it means anything, which is
+   * why that one has a builder and a button at the end of it; these two are a
+   * re-reading of the claim already on the table. One press sends the move.
+   *
+   * Pinned because "does pressing Bull also need Bid afterwards?" is a fair
+   * question to have about a screen with a Bid button on it, and the answer has
+   * to stay no.
+   */
+  it('sends a Bull on the press, and sends nothing else', async () => {
+    const { onBull, onBid, onLie } = show(BASE)
+    await userEvent.click(screen.getByRole('button', { name: /^Bull/ }))
+
+    expect(onBull).toHaveBeenCalledTimes(1)
+    expect(onBid).not.toHaveBeenCalled()
+    expect(onLie).not.toHaveBeenCalled()
+  })
+
+  it('sends a Lie on the press, and sends nothing else', async () => {
+    const { onLie, onBid, onBull } = show(BASE)
+    await userEvent.click(screen.getByRole('button', { name: /^Lie/ }))
+
+    expect(onLie).toHaveBeenCalledTimes(1)
+    expect(onBid).not.toHaveBeenCalled()
+    expect(onBull).not.toHaveBeenCalled()
+  })
+
+  // And the builder is not involved: whatever is sitting in it is not what a
+  // Bull is about, so touching it changes nothing about the move.
+  it('is unaffected by whatever the bid builder is holding', async () => {
+    const { onBull, onBid } = show(BASE)
+    await userEvent.click(screen.getByRole('button', { name: 'One more' }))
+    await userEvent.click(screen.getByRole('button', { name: /^Bull/ }))
+
+    expect(onBull).toHaveBeenCalledTimes(1)
+    expect(onBid).not.toHaveBeenCalled()
   })
 })
 
