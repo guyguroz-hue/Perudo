@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Cup } from '../../components/Cup'
 import { Die } from '../../components/Die'
 import { countsToward } from '../../game'
+import { toneForSeat } from './colors'
 import type { RevealClaim, RevealData } from './reveal'
 import { claimOwner, reading } from './reveal'
 import './Reveal.css'
@@ -137,7 +138,12 @@ export function Reveal({
                   </span>
                 )}
                 <span className="reveal__cup">
-                  <Cup lifted={lifted} size={cupWidth(player.diceCount)} label="" />
+                  <Cup
+                    tone={toneForSeat(seated.indexOf(player))}
+                    state={lifted ? 'lifted' : 'covered'}
+                    size={cupWidth(player.diceCount)}
+                    label=""
+                  />
                 </span>
               </span>
               <span className="reveal__who">{player.name}</span>

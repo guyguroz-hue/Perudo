@@ -77,18 +77,24 @@ export function BidBuilder({
 
   return (
     <div className="builder">
-      <p className="builder__preview">
-        <span className="builder__quantity" aria-hidden="true">
-          {bid.quantity}
-        </span>
-        <span className="builder__times" aria-hidden="true">
-          ×
-        </span>
-        <Die face={bid.face} size={56} />
-        <span className="visually-hidden">
-          {bid.quantity} {bid.face === 1 ? 'Perudo' : bid.face}
-        </span>
-      </p>
+      <div className="builder__deck" role="group" aria-label="Face">
+        {FACES.map((face) => {
+          const legal = faces.includes(face)
+          return (
+            <button
+              key={face}
+              type="button"
+              className="builder__face"
+              aria-pressed={face === bid.face}
+              aria-label={face === 1 ? 'Joker' : `${face}`}
+              disabled={!legal}
+              onClick={() => setDraft(withFace(round, bid, face))}
+            >
+              <Die face={face} size={34} />
+            </button>
+          )
+        })}
+      </div>
 
       <div className="builder__row">
         <button
@@ -98,11 +104,19 @@ export function BidBuilder({
           disabled={bid.quantity <= bounds.min}
           aria-label="One fewer"
         >
-          −
+          &minus;
         </button>
-        <span className="builder__range" aria-hidden="true">
-          {bounds.min}–{bounds.max}
-        </span>
+
+        <p className="builder__preview">
+          <span className="builder__quantity" aria-hidden="true">
+            {bid.quantity}
+          </span>
+          <Die face={bid.face} size={44} />
+          <span className="visually-hidden">
+            {bid.quantity} {bid.face === 1 ? 'Joker' : bid.face}
+          </span>
+        </p>
+
         <button
           type="button"
           className="builder__step"
@@ -112,25 +126,6 @@ export function BidBuilder({
         >
           +
         </button>
-      </div>
-
-      <div className="builder__faces" role="group" aria-label="Face">
-        {FACES.map((face) => {
-          const legal = faces.includes(face)
-          return (
-            <button
-              key={face}
-              type="button"
-              className="builder__face"
-              aria-pressed={face === bid.face}
-              aria-label={face === 1 ? 'Perudo' : `${face}`}
-              disabled={!legal}
-              onClick={() => setDraft(withFace(round, bid, face))}
-            >
-              <Die face={face} size={34} />
-            </button>
-          )
-        })}
       </div>
 
       {!verdict.legal && <p className="builder__why">{verdict.detail}</p>}

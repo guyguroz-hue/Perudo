@@ -20,7 +20,7 @@ function show(round: RoundState, onBid = vi.fn()) {
 
 const submit = () => screen.getByRole('button', { name: 'Bid' })
 const disabled = (el: HTMLElement) => el.hasAttribute('disabled')
-const face = (n: number) => screen.getByRole('button', { name: n === 1 ? 'Perudo' : `${n}` })
+const face = (n: number) => screen.getByRole('button', { name: n === 1 ? 'Joker' : `${n}` })
 
 describe('one tap is the common case', () => {
   // The whole reason the builder opens where it does: raising the bid in front
@@ -48,8 +48,8 @@ describe('one tap is the common case', () => {
 
 describe('illegal bids cannot be expressed', () => {
   it('disables a face rather than removing it', () => {
-    // Perudo cannot open a normal round, and the button says so by being there
-    // and unavailable. A vanished button teaches nobody the rule.
+    // The Joker cannot open a normal round, and the button says so by being
+    // there and unavailable. A vanished button teaches nobody the rule.
     show(normalRound())
     expect(disabled(face(1))).toBe(true)
     expect(disabled(face(2))).toBe(false)

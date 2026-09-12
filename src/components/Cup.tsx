@@ -1,49 +1,61 @@
 import type { CSSProperties } from 'react'
-import { PERUDO_GLYPH } from './perudoGlyph'
+import { Crown } from './Crown'
 import './Cup.css'
 
 /**
- * A dice cup, in tooled leather.
+ * A dice cup.
  *
- * Drawn rather than photographed or textured with an image: a cup per player
- * at up to six players, lifting at once, has to cost nothing to render on a
- * phone. The leather is a stack of gradients and the carving is the same
- * Perudo glyph the dice use, stamped twice — once dark and once light and
- * offset by a pixel — which is what tooled leather actually looks like: not a
- * drawn line but an impression catching the light on one edge.
+ * The signature object of the game and the one that carries the hidden
+ * information rule without a word of explanation: a cup on the table means
+ * those dice are not yours to see.
  *
- * `lifted` is the only state. It is a transform, so lifting six of them is six
- * composited layers and no layout.
+ * Built from gradients and two ellipses rather than a rendered image, because
+ * six of these move at once on a phone. It is stylised rather than
+ * photoreal — a real leather cup at 90px is a brown smudge, while a shape with
+ * one clear light source and one clear silhouette reads instantly.
+ *
+ * `tone` is the player's colour. It is the cup's whole body, not a stripe on
+ * it: at the size a cup appears on a phone, an accent is invisible and the
+ * body is the only thing that can carry identity.
  */
+export type CupState = 'covered' | 'shaking' | 'lifting' | 'lifted'
+
 export function Cup({
-  lifted = false,
-  size = 84,
+  tone,
+  state = 'covered',
+  active = false,
+  size = 92,
   label,
 }: {
-  lifted?: boolean
+  /** The player's colour: a `--p1`…`--p6` value. */
+  tone: string
+  state?: CupState
+  /** Whether this player holds the turn. The only reason anything here glows. */
+  active?: boolean
   size?: number
   label?: string
 }) {
-  const style = { '--cup-size': `${size}px` } as CSSProperties
+  const style = { '--cup-size': `${size}px`, '--cup-tone': tone } as CSSProperties
 
   return (
     <span
-      className={`cup${lifted ? ' cup--lifted' : ''}`}
+      className={`cup cup--${state}${active ? ' cup--active' : ''}`}
       style={style}
       role="img"
       aria-label={label ?? 'Dice cup'}
     >
-      <span className="cup__body">
-        <svg className="cup__carving" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-          {PERUDO_GLYPH.reduced.map((d) => (
-            <g key={d}>
-              <path d={d} className="cup__cut" strokeWidth="2.6" />
-              <path d={d} className="cup__catch" strokeWidth="2.6" />
-            </g>
-          ))}
-        </svg>
+      <span className="cup__glow" aria-hidden="true" />
+      <span className="cup__coaster" aria-hidden="true" />
+      <span className="cup__rig" aria-hidden="true">
+        <span className="cup__shadow" />
+        <span className="cup__body">
+          <span className="cup__sheen" />
+          <span className="cup__rim" />
+          <Crown className="cup__crown" />
+        </span>
+        <span className="cup__foot" />
+        <span className="cup__lid" />
       </span>
-      <span className="cup__shadow" aria-hidden="true" />
     </span>
   )
 }

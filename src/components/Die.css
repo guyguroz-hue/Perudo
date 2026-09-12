@@ -1,47 +1,83 @@
+/*
+ * A die as a physical object.
+ *
+ * The depth is three things and no more: a light from the upper left, a dark
+ * edge where the face turns away from it, and a shadow underneath. Adding a
+ * fourth would not make it more real, only more expensive — and there can be
+ * thirty of these on screen at once.
+ */
 .die {
   --die-size: 44px;
+  position: relative;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
   width: var(--die-size);
   height: var(--die-size);
-  padding: calc(var(--die-size) * 0.12);
-  border-radius: calc(var(--die-size) * 0.18);
-  background: linear-gradient(160deg, #fffdf7, var(--bone-dim));
+  padding: calc(var(--die-size) * 0.15);
+  /* Not a rounded rectangle: a die is a cube with worn corners, which is a
+     larger radius than any panel in the product uses. */
+  border-radius: calc(var(--die-size) * 0.22);
+  background:
+    radial-gradient(
+      120% 90% at 26% 18%,
+      #fffdf6 0%,
+      var(--bone) 45%,
+      var(--bone-shade) 100%
+    );
   box-shadow:
-    inset 0 calc(var(--die-size) * -0.06) calc(var(--die-size) * 0.08) rgb(0 0 0 / 0.18),
-    inset 0 calc(var(--die-size) * 0.04) 0 rgb(255 255 255 / 0.9),
-    var(--shadow);
+    inset 0 calc(var(--die-size) * 0.035) 0 rgb(255 255 255 / 0.95),
+    inset 0 calc(var(--die-size) * -0.07) calc(var(--die-size) * 0.09) rgb(94 74 46 / 0.4),
+    inset calc(var(--die-size) * -0.04) 0 calc(var(--die-size) * 0.08) rgb(94 74 46 / 0.22),
+    var(--shadow-object);
 }
 
 .die__pip {
   align-self: center;
   justify-self: center;
-  width: calc(var(--die-size) * 0.18);
-  height: calc(var(--die-size) * 0.18);
+  width: calc(var(--die-size) * 0.19);
+  height: calc(var(--die-size) * 0.19);
   border-radius: 50%;
-  background: var(--ink, #221a12);
-  box-shadow: inset 0 1px 1px rgb(0 0 0 / 0.5);
+  /* Pips are drilled, not printed: dark at the bottom, catching light at the
+     top rim. */
+  background: radial-gradient(80% 80% at 50% 70%, #3a3128, var(--pip));
+  box-shadow:
+    inset 0 calc(var(--die-size) * 0.02) calc(var(--die-size) * 0.02) rgb(0 0 0 / 0.7),
+    0 calc(var(--die-size) * 0.012) 0 rgb(255 255 255 / 0.55);
 }
 
-/* The glyph fills the face rather than sitting on the pip grid. Dark like the
-   pips, because the shape already carries the distinction — a brass mark pulls
-   the eye harder than it deserves in a hand of five. */
-.die--perudo {
-  color: var(--ink, #221a12);
+/* The Joker fills the face rather than sitting on the pip grid. Same ink as the
+   pips: the shape already carries the distinction, and a coloured mark would
+   pull the eye harder than one die in five deserves. */
+.die--joker {
+  color: var(--pip);
 }
 
-.die__glyph {
+.die__joker {
   grid-area: 1 / 1 / 4 / 4;
   width: 100%;
   height: 100%;
-  align-self: center;
-  justify-self: center;
+  filter: drop-shadow(0 calc(var(--die-size) * 0.012) 0 rgb(255 255 255 / 0.5));
 }
 
+/*
+ * A die nobody can see.
+ *
+ * Takes the player's colour, so the row of blanks beside a name reads as "how
+ * many dice Dana holds" rather than as a row of grey squares. It is not a die
+ * with the face hidden — the value was never sent.
+ */
 .die--hidden {
-  background: linear-gradient(160deg, var(--leather), var(--wood));
-  box-shadow: var(--shadow);
+  --die-tone: var(--p6);
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--die-tone) 85%, white 15%),
+    color-mix(in srgb, var(--die-tone) 78%, black 22%)
+  );
+  box-shadow:
+    inset 0 calc(var(--die-size) * 0.05) 0 rgb(255 255 255 / 0.22),
+    inset 0 calc(var(--die-size) * -0.08) calc(var(--die-size) * 0.1) rgb(0 0 0 / 0.35),
+    0 1px 2px rgb(0 0 0 / 0.5);
 }
 
 .die__pip--tl { grid-area: 1 / 1; }

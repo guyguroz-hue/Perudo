@@ -13,6 +13,13 @@ import type { Face, PlayerId, RoundState } from '../../game'
 export interface TablePlayer {
   readonly id: PlayerId
   readonly name: string
+  /**
+   * The seat they took in the room, 0-5.
+   *
+   * Their colour hangs off this rather than off their position in this list,
+   * so it never changes when somebody is eliminated and the list shortens.
+   */
+  readonly seatIndex: number
   readonly diceCount: number
   readonly isYou: boolean
   readonly isEliminated: boolean

@@ -1,0 +1,119 @@
+/*
+ * A seat.
+ *
+ * Positioned from the table's centre by the fractions the seating module works
+ * out, so the layout is arithmetic in one place and CSS in the other. The cup
+ * sits on the point; the name tag hangs off whichever side of the table the
+ * seat is on, so tags never cross the middle of the board.
+ */
+.pseat {
+  --pseat-x: 0;
+  --pseat-y: 1;
+  --pseat-scale: 1;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* The seat's point on the ellipse, then lifted so the cup stands on it
+     rather than being centred over it. */
+  translate:
+    calc(-50% + var(--pseat-x) * var(--ring-x))
+    calc(-50% + var(--pseat-y) * var(--ring-y));
+  scale: var(--pseat-scale);
+  transition:
+    translate var(--t-medium) var(--ease-object),
+    scale var(--t-medium) var(--ease-object),
+    opacity var(--t-short) var(--ease-ui);
+}
+
+/* A seat arriving. Not a component mounting — somebody sitting down. */
+@starting-style {
+  .pseat {
+    opacity: 0;
+    scale: calc(var(--pseat-scale) * 0.6);
+  }
+}
+
+.pseat__cup {
+  display: block;
+  /* The cup's base is the seat's point, so it stands on the table rather than
+     hovering over it. */
+  margin-bottom: -14px;
+}
+
+/* A seat somebody has left. The place stays, which is what a table does. */
+.pseat__empty {
+  display: block;
+  width: 80px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.5), transparent 72%);
+}
+
+/*
+ * The name tag.
+ *
+ * Dark, small, and pinned to the cup. It is the one piece of chrome allowed on
+ * the table surface, so it stays as quiet as it can while still being legible
+ * against wood.
+ */
+.pseat__tag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 9px 5px;
+  border-radius: var(--radius);
+  background: rgb(8 7 12 / 0.82);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.5);
+  /* Tags do not shrink with their seat: a name at 0.7 scale is unreadable. */
+  scale: calc(1 / var(--pseat-scale));
+}
+
+.pseat__name {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: var(--track-display);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.pseat__dice {
+  display: flex;
+  gap: 2px;
+  min-height: 11px;
+}
+
+.pseat__gone {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Whose turn it is. The cup already has its ring of light on the table; the
+   tag picks up the same blue so the two read as one signal. */
+.pseat--turn .pseat__tag {
+  background: rgb(14 22 42 / 0.92);
+  box-shadow:
+    0 0 0 1px rgb(79 143 255 / 0.55),
+    0 2px 12px rgb(79 143 255 / 0.35);
+}
+
+.pseat--out {
+  opacity: 0.4;
+}
+
+/* Seats on the far side sit above their cup, so a tag never covers the table's
+   centre — which is where the bid is. */
+.pseat--far {
+  flex-direction: column-reverse;
+}
+
+.pseat--far .pseat__cup {
+  margin-bottom: 0;
+  margin-top: -10px;
+}

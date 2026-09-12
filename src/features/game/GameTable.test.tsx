@@ -11,9 +11,9 @@ const BASE: TableView = {
   round: normalRound(bid(4, 5, 'alice')),
   roundNumber: 3,
   players: [
-    { id: 'alice', name: 'Alice', diceCount: 5, isYou: false, isEliminated: false, hasTurn: false },
-    { id: 'you', name: 'Dana', diceCount: 3, isYou: true, isEliminated: false, hasTurn: true },
-    { id: 'carl', name: 'Carl', diceCount: 2, isYou: false, isEliminated: false, hasTurn: false },
+    { id: 'alice', name: 'Alice', seatIndex: 0, diceCount: 5, isYou: false, isEliminated: false, hasTurn: false },
+    { id: 'you', name: 'Dana', seatIndex: 1, diceCount: 3, isYou: true, isEliminated: false, hasTurn: true },
+    { id: 'carl', name: 'Carl', seatIndex: 2, diceCount: 2, isYou: false, isEliminated: false, hasTurn: false },
   ],
   yourHand: [5, 1, 3],
   lastEvent: 'Alice bid 4 fives',
@@ -25,7 +25,7 @@ const BASE: TableView = {
  * claim, the buttons state what they would do to it.
  */
 function theBid(): HTMLElement {
-  const el = document.querySelector('.table__bid')
+  const el = document.querySelector('.bid')
   if (el === null) throw new Error('no bid on the table')
   return el as HTMLElement
 }
@@ -65,12 +65,12 @@ describe('what the screen is allowed to know', () => {
   // could not render them if it tried.
   it('shows your dice and no one else’s', () => {
     const { container } = show(BASE)
-    const faces = [...container.querySelectorAll('.table__hand .die')]
+    const faces = [...container.querySelectorAll('.board__hand .die')]
     expect(faces).toHaveLength(3)
-    // Everyone else is drawn as hidden dice only.
-    const cups = [...container.querySelectorAll('.table__cups .die')]
-    expect(cups.length).toBeGreaterThan(0)
-    expect(cups.every((die) => die.classList.contains('die--hidden'))).toBe(true)
+    // Everyone else is a cup and a row of blanks in their colour.
+    const counts = [...container.querySelectorAll('.pseat__dice .die')]
+    expect(counts.length).toBeGreaterThan(0)
+    expect(counts.every((die) => die.classList.contains('die--hidden'))).toBe(true)
   })
 
   it('offers no actions to a player who is out', () => {
@@ -96,11 +96,13 @@ describe('the bid on the table', () => {
   it('reads a Bulled bid as "exactly", on the same numbers', () => {
     show({ ...BASE, round: normalRound(bid(4, 5, 'alice', 'carl')) })
     expect(theBid().textContent).toContain('exactly')
-    expect(within(theBid()).getByText(/Bull by Carl/)).toBeTruthy()
+    // The Bull caller replaces the bidder's name: once Bulled, the claim on the
+    // table is theirs (GAME_RULES §8.3).
+    expect(within(theBid()).getByText(/Bull · Carl/)).toBeTruthy()
   })
 
-  it('warns that ones are not wild in a Farewell Round', () => {
+  it('marks a Farewell Round', () => {
     show({ ...BASE, round: { type: 'farewell', lockedFace: 5, bid: null } })
-    expect(screen.getByText(/ones are not wild/)).toBeTruthy()
+    expect(screen.getByText('Farewell')).toBeTruthy()
   })
 })

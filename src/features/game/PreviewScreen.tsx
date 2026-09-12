@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Atoms } from './Atoms'
 import { Finish } from './Finish'
 import { GameTable } from './GameTable'
 import { Reveal } from './Reveal'
@@ -20,7 +21,7 @@ import './PreviewScreen.css'
  * checked against it in one place.
  */
 export function PreviewScreen() {
-  const [tab, setTab] = useState<'table' | 'reveal' | 'end'>('table')
+  const [tab, setTab] = useState<'table' | 'reveal' | 'end' | 'atoms'>('table')
   const [ending, setEnding] = useState(0)
   const [scenario, setScenario] = useState(SCENARIOS[0])
   const [revealIndex, setRevealIndex] = useState(0)
@@ -74,10 +75,20 @@ export function PreviewScreen() {
           >
             Game over
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'atoms'}
+            onClick={() => setTab('atoms')}
+          >
+            Objects
+          </button>
         </div>
       </header>
 
-      {tab === 'end' ? (
+      {tab === 'atoms' ? (
+        <Atoms />
+      ) : tab === 'end' ? (
         <>
           <nav className="preview__picks">
             {ENDINGS.map((option, index) => (

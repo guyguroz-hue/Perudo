@@ -13,10 +13,10 @@ import type { TableView } from './view'
  */
 
 const PLAYERS = [
-  { id: 'alice', name: 'Alice', diceCount: 5, isYou: false, isEliminated: false, hasTurn: false },
-  { id: 'you', name: 'Dana', diceCount: 4, isYou: true, isEliminated: false, hasTurn: true },
-  { id: 'carl', name: 'Carl', diceCount: 2, isYou: false, isEliminated: false, hasTurn: false },
-  { id: 'maya', name: 'Maya', diceCount: 5, isYou: false, isEliminated: false, hasTurn: false },
+  { id: 'alice', name: 'Alice', seatIndex: 0, diceCount: 5, isYou: false, isEliminated: false, hasTurn: false },
+  { id: 'you', name: 'Dana', seatIndex: 1, diceCount: 4, isYou: true, isEliminated: false, hasTurn: true },
+  { id: 'carl', name: 'Carl', seatIndex: 2, diceCount: 2, isYou: false, isEliminated: false, hasTurn: false },
+  { id: 'maya', name: 'Maya', seatIndex: 3, diceCount: 5, isYou: false, isEliminated: false, hasTurn: false },
 ] as const
 
 export interface Scenario {

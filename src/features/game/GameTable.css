@@ -1,4 +1,4 @@
-.table {
+.board {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -7,166 +7,189 @@
   margin: 0 auto;
 }
 
-.table__round {
+/* -----------------------------------------------------------------------------
+ * The strip above the table
+ * ---------------------------------------------------------------------------*/
+.board__strip {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  align-items: baseline;
   justify-content: space-between;
-  font-size: var(--text-xs);
+  gap: var(--space-3);
+  padding: 0 var(--space-1);
+}
+
+.board__round {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--bone-faint);
+  color: var(--ink-faint);
 }
 
-.table__farewell {
+/* A Farewell Round is marked, not announced. It is a change in the rules, and
+   the rule it changes is already visible in what the bid builder will accept. */
+.board__farewell {
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background: rgb(212 162 76 / 0.16);
+  box-shadow: inset 0 0 0 1px rgb(212 162 76 / 0.45);
   color: var(--brass-bright);
-  letter-spacing: 0.06em;
+  font-weight: 600;
 }
 
-/* Whose turn it is, first on the screen because it is the first thing anyone
-   looks for. */
-.table__turn {
-  margin: 0;
+.board__turn {
   font-family: var(--font-display);
-  font-size: var(--text-lg);
-  text-align: center;
-  color: var(--bone-dim);
+  font-size: var(--text-base);
+  font-weight: 600;
+  letter-spacing: var(--track-display);
+  color: var(--ink-dim);
 }
 
-/* Arriving at your turn is the one moment allowed to be emphatic. A player
-   must never have to wonder whether it is their turn. */
-.table--yours .table__turn {
-  color: var(--brass-bright);
-  animation: turn-arrives var(--duration) var(--ease);
+/* Arriving at your turn is the one moment allowed to be emphatic. A player must
+   never have to wonder whether it is their turn. */
+.board--yours .board__turn {
+  color: var(--turn);
+  animation: turn-arrives var(--t-short) var(--ease-arrive);
 }
 
 @keyframes turn-arrives {
-  from { transform: scale(0.94); opacity: 0.4; }
-  to   { transform: scale(1); opacity: 1; }
+  from { opacity: 0.3; scale: 0.9; }
+  to { opacity: 1; scale: 1; }
 }
 
-.table__bid {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  margin: 0;
-  padding: var(--space-3);
-  border-radius: var(--radius-lg);
-  background: rgb(0 0 0 / 0.22);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+/* -----------------------------------------------------------------------------
+ * The table
+ * ---------------------------------------------------------------------------*/
+/*
+ * A container query context, because the seats are positioned from the table's
+ * own radii rather than from the page. The table can then be any size on any
+ * screen and the seating arithmetic never changes.
+ */
+.board__stage {
+  position: relative;
+  aspect-ratio: 1 / 0.92;
+  /* Room above and below for what hangs off the table's edges: a far cup rises
+     past the back rim, and the near seat's name tag sits below the front one —
+     both of which is what happens at a real table. */
+  margin: var(--space-8) 0 var(--space-6);
+  container-type: size;
 }
 
-.table__reading {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--bone-faint);
+/*
+ * The wood.
+ *
+ * Four layers: the light pooling near the top where the lamp is, a faint grain,
+ * the body of the timber, and a dark rail around the edge. Stylised rather than
+ * photoreal — a photograph of oak at this size is noise, while one clear light
+ * source and one clear silhouette reads as a table instantly.
+ */
+.board__surface {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(52% 40% at 50% 12%, rgb(255 226 190 / 0.26), transparent 64%),
+    /* Grain, barely there. Straight boards on a round table read as corduroy,
+       so this is closer to a sheen than to timber. */
+    repeating-linear-gradient(
+      94deg,
+      rgb(0 0 0 / 0.028) 0 3px,
+      rgb(255 236 210 / 0.012) 3px 7px,
+      transparent 7px 13px
+    ),
+    radial-gradient(
+      86% 76% at 50% 26%,
+      var(--wood-light) 0%,
+      var(--wood) 42%,
+      var(--wood-deep) 78%,
+      var(--wood-edge) 100%
+    );
+  box-shadow:
+    inset 0 0 0 5px rgb(26 12 5 / 0.85),
+    inset 0 0 0 7px rgb(212 162 76 / 0.18),
+    inset 0 14px 30px rgb(0 0 0 / 0.3),
+    0 26px 54px rgb(0 0 0 / 0.62);
 }
 
-.table__quantity {
-  font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
+.board__centre {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 48%;
+  /* An ellipse, not a circle: the bid reads across, and a circle tall enough to
+     hold it would leave the near cup nowhere to stand. */
+  aspect-ratio: 1 / 0.62;
+  translate: -50% -50%;
 }
 
-/* A Bull does not replace the bid, it changes how the same numbers are read,
-   so it is marked on the bid rather than shown beside it. */
-.table__bid--bulled {
-  border: 1px solid var(--brass);
-  background: rgb(201 162 39 / 0.12);
-}
-
-.table__bid--bulled .table__reading {
-  color: var(--brass-bright);
-}
-
-.table__bidder {
-  flex-basis: 100%;
-  text-align: center;
-  font-size: var(--text-sm);
-  color: var(--bone-faint);
-}
-
-.table__bid--none {
-  color: var(--bone-faint);
-  font-style: italic;
-}
-
-.table__players {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+/* The radii live here rather than on the stage: an element does not query
+   itself as a container, so `cqw` written on `.board__stage` would resolve
+   against whatever contains *it*, and the seats would scatter. */
+.board__seats {
+  /*
+   * The ellipse the cups stand on.
+   *
+   * Pushed close to the rim on purpose. The near cup has to clear the bid in
+   * the middle of the table, and the only way it can is by sitting where a
+   * player's own cup actually sits: at the edge nearest them.
+   *
+   * A far cup whose body rises past the table's top edge is not a bug. That is
+   * what a cup on the far side of a round table looks like.
+   */
+  --ring-x: 34cqw;
+  --ring-y: 46cqh;
+  position: absolute;
+  inset: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.table__player {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-left: 3px solid transparent;
-  border-radius: var(--radius-sm);
-  background: rgb(0 0 0 / 0.14);
-}
-
-.table__player--turn {
-  border-left-color: var(--brass-bright);
-  background: rgb(0 0 0 / 0.3);
-}
-
-.table__player--out {
-  opacity: 0.45;
-}
-
-.table__you {
-  color: var(--bone-faint);
-}
-
-.table__cups {
-  display: flex;
-  gap: 3px;
-}
-
-.table__gone {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--bone-faint);
-}
-
-.table__log {
+/* -----------------------------------------------------------------------------
+ * Below the table
+ * ---------------------------------------------------------------------------*/
+/* The last thing anybody did. It sits under the table rather than on it, so it
+   never competes with the bid — and it keeps clear of the near seat's tag,
+   which hangs off the table's front edge. */
+.board__log {
+  position: relative;
   margin: 0;
   text-align: center;
   font-size: var(--text-sm);
-  color: var(--bone-dim);
+  color: var(--ink-dim);
 }
 
-/* Your own dice, set larger than anything else on the table: they are the only
-   information on this screen nobody else has. */
-.table__hand {
+/*
+ * Your own dice.
+ *
+ * Larger than anything else on the screen, and the only information here that
+ * nobody else has. They sit just above the controls, so a player's eye travels
+ * hand → bid → act without leaving the bottom of the screen.
+ */
+.board__hand {
   display: flex;
+  align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 56px;
-  align-items: center;
-  padding: var(--space-2);
+  min-height: 58px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-lg);
-  background: linear-gradient(rgb(0 0 0 / 0.28), rgb(0 0 0 / 0.12));
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(0 0 0 / 0.25));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07);
 }
 
-.table__nohand {
+.board__nohand {
   margin: 0;
   font-size: var(--text-sm);
-  color: var(--bone-faint);
+  color: var(--ink-faint);
 }
 
-.table__actions {
+/* The console. A slab docked to the bottom of the screen rather than a footer:
+   it is the part of the table the player's hands are on. */
+.board__console {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

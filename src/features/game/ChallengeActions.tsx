@@ -43,16 +43,14 @@ export function ChallengeActions({
         aria-label={`${burst ? 'Burst Dudo' : 'Dudo'}: I say there are fewer than ${bid.quantity}`}
       >
         <CrossMark />
-        <span className="challenge__body">
-          <span className="challenge__name">{burst ? 'Burst Dudo' : 'Dudo'}</span>
-          <span className="challenge__claim">
-            <span className="challenge__reading">at least</span>
-            <span className="challenge__count">{bid.quantity}</span>
-            <Die face={bid.face} size={20} />
-          </span>
-          <span className="challenge__gloss">
-            {canWinADie ? 'I say fewer — win a die if I am right' : 'I say there are fewer'}
-          </span>
+        <span className="challenge__name">{burst ? 'Burst Dudo' : 'Dudo'}</span>
+        <span className="challenge__claim">
+          <span className="challenge__reading">at least</span>
+          <span className="challenge__count">{bid.quantity}</span>
+          <Die face={bid.face} size={18} />
+        </span>
+        <span className="challenge__gloss">
+          {canWinADie ? 'win a die if right' : 'I say fewer'}
         </span>
       </button>
 
@@ -68,7 +66,7 @@ export function ChallengeActions({
         <span className="challenge__claim">
           <span className="challenge__reading">exactly</span>
           <span className="challenge__count">{bid.quantity}</span>
-          <Die face={bid.face} size={20} />
+          <Die face={bid.face} size={18} />
         </span>
         <span className="challenge__gloss">Precisely right</span>
       </button>

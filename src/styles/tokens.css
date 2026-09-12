@@ -1,53 +1,175 @@
 /*
  * Design tokens.
  *
- * The table is the product: dark felt, warm wood, brass and bone. Everything
- * here is a variable so the surface can be retuned in one place rather than
- * hunted through components.
+ * The world is a dark lounge and the table is the light in it. Everything is
+ * built from that one relationship: a warm wooden surface carrying the game,
+ * a room that falls away into shadow around it, and six saturated player
+ * colours that are the only other thing allowed to be bright.
+ *
+ * Two rules the rest of the system follows from:
+ *
+ *   Light tells you where to look. Nothing glows decoratively — a glow means
+ *   a turn, a challenge, or a reveal.
+ *
+ *   Colour means identity. A player's colour is theirs across their cup, their
+ *   ring and their seat, so you recognise Dana without reading "Dana".
  *
  * The game is played on phones held in one hand, so sizing starts at the small
- * end and grows, and every interactive target clears 44px.
+ * end and every interactive target clears 44px.
  */
+
+/* -----------------------------------------------------------------------------
+ * Type
+ * ---------------------------------------------------------------------------*/
+/* Self-hosted rather than fetched from a font CDN: one less third-party on the
+   critical path, and no request to a host that can be slow or blocked. Both are
+   variable, so one file per family covers every weight used.
+
+   Latin and Latin Extended only. A display name written in Hebrew or any other
+   script falls back to the system stack, which handles it properly — shipping
+   the world's scripts to render six names would not. */
+@font-face {
+  font-family: 'Outfit';
+  src: url('/fonts/outfit-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Outfit';
+  src: url('/fonts/outfit-latin-ext.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('/fonts/dmsans-latin.woff2') format('woff2');
+  font-weight: 100 1000;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('/fonts/dmsans-latin-ext.woff2') format('woff2');
+  font-weight: 100 1000;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
-  /* Felt — the table surface, and the ground for almost every screen. */
-  --felt-deep: #0e1f17;
-  --felt: #16301f;
-  --felt-raised: #1e4029;
-  --felt-edge: #0a1710;
+  /* Outfit for anything that carries weight: a bid, a name, a verdict. Wide,
+     geometric, and confident at large sizes without looking like a logo. */
+  --font-display: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+  /* DM Sans for everything read rather than looked at. Geometric enough to
+     belong beside Outfit, warmer than the usual UI default. */
+  --font-ui: 'DM Sans', system-ui, -apple-system, sans-serif;
 
-  /* Wood and leather — the rail around the table. */
-  --wood-dark: #2d1d12;
-  --wood: #4a3020;
-  --leather: #7d5a3c;
-
-  /* Brass — the single accent. Used sparingly so it still means something. */
-  --brass: #c9a227;
-  --brass-bright: #e8c34d;
-  --brass-dim: #8a6f1b;
-
-  /* Bone — dice, and the colour text is set in. */
-  --bone: #f4efe4;
-  --bone-dim: #cfc7b6;
-  --bone-faint: #9a9384;
-
-  --danger: #c0472f;
-  --danger-bright: #e06349;
-
-  /* Type. System stacks only: no webfont request to fail or block a first
-     paint, and no third-party dependency on the critical path. */
-  --font-display: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
-  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-numeric: ui-monospace, 'SF Mono', Menlo, monospace;
-
+  --text-2xs: 0.6875rem;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
   --text-lg: 1.125rem;
-  --text-xl: 1.5rem;
-  --text-2xl: 2rem;
-  --text-3xl: 2.75rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.5rem;
+  --text-4xl: 3.5rem;
 
-  /* Spacing, on a 4px rhythm. */
+  /* Display type is set tight; UI type is not. */
+  --track-display: -0.02em;
+  --track-label: 0.14em;
+
+  /* ---------------------------------------------------------------------------
+   * The room
+   * -------------------------------------------------------------------------*/
+  /* Near black, but never neutral: a violet cast from the window and an amber
+     one from the lamp are what stop it reading as a dark-mode dashboard. */
+  --room: #0a0910;
+  --room-deep: #05040a;
+  --room-lift: #15131f;
+  --glow-window: #2d4a8a;
+  --glow-lamp: #a8590f;
+
+  /* ---------------------------------------------------------------------------
+   * The table
+   * -------------------------------------------------------------------------*/
+  /* Warm cherry. The lightest value is a specular highlight rather than a
+     colour — wood under a low lamp is mostly dark with one bright band. */
+  --wood-spec: #d9a374;
+  --wood-light: #a9603a;
+  --wood: #7d4224;
+  --wood-deep: #4b2614;
+  --wood-edge: #2a1409;
+  --wood-rim: #1a0c05;
+
+  /* Brass. The crown on a cup, the rim at its base, the ring on the table. */
+  --brass: #d4a24c;
+  --brass-bright: #f0cd87;
+  --brass-deep: #8a6420;
+
+  /* ---------------------------------------------------------------------------
+   * Players
+   * -------------------------------------------------------------------------*/
+  /* Six, assigned by seat so every player sees the same colour on the same
+     person. Saturated enough to survive a dark room, separated enough in hue
+     to be told apart at the size of a cup on a phone. */
+  --p1: #8b5cf6; --p1-light: #b794ff; --p1-deep: #4c2a9e;
+  --p2: #10b981; --p2-light: #4ee0ab; --p2-deep: #05674a;
+  --p3: #3b82f6; --p3-light: #7cb0ff; --p3-deep: #17408f;
+  --p4: #e5346b; --p4-light: #ff7aa0; --p4-deep: #8a1338;
+  --p5: #f59e0b; --p5-light: #ffc65c; --p5-deep: #8a5303;
+  --p6: #2b3444; --p6-light: #5d6a80; --p6-deep: #12161f;
+
+  /* ---------------------------------------------------------------------------
+   * Game state
+   * -------------------------------------------------------------------------*/
+  /* Electric blue is the turn. It appears nowhere else, which is what makes it
+     impossible to miss. */
+  --turn: #4f8fff;
+  --turn-glow: #4f8fff;
+
+  /* The two challenges. Different hues, and they carry different icons and
+     different shapes as well — colour alone is not a distinction. */
+  --dudo: #e5346b;
+  --dudo-deep: #6d0f2c;
+  --bull: #2f6bf5;
+  --bull-deep: #12306f;
+
+  --win: #22d39a;
+  --loss: #f2503c;
+
+  /* ---------------------------------------------------------------------------
+   * Surfaces and ink
+   * -------------------------------------------------------------------------*/
+  /* Chrome sits over the scene as near-black panels rather than glass. Glass
+     everywhere is the tell of an interface that was generated rather than
+     designed; here the physical objects are the material, and the controls get
+     out of their way. */
+  --panel: rgb(14 13 20 / 0.88);
+  --panel-solid: #12111a;
+  --panel-lift: #1c1a27;
+  --panel-edge: rgb(255 255 255 / 0.08);
+
+  --ink: #f6f4fb;
+  --ink-dim: #aba8bd;
+  --ink-faint: #6f6c80;
+
+  /* Dice are bone, not white. White dice on a dark table look like paper. */
+  --bone: #f4efe2;
+  --bone-shade: #cdc4b2;
+  --pip: #1b1712;
+
+  /* ---------------------------------------------------------------------------
+   * Space, shape, depth
+   * -------------------------------------------------------------------------*/
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -56,33 +178,47 @@
   --space-6: 2rem;
   --space-8: 3rem;
 
-  --radius-sm: 4px;
-  --radius: 8px;
-  --radius-lg: 14px;
+  /* Not everything is a rounded rectangle, but the things that are share a
+     radius, and it is generous — small radii read as "form". */
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 22px;
   --radius-full: 999px;
 
-  /* Tactile depth: a lifted edge above, a cast shadow below. */
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
-  --shadow: 0 2px 8px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.06);
-  --shadow-lg: 0 8px 28px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.08);
-
-  /* Minimum comfortable tap target. */
   --tap: 44px;
 
-  --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
-  --duration-fast: 120ms;
-  --duration: 220ms;
-  /* The cup lift, and nothing else. Long enough to read as a physical act. */
-  --duration-lift: 480ms;
+  /* Depth by layer, not by taste. Objects on the table cast onto it; controls
+     float above the scene; overlays sit above everything. */
+  --shadow-object: 0 6px 14px rgb(0 0 0 / 0.55), 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-control: 0 8px 24px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.06);
+  --shadow-overlay: 0 24px 64px rgb(0 0 0 / 0.7);
+
+  /* ---------------------------------------------------------------------------
+   * Motion
+   * -------------------------------------------------------------------------*/
+  /* Four bands, and which one a thing uses says what kind of thing it is.
+     UI responds; physical objects have weight; celebration takes its time. */
+  --t-micro: 140ms;
+  --t-short: 300ms;
+  --t-medium: 600ms;
+  --t-celebrate: 1100ms;
+
+  /* UI easing: decisive, no overshoot. */
+  --ease-ui: cubic-bezier(0.2, 0.8, 0.3, 1);
+  /* Physical easing: something with mass starting and stopping. */
+  --ease-object: cubic-bezier(0.34, 0.02, 0.16, 1);
+  /* A thing arriving, with a little overshoot. Used for seats and results. */
+  --ease-arrive: cubic-bezier(0.22, 1.4, 0.36, 1);
 }
 
-/* Animation must never be load-bearing for understanding the game state
-   (PART 51), so switching it off costs nothing but polish. */
+/* Motion is never load-bearing for understanding the game state, so switching
+   it off costs polish and nothing else. */
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --duration-fast: 0ms;
-    --duration: 0ms;
-    --duration-lift: 0ms;
+    --t-micro: 0ms;
+    --t-short: 0ms;
+    --t-medium: 0ms;
+    --t-celebrate: 0ms;
   }
 
   *,
@@ -93,4 +229,34 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/*
+ * Bridge to the old palette.
+ *
+ * The lobby, the name screen, the reveal and the result screens have not been
+ * redesigned yet, and they are built from tokens the new system does not have.
+ * Rather than leave them referencing names that resolve to nothing — which
+ * fails silently and looks like a rendering bug — each old name points at its
+ * nearest new equivalent until that screen is rebuilt.
+ *
+ * Every line here is a screen still owed a redesign. The block should be empty
+ * when the work is finished, and it is a list of what is left until then.
+ */
+:root {
+  --bone-dim: var(--ink-dim);
+  --bone-faint: var(--ink-faint);
+  --brass-dim: var(--brass-deep);
+  --danger: var(--loss);
+  --danger-bright: var(--dudo);
+  --felt-edge: var(--room-deep);
+  --felt-raised: var(--room-lift);
+  --font-numeric: var(--font-display);
+  --leather: var(--wood-light);
+  --wood-dark: var(--wood-deep);
+  --shadow: var(--shadow-object);
+  --shadow-lg: var(--shadow-overlay);
+  --duration: var(--t-short);
+  --duration-fast: var(--t-micro);
+  --ease: var(--ease-ui);
 }

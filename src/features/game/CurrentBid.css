@@ -1,0 +1,77 @@
+/*
+ * The centre of the table.
+ *
+ * A brass ring inlaid into the wood with the bid sitting inside it. The ring is
+ * the only decoration on the surface, and it earns its place by framing the
+ * most important number in the game.
+ */
+.bid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  text-align: center;
+  /* Light pooling in the middle of the table, as if from above. */
+  background:
+    radial-gradient(closest-side, rgb(255 214 160 / 0.16), rgb(255 214 160 / 0) 78%);
+  box-shadow:
+    inset 0 0 0 1.5px rgb(212 162 76 / 0.55),
+    inset 0 0 22px rgb(255 205 140 / 0.14);
+}
+
+.bid__reading {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--brass-bright) 80%, white);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+}
+
+.bid__figure {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bid__quantity {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  letter-spacing: var(--track-display);
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: 0 2px 10px rgb(0 0 0 / 0.65);
+}
+
+.bid__by,
+.bid__hint {
+  max-width: 88%;
+  overflow: hidden;
+  font-size: var(--text-2xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgb(255 236 210 / 0.72);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+}
+
+/* Bulled: the metal goes cold and the reading changes. Same numbers. */
+.bid--bulled {
+  background: radial-gradient(closest-side, rgb(47 107 245 / 0.2), transparent 78%);
+  box-shadow:
+    inset 0 0 0 1.5px rgb(120 168 255 / 0.7),
+    inset 0 0 26px rgb(47 107 245 / 0.25);
+}
+
+.bid--bulled .bid__reading {
+  color: #a9c8ff;
+}
+
+.bid--open .bid__reading {
+  color: rgb(255 236 210 / 0.5);
+}

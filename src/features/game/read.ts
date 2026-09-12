@@ -66,6 +66,7 @@ export async function fetchPlayers(
   return ((data ?? []) as Row[]).map((row) => ({
     id: row.user_id,
     name: nameOf(row.profiles),
+    seatIndex: row.seat,
     diceCount: row.dice_count,
     isYou: row.user_id === youId,
     isEliminated: row.is_eliminated,

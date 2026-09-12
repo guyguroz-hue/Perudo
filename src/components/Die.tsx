@@ -1,55 +1,54 @@
 import type { CSSProperties } from 'react'
 import type { Face } from '../game'
-import { GLYPH_DETAIL_THRESHOLD, PERUDO_GLYPH, glyphStrokeWidth } from './perudoGlyph'
+import { JokerFace } from './JokerFace'
 import './Die.css'
 
 /**
- * A single die.
+ * A die.
  *
- * Faces 2–6 are pips on a 3×3 grid, so they scale without ever going soft. The
- * one is not a pip at all: it is the Perudo glyph, because the wildcard is a
- * different kind of thing from a number and the die should say so. Tinting a
- * pip would have carried the same meaning in colour alone, which is no meaning
- * at all to anyone glancing quickly or not seeing the tint.
+ * The one canonical die in the product. Every place a face is shown — a hand,
+ * the bid builder, the current bid, the reveal, a player's dice count — renders
+ * this, so there is exactly one answer to what a die looks like and exactly one
+ * place the wildcard rule lives.
+ *
+ * Faces 2-6 are pips on a 3x3 grid, which scale without ever going soft. The
+ * one is never a pip and never a numeral: it is the Joker (GAME_RULES §3).
  */
 export function Die({
   face,
   size = 44,
   hidden = false,
+  tone,
   label,
 }: {
   face?: Face
   size?: number
-  /** A die in someone else's cup: shown as a blank, never as a value. */
+  /** A die in somebody else's cup: drawn as a blank, never as a value. */
   hidden?: boolean
+  /** Player colour, for the blanks that stand in for a player's dice count. */
+  tone?: string
   label?: string
 }) {
-  const style = { '--die-size': `${size}px` } as CSSProperties
+  const style = {
+    '--die-size': `${size}px`,
+    ...(tone === undefined ? {} : { '--die-tone': tone }),
+  } as CSSProperties
 
   if (hidden || face === undefined) {
     return (
-      <span className="die die--hidden" style={style} role="img" aria-label={label ?? 'Hidden die'} />
+      <span
+        className="die die--hidden"
+        style={style}
+        role="img"
+        aria-label={label ?? 'Hidden die'}
+      />
     )
   }
 
   if (face === 1) {
-    const detailed = size >= GLYPH_DETAIL_THRESHOLD
-    const paths = detailed ? PERUDO_GLYPH.detailed : PERUDO_GLYPH.reduced
-
     return (
-      <span className="die die--perudo" style={style} role="img" aria-label={label ?? 'Perudo'}>
-        <svg className="die__glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-          {paths.map((d) => (
-            <path
-              key={d}
-              d={d}
-              stroke="currentColor"
-              strokeWidth={glyphStrokeWidth(size)}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          ))}
-        </svg>
+      <span className="die die--joker" style={style} role="img" aria-label={label ?? 'Joker'}>
+        <JokerFace className="die__joker" />
       </span>
     )
   }
@@ -63,7 +62,7 @@ export function Die({
   )
 }
 
-/** Grid positions for each face, named by row and column on the 3×3. */
+/** Grid positions for each face, named by row and column on the 3x3. */
 const PIPS: Record<Exclude<Face, 1>, readonly string[]> = {
   2: ['tl', 'br'],
   3: ['tl', 'mc', 'br'],

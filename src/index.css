@@ -12,17 +12,29 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/*
+ * The room.
+ *
+ * A dark lounge at night, built from light rather than from pictures: a cool
+ * window at the top left, a warm lamp at the top right, and everything between
+ * them falling away into near black. Three gradients, no images, no blur
+ * filters — it costs one paint and it never competes with the table, which is
+ * the whole job of a background in a game.
+ */
 body {
   margin: 0;
   min-height: 100dvh;
   font-family: var(--font-ui);
   font-size: var(--text-base);
   line-height: 1.5;
-  color: var(--bone);
+  color: var(--ink);
   background:
-    radial-gradient(ellipse 120% 80% at 50% 0%, var(--felt-raised), transparent 60%),
-    linear-gradient(var(--felt), var(--felt-deep));
-  background-color: var(--felt-deep);
+    radial-gradient(70% 45% at 12% 0%, color-mix(in srgb, var(--glow-window) 42%, transparent), transparent 70%),
+    radial-gradient(60% 40% at 92% 4%, color-mix(in srgb, var(--glow-lamp) 38%, transparent), transparent 68%),
+    radial-gradient(120% 80% at 50% 120%, var(--room-lift), transparent 60%),
+    linear-gradient(180deg, var(--room), var(--room-deep));
+  background-color: var(--room-deep);
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -31,8 +43,9 @@ h2,
 h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 600;
-  line-height: 1.15;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: var(--track-display);
 }
 
 button,
@@ -41,11 +54,16 @@ input {
   color: inherit;
 }
 
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 /* A visible focus ring everywhere, because the game is keyboard reachable and
    a ring that only appears on some controls is worse than none. */
 :focus-visible {
-  outline: 2px solid var(--brass-bright);
-  outline-offset: 2px;
+  outline: 2px solid var(--turn);
+  outline-offset: 3px;
 }
 
 #root {

@@ -1,0 +1,62 @@
+.atoms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.atoms h3 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--ink-faint);
+}
+
+.atoms__note {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-dim);
+}
+
+.atoms__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.atoms__row--baseline {
+  align-items: flex-end;
+}
+
+.atoms__row--wrap {
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.atoms__hand {
+  display: flex;
+  gap: 2px;
+}
+
+.atoms__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.atoms__state em {
+  font-size: var(--text-xs);
+  font-style: normal;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* The lifted cup leaves its box, so it needs room above it here — on the table
+   it lifts out of a clipped frame instead. */
+.atoms__state--tall {
+  padding-top: calc(86px * 1.35);
+}
