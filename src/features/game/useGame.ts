@@ -3,7 +3,14 @@ import { supabase } from '../../lib/supabaseClient'
 import type { ProposedBid } from '../../game'
 import * as api from './api'
 import { toGameError } from './errors'
-import { fetchPlayers, fetchReveal, fetchRound, toTableView } from './read'
+import {
+  fetchGameStanding,
+  fetchLastEvent,
+  fetchPlayers,
+  fetchReveal,
+  fetchRound,
+  toTableView,
+} from './read'
 import type { RevealData } from './reveal'
 import type { Connection } from '../rooms/useRoom'
 import type { TableView } from './view'
@@ -28,6 +35,12 @@ export interface GameHandle {
    * the network wait are the same moment (docs/GAME_UI.md §5.1).
    */
   readonly reveal: { readonly pending: boolean; readonly data: RevealData | null } | null
+  /**
+   * Set once the game is over. `winnerName` is null when nobody won, which is
+   * a real outcome: if the last players are eliminated in the same resolution
+   * there is no winner rather than one awarded on a tiebreak (R-004).
+   */
+  readonly over: { readonly winnerName: string | null } | null
   readonly error: string | null
   bid: (bid: ProposedBid) => Promise<void>
   bull: () => Promise<void>
@@ -41,6 +54,7 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
   const [connection, setConnection] = useState<Connection>('connecting')
   const [busy, setBusy] = useState(false)
   const [reveal, setReveal] = useState<GameHandle['reveal']>(null)
+  const [over, setOver] = useState<GameHandle['over']>(null)
   const [error, setError] = useState<string | null>(null)
 
   const generation = useRef(0)
@@ -54,9 +68,10 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
     const mine = ++generation.current
 
     try {
-      const [round, players] = await Promise.all([
+      const [round, players, standing] = await Promise.all([
         fetchRound(gameId),
         fetchPlayers(gameId, youId),
+        fetchGameStanding(gameId),
       ])
       if (generation.current !== mine) return
 
@@ -64,12 +79,21 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
       const resolvedElsewhere =
         started.current && previous !== null && round?.id !== previous
 
-      const hand = round === null ? null : await api.fetchOwnHand(round.id, youId)
+      const names = new Map(players.map((player) => [player.id, player.name]))
+      const [hand, lastEvent] = await Promise.all([
+        round === null ? Promise.resolve(null) : api.fetchOwnHand(round.id, youId),
+        fetchLastEvent(gameId, names),
+      ])
       if (generation.current !== mine) return
 
       seenRound.current = round?.id ?? null
       started.current = true
-      setView(toTableView(round, players, hand, null))
+      setView(toTableView(round, players, hand, lastEvent))
+      setOver(
+        standing.status === 'completed'
+          ? { winnerName: standing.winnerId === null ? null : (names.get(standing.winnerId) ?? null) }
+          : null,
+      )
 
       // Somebody else's challenge. The reveal is rebuilt from what the round
       // made public, so every player sees the cups come off, not just the one
@@ -203,5 +227,17 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
 
   const dismissReveal = useCallback(() => setReveal(null), [])
 
-  return { view, connection, busy, reveal, error, bid, bull, doubt, dismissReveal, refresh }
+  return {
+    view,
+    connection,
+    busy,
+    reveal,
+    over,
+    error,
+    bid,
+    bull,
+    doubt,
+    dismissReveal,
+    refresh,
+  }
 }

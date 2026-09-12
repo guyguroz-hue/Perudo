@@ -1,6 +1,7 @@
 import { supabase } from '../../lib/supabaseClient'
 import type { Face, PlayerId, RoundType } from '../../game'
 import { GameActionError } from './errors'
+import { describeEvent } from './events'
 import type { RevealData } from './reveal'
 import type { TablePlayer, TableView } from './view'
 
@@ -223,4 +224,59 @@ async function challengeEvent(roundId: string) {
     deltas: (row.payload.deltas ?? {}) as Record<PlayerId, number>,
     eliminated: (row.payload.eliminated ?? []) as PlayerId[],
   }
+}
+
+/** Whether the game is still running, and who won if it is not. */
+export interface GameStanding {
+  readonly status: string
+  readonly winnerId: PlayerId | null
+}
+
+export async function fetchGameStanding(gameId: string): Promise<GameStanding> {
+  const { data, error } = await supabase
+    .from('games')
+    .select('status, winner_id')
+    .eq('id', gameId)
+    .maybeSingle()
+  if (error !== null) throw new GameActionError('UNKNOWN', error.message, false)
+
+  const row = data as { status: string; winner_id: PlayerId | null } | null
+  return { status: row?.status ?? 'abandoned', winnerId: row?.winner_id ?? null }
+}
+
+/**
+ * The most recent thing anybody did, as a sentence.
+ *
+ * Deliberately one row. The log is the whole history of the game and the screen
+ * wants the last line of it — fetching more to show one would be paying for
+ * scrollback nobody is reading.
+ */
+export async function fetchLastEvent(
+  gameId: string,
+  names: ReadonlyMap<PlayerId, string>,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('game_events')
+    .select('actor_id, kind, payload')
+    .eq('game_id', gameId)
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error !== null) throw new GameActionError('UNKNOWN', error.message, false)
+  if (data === null) return null
+
+  const row = data as {
+    actor_id: PlayerId | null
+    kind: string
+    payload: Record<string, unknown>
+  }
+  const quantity = row.payload.quantity
+  const face = row.payload.face
+
+  return describeEvent({
+    kind: row.kind,
+    actorName: (row.actor_id === null ? null : names.get(row.actor_id)) ?? 'Someone',
+    quantity: typeof quantity === 'number' ? quantity : undefined,
+    face: typeof face === 'number' ? (face as Face) : undefined,
+  })
 }

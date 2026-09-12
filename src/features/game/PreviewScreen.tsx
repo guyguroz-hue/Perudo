@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { Finish } from './Finish'
 import { GameTable } from './GameTable'
 import { Reveal } from './Reveal'
-import { REVEALS, SCENARIOS, claimFor, standingsFor } from './fixtures'
+import { ENDINGS, REVEALS, SCENARIOS, claimFor, standingsFor } from './fixtures'
 import type { RevealData } from './reveal'
 import './PreviewScreen.css'
 
@@ -19,7 +20,8 @@ import './PreviewScreen.css'
  * checked against it in one place.
  */
 export function PreviewScreen() {
-  const [tab, setTab] = useState<'table' | 'reveal'>('table')
+  const [tab, setTab] = useState<'table' | 'reveal' | 'end'>('table')
+  const [ending, setEnding] = useState(0)
   const [scenario, setScenario] = useState(SCENARIOS[0])
   const [revealIndex, setRevealIndex] = useState(0)
   // Null replays the held beat, so the pause can be seen and not just reasoned
@@ -64,10 +66,34 @@ export function PreviewScreen() {
           >
             Reveal
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'end'}
+            onClick={() => setTab('end')}
+          >
+            Game over
+          </button>
         </div>
       </header>
 
-      {tab === 'table' ? (
+      {tab === 'end' ? (
+        <>
+          <nav className="preview__picks">
+            {ENDINGS.map((option, index) => (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={index === ending}
+                onClick={() => setEnding(index)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </nav>
+          <Finish winnerName={ENDINGS[ending].winnerName} view={ENDINGS[ending].view} />
+        </>
+      ) : tab === 'table' ? (
         <>
           <nav className="preview__picks">
             {SCENARIOS.map((option) => (

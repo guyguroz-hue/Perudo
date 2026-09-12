@@ -36,7 +36,7 @@ begin
   set local role authenticated; v_game := public.start_game(v_room); reset role;
 
   v_round := public.deal_round(v_game, 'normal', 'da000000-0000-0000-0000-000000000001');
-  create temp table t_act as select v_game as game, v_round as round;
+  create temp table t_act as select v_room as room, v_game as game, v_round as round;
 end $$;
 \echo '--- three players, five dice each, one round open ---'
 
@@ -222,6 +222,13 @@ begin
      and winner_id = 'da000000-0000-0000-0000-000000000001';
   if n <> 1 then raise exception 'FAIL: the game did not end'; end if;
 
+  -- The room has to follow the game. return_to_lobby only reopens a room that
+  -- is 'finished', so a room left 'in_game' could never host another game.
+  select count(*) into n from public.rooms r
+    join public.games g on g.room_id = r.id
+   where g.id = v_game and r.status = 'finished';
+  if n <> 1 then raise exception 'FAIL: the room was left in play'; end if;
+
   -- No round is dealt into a finished game.
   select count(*) into n from public.rounds where game_id = v_game and status <> 'resolved';
   if n <> 0 then raise exception 'FAIL: a round was opened after the game ended'; end if;
@@ -231,7 +238,21 @@ begin
      and eliminated_at is not null;
   if n <> 2 then raise exception 'FAIL: eliminations were not recorded'; end if;
 end $$;
-\echo 'PASS  the last resolution ends the game and opens nothing'
+\echo 'PASS  the last resolution ends the game, frees the room and opens nothing'
+
+-- The host can start another game, which is the thing the room status gates.
+do $$
+declare v_room uuid := (select room from t_act); n int;
+begin
+  perform pg_temp.act7('da000000-0000-0000-0000-000000000001');
+  set local role authenticated;
+  perform public.return_to_lobby(v_room);
+  reset role;
+
+  select count(*) into n from public.rooms where id = v_room and status = 'lobby';
+  if n <> 1 then raise exception 'FAIL: the room did not reopen'; end if;
+end $$;
+\echo 'PASS  a finished table can start another game'
 
 -- -----------------------------------------------------------------------------
 -- None of this is a client capability

@@ -132,6 +132,12 @@ Completed items are marked `[x]` and kept, not deleted.
       `apply_bull` and `apply_challenge`. Paste `bundle.ts` into the dashboard.
 - [x] **T-33** ~~Wire the game screen to the action layer and Realtime~~ — done.
       A game deals its first round once the function is deployed.
+- [x] **T-35** ~~A finished game had nowhere to go~~ — nothing set the room to
+      `finished`, and `return_to_lobby` only reopens a room that is. A table
+      that finished a game could never start another one. Fixed with a trigger
+      on `games`, so the room follows whatever completes the game.
+- [x] **T-36** ~~Game over showed nothing~~ — `features/game/Finish`, including
+      the R-004 case where nobody wins.
 - [ ] **T-34** The reveal is rebuilt for non-challengers from the round, the
       reveals and the challenge event. Verified by types and by reading, not yet
       by two browsers against the live project.

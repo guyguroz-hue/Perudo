@@ -257,3 +257,38 @@ revoke execute on function public.apply_challenge(uuid, integer, uuid, text, int
 grant execute on function public.apply_bid(uuid, integer, uuid, smallint, smallint, boolean, uuid, boolean) to service_role;
 grant execute on function public.apply_bull(uuid, integer, uuid, boolean, uuid) to service_role;
 grant execute on function public.apply_challenge(uuid, integer, uuid, text, integer, boolean, jsonb, uuid[], boolean, uuid, uuid, text, uuid[]) to service_role;
+
+-- -----------------------------------------------------------------------------
+-- The room follows the game
+-- -----------------------------------------------------------------------------
+-- Without this the room stays 'in_game' for good, and `return_to_lobby` only
+-- reopens a room that is 'finished' — so a table that finished a game could
+-- never start another one.
+--
+-- A trigger rather than a line inside apply_challenge, because it is not
+-- something the resolution has to remember: a completed game and a room still
+-- in play is an inconsistent pair, whatever produced it. Only 'completed'
+-- counts. An abandoned game means the host closed the room, and end_room has
+-- already decided what the room is.
+
+create or replace function public.room_follows_game()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  update public.rooms r
+     set status = 'finished'
+   where r.id = new.room_id
+     and r.status = 'in_game';
+  return new;
+end;
+$$;
+
+drop trigger if exists games_finish_room on public.games;
+create trigger games_finish_room
+  after update of status on public.games
+  for each row
+  when (new.status = 'completed' and old.status is distinct from 'completed')
+  execute function public.room_follows_game();

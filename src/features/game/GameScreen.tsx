@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ConnectionDot } from '../../components/ConnectionDot'
 import { GameTable } from './GameTable'
+import { Finish } from './Finish'
 import { Reveal } from './Reveal'
 import { PERUDO } from '../../game'
 import { openRound } from './api'
@@ -23,13 +24,17 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
   const game = useGame(gameId, youId)
   const [opening, setOpening] = useState<string | null>(null)
 
-  // The only moment a game has no round is immediately after it starts: every
-  // later round is dealt by the resolution that ended the previous one. So this
-  // runs once, and the unique index on live rounds settles the race if several
-  // clients arrive at the same instant.
+  // The only moment a running game has no round is immediately after it starts:
+  // every later round is dealt by the resolution that ended the previous one.
+  // So this runs once, and the unique index on live rounds settles the race if
+  // several clients arrive at the same instant.
+  //
+  // A finished game also has no round, and asking to open one there would be a
+  // request the server can only refuse.
   const asked = useRef(false)
   useEffect(() => {
-    if (game.view === null || game.view.roundNumber !== 0 || asked.current) return
+    if (game.view === null || game.view.roundNumber !== 0) return
+    if (game.over !== null || asked.current) return
     asked.current = true
 
     openRound(gameId)
@@ -44,6 +49,12 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
 
   if (game.view === null) {
     return <p className="game__waiting">Setting the table…</p>
+  }
+
+  // The reveal still plays over a finished game: the hand that ended it is the
+  // one most worth seeing, and cutting to a result screen would skip it.
+  if (game.over !== null && game.reveal === null) {
+    return <Finish winnerName={game.over.winnerName} view={game.view} />
   }
 
   if (game.reveal !== null) {

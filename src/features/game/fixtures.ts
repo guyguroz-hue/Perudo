@@ -208,3 +208,68 @@ export const REVEALS: readonly RevealScenario[] = [
     },
   },
 ]
+
+/**
+ * How a game ends.
+ *
+ * Including the case nobody expects to see: if the last players are eliminated
+ * in the same resolution the game ends with **no winner** rather than one
+ * awarded on a tiebreak (R-004). It is rare, it is reachable, and it is the
+ * screen most likely to be wrong because nobody has looked at it.
+ */
+export const ENDINGS: readonly {
+  readonly id: string
+  readonly label: string
+  readonly winnerName: string | null
+  readonly view: TableView
+}[] = [
+  {
+    id: 'you-won',
+    label: 'You won',
+    winnerName: 'Dana',
+    view: {
+      round: { type: 'normal', lockedFace: null, bid: null },
+      roundNumber: 11,
+      players: PLAYERS.map((p) =>
+        p.isYou
+          ? { ...p, diceCount: 2, hasTurn: false }
+          : { ...p, diceCount: 0, isEliminated: true, hasTurn: false },
+      ),
+      yourHand: null,
+      lastEvent: 'Dana called Dudo',
+    },
+  },
+  {
+    id: 'they-won',
+    label: 'Somebody else won',
+    winnerName: 'Maya',
+    view: {
+      round: { type: 'normal', lockedFace: null, bid: null },
+      roundNumber: 9,
+      players: PLAYERS.map((p) =>
+        p.name === 'Maya'
+          ? { ...p, diceCount: 3, hasTurn: false }
+          : { ...p, diceCount: 0, isEliminated: true, hasTurn: false },
+      ),
+      yourHand: null,
+      lastEvent: 'Maya burst in with Dudo',
+    },
+  },
+  {
+    id: 'nobody',
+    label: 'Nobody won (R-004)',
+    winnerName: null,
+    view: {
+      round: { type: 'normal', lockedFace: null, bid: null },
+      roundNumber: 7,
+      players: PLAYERS.map((p) => ({
+        ...p,
+        diceCount: 0,
+        isEliminated: true,
+        hasTurn: false,
+      })),
+      yourHand: null,
+      lastEvent: 'Carl called Bull — exactly',
+    },
+  },
+]
