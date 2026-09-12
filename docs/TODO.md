@@ -84,6 +84,24 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🐛 Bugs
 
+- [x] **B-4** ~~Every bid failed with "Something broke".~~ The Edge Function
+      logged `Could not find the function public.apply_bid(...) in the schema
+      cache`. PostgREST resolves an RPC from the JSON body by matching argument
+      names and checking each value can be coerced to the declared type, and a
+      JSON number does not resolve to `smallint` — so the function was
+      unreachable. The evidence was exact: every function in the schema with a
+      smallint parameter failed and every one without worked, which is why
+      starting a game and dealing a round were fine. `count_face` had the same
+      fault and had simply not been reached, because it takes a challenge to
+      call it. Parameters are `integer` now and narrowed inside; the columns
+      stay smallint, which was never the problem. **Second fault of the same
+      class as B-3, and invisible to the local harness for the same reason** —
+      these tests call the functions directly in SQL, where a literal is
+      coerced at parse time. `supabase/tests/08_postgrest_contract_test.sql`
+      now asserts the two properties a function needs to be reachable at all:
+      no smallint parameters, and no overloads. It fails against the old schema
+      and names both broken functions.
+
 - [x] **B-3** ~~Opening a room failed with PGRST201.~~ `room_members` points at
       `profiles` twice — through `user_id` and through `removed_by` — so an
       unqualified embed is ambiguous and PostgREST refuses it outright rather
