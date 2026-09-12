@@ -40,6 +40,23 @@ import { makeRoom } from './room'
  */
 const AIM = new Vector3(LOOK_AT.x, LOOK_AT.y, LOOK_AT.z)
 
+/** The axis a die spins about once it has come to rest on the table. */
+const UP = new Vector3(0, 1, 0)
+
+/**
+ * How wide to spread the dice under one cup.
+ *
+ * Wide enough that neighbours on the ring do not intersect, which is what a
+ * fixed radius could not promise: five dice on the ring that suited three came
+ * out as a single pile with corners poking through each other. Solved from the
+ * chord between neighbours rather than guessed, so it holds for one die and for
+ * five.
+ */
+function ringRadius(count: number): number {
+  if (count < 2) return 0
+  return (DIE_SIZE * 1.16) / (2 * Math.sin(Math.PI / count))
+}
+
 export type CupState = 'covered' | 'shaking' | 'lifted'
 
 export interface SceneSeat {
@@ -241,11 +258,25 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
           const die = makeDie()
           // Laid out on a small ring, so five dice under one cup do not stack.
           const a = (i / Math.max(1, faces.length)) * Math.PI * 2 + seat.index
-          const spread = faces.length === 1 ? 0 : 0.062
-          die.position.set(Math.cos(a) * spread, DIE_SIZE / 2, Math.sin(a) * spread)
+          die.position.set(
+            Math.cos(a) * ringRadius(faces.length),
+            DIE_SIZE / 2,
+            Math.sin(a) * ringRadius(faces.length),
+          )
           const [rx, ry, rz] = FACE_UP[face] ?? FACE_UP[1]
-          // The upward face is the value; the spin about it is cosmetic.
-          die.rotation.set(rx, ry + a * 0.7, rz)
+          /*
+           * Turn the die so its value faces up, then spin it where it lies.
+           *
+           * The spin has to go on afterwards, about the world's up axis, not
+           * into the Euler angles that orient the face. Added to the middle
+           * angle it is applied *before* the tilt that puts the face up, which
+           * turns it into a tumble about a horizontal axis — so every die
+           * showing a two, a five or a six came to rest on a corner. Those are
+           * exactly the faces whose orientation has a non-zero first angle,
+           * which is why half the table looked right.
+           */
+          die.rotation.set(rx, ry, rz)
+          die.rotateOnWorldAxis(UP, a * 0.7)
           dice.add(die)
         })
         group.add(dice)

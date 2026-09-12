@@ -9,7 +9,7 @@ import {
   type BufferGeometry,
   type Material,
 } from 'three'
-import { JOKER_EYES, JOKER_MASK } from './joker'
+import { JOKER_BOX, JOKER_PATHS } from './joker'
 
 /**
  * A die.
@@ -65,7 +65,7 @@ const PIPS: Record<number, readonly [number, number][]> = {
   3: [[0.27, 0.27], [0.5, 0.5], [0.73, 0.73]],
   4: [[0.27, 0.27], [0.73, 0.27], [0.27, 0.73], [0.73, 0.73]],
   5: [[0.27, 0.27], [0.73, 0.27], [0.5, 0.5], [0.27, 0.73], [0.73, 0.73]],
-  6: [[0.27, 0.25], [0.73, 0.25], [0.27, 0.5], [0.73, 0.5], [0.27, 0.75], [0.73, 0.75]],
+  6: [[0.27, 0.27], [0.73, 0.27], [0.27, 0.5], [0.73, 0.5], [0.27, 0.73], [0.73, 0.73]],
 }
 
 const faces = new Map<number, CanvasTexture>()
@@ -93,18 +93,15 @@ function faceTexture(face: number): CanvasTexture {
   ctx.fillStyle = '#1b1712'
 
   if (face === 1) {
-    // The Joker sits on the face rather than filling it. Larger, it closes up
-    // into a solid blob with two holes and starts reading as a letter.
+    // The crown sits on the face rather than filling it, and it is wider than
+    // it is tall, so it is centred on both axes from its own box rather than
+    // from a square it does not fill.
     ctx.save()
-    const mark = size * 0.56
-    ctx.translate((size - mark) / 2, (size - mark) / 2)
-    ctx.scale(mark / 32, mark / 32)
-    ctx.fill(new Path2D(JOKER_MASK))
-    // Punched out rather than filled with the face's colour, so the mask works
-    // whatever is drawn behind it.
-    ctx.globalCompositeOperation = 'destination-out'
-    for (const d of JOKER_EYES) ctx.fill(new Path2D(d))
-    ctx.globalCompositeOperation = 'source-over'
+    const mark = size * 0.6
+    const scale = mark / JOKER_BOX.width
+    ctx.translate((size - mark) / 2, (size - JOKER_BOX.height * scale) / 2)
+    ctx.scale(scale, scale)
+    for (const d of JOKER_PATHS) ctx.fill(new Path2D(d))
     ctx.restore()
   } else {
     for (const [u, v] of PIPS[face]) {
