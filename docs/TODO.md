@@ -35,7 +35,9 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **T-9** ~~Install Vitest; set up the pure engine test harness~~ — 55 cases.
 - [x] **T-10** ~~Phase 1 slice 1 schema + migrations + RLS~~ — locally verified.
 - [ ] **T-10b** Phase 1 slice 2: rounds, bids, private dice, reveals, event log.
-- [ ] **T-11** Decide min/max players per game (recommend 2–8).
+- [x] **T-11** ~~Decide min/max players per game~~ — **three to six**, and not
+      as a number the application checks: six seats exist, the unique seat index
+      is what refuses a seventh, and `start_game` refuses fewer than three.
 - [x] **T-12** ~~Keep `player_dice` out of the Realtime publication~~ — enforced
       by the migration itself and by an exact-list assertion.
 
@@ -66,9 +68,18 @@ Completed items are marked `[x]` and kept, not deleted.
       indexed, but nothing deletes yet. Not urgent — joins will reject expired
       rooms — but the table grows without it.
 
-- [ ] **T-20** Animations (roll, reveal, die loss/gain, Burst interruption, victory).
-- [ ] **T-21** Reduced-motion support.
-- [ ] **T-22** Sound, with mute control (non-essential by design).
+- [ ] **T-20** Animations. Done: the deal (every cup shaken for a beat when the
+      round number moves) and the reveal (cups lifted on the table itself, the
+      count filling one die at a time). Still owed: a die lost or won, which
+      currently just changes a number on a badge; the Burst interruption; and
+      the victory.
+- [x] **T-21** ~~Reduced-motion support~~ — the media query zeroes every
+      duration globally, and the two sequences that are driven by timers rather
+      than by CSS — the deal shake and the reveal — each check it and go
+      straight to their end state.
+- [x] **T-22** ~~Sound, with mute control~~ — dice and cups synthesised, music
+      generated (`src/lib/ambient.ts`) unless `/audio/table.mp3` is supplied,
+      and a switch on the table that is remembered.
 - [ ] **T-23** Accessibility pass: contrast, focus, labels, non-color-only feedback.
 
 ## 🐛 Bugs
@@ -95,6 +106,15 @@ Completed items are marked `[x]` and kept, not deleted.
       `ErrorBoundary` now backstops render-time crashes. Verified by building
       with no env vars and confirming the error screen appears.
 
+- [ ] **T-37** Screens still on the old palette. The table is redesigned; these
+      are not, and they are listed by the bridge block at the foot of
+      `src/styles/tokens.css` — every line in it is a screen still owed the
+      work. In dependency order: `Finish` (the end of a game, reached every
+      time), then the lobby (`RoomScreen`, `RoomTable`, `Seat`, `RoomCode`,
+      `Countdown`), then the way in (`HomeScreen`, `NameScreen`), then the
+      shared parts (`Button`, `ConnectionDot`, `ErrorBoundary`). The block
+      should be empty when this is finished.
+
 ## 🧹 Technical debt
 
 - [ ] **TD-10** `UnresolvedRuleError` now has no thrower, since every rule is
@@ -117,9 +137,11 @@ Completed items are marked `[x]` and kept, not deleted.
 - [x] **TD-3** ~~No test runner~~ — Vitest.
 - [x] **TD-8** ~~`Seated` placeholder screen~~ — replaced by the real lobby.
 - [x] **T-28** ~~Wire the Start button~~ — starts a real game.
-- [x] **T-30** ~~Build the game screens~~ — `features/game/GameTable` (waiting,
-      bid builder, Lie/Bull) and `features/game/Reveal` (cups, count, result)
-      exist and can be seen at **`/preview`**, driven by fixtures.
+- [x] **T-30** ~~Build the game screens~~ — `features/game/GameTable` carries
+      the whole of a round: the rendered table, the bid builder, Lie and Bull,
+      and the reveal, which now happens on the table rather than replacing it
+      (`RevealPanel` + `revealStage`). All of it can be seen at **`/preview`**,
+      driven by fixtures.
 - [x] **T-29** ~~`GameView` is a placeholder~~ — replaced by
       `features/game/GameScreen`, which reads the round through RLS, follows it
       over Realtime, and acts through the Edge Function.
