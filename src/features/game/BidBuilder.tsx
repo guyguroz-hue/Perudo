@@ -90,12 +90,15 @@ export function BidBuilder({
               disabled={!legal}
               onClick={() => setDraft(withFace(round, bid, face))}
             >
-              <Die face={face} size={34} />
+              <Die face={face} size={26} />
             </button>
           )
         })}
       </div>
 
+      {/* The quantity and the word for it on one line. A stepper stacked above
+          its own button is two rows of screen for one decision, and this screen
+          belongs to the table. */}
       <div className="builder__row">
         <button
           type="button"
@@ -111,7 +114,7 @@ export function BidBuilder({
           <span className="builder__quantity" aria-hidden="true">
             {bid.quantity}
           </span>
-          <Die face={bid.face} size={44} />
+          <Die face={bid.face} size={30} />
           <span className="visually-hidden">
             {bid.quantity} {bid.face === 1 ? 'Joker' : bid.face}
           </span>
@@ -126,18 +129,21 @@ export function BidBuilder({
         >
           +
         </button>
+
+        <button
+          type="button"
+          className={`builder__submit${burst ? ' builder__submit--burst' : ''}`}
+          disabled={busy || !verdict.legal}
+          onClick={() => onBid(bid)}
+          /* Short on the button, whole in the name it is announced by: the dock
+             has room for one word and a screen reader has room for the sense. */
+          aria-label={burst ? 'Burst bid' : 'Bid'}
+        >
+          {burst ? 'Burst' : 'Bid'}
+        </button>
       </div>
 
       {!verdict.legal && <p className="builder__why">{verdict.detail}</p>}
-
-      <button
-        type="button"
-        className={`builder__submit${burst ? ' builder__submit--burst' : ''}`}
-        disabled={busy || !verdict.legal}
-        onClick={() => onBid(bid)}
-      >
-        {burst ? 'Burst bid' : 'Bid'}
-      </button>
     </div>
   )
 }

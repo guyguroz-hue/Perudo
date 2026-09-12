@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { placeSeats } from './seating'
+import { placeSeats, sceneSeats } from './seating'
 import type { TablePlayer } from './view'
 
 function table(count: number, youAt: number): TablePlayer[] {
@@ -88,5 +88,42 @@ describe('who sits where', () => {
 
   it('survives a table it was handed empty', () => {
     expect(placeSeats([])).toEqual([])
+  })
+
+  /*
+   * Going out costs you your dice, not your chair.
+   *
+   * The cup that leaves the table is the eliminated player's, and everybody
+   * else stays where they were sitting. The renderer places a cup from the seat
+   * index and the size of the whole table, so both have to survive the filter:
+   * derived from the length of the list that is left, a four-handed table with
+   * one player out puts the last player in the empty chair, and then the cup
+   * under a name is somebody else's.
+   */
+  it('leaves everyone else in their chair when a player goes out', () => {
+    const players = table(4, 0)
+    const whole = sceneSeats(placeSeats(players), null)
+
+    const short = sceneSeats(
+      placeSeats(players.map((p) => (p.id === 'p2' ? { ...p, diceCount: 0, isEliminated: true } : p))),
+      null,
+    )
+
+    expect(short.map((s) => s.id)).toEqual(['p0', 'p1', 'p3'])
+    for (const seat of short) {
+      const before = whole.find((s) => s.id === seat.id)
+      expect({ index: seat.index, count: seat.count }).toEqual({
+        index: before?.index,
+        count: before?.count,
+      })
+    }
+  })
+
+  // Your dice are the only faces in this browser, so they are the only faces
+  // the renderer can be handed.
+  it('sends the renderer your faces and nobody else’s', () => {
+    const cups = sceneSeats(placeSeats(table(4, 2)), [3, 5, 2])
+    expect(cups.filter((s) => s.dice !== undefined)).toHaveLength(1)
+    expect(cups[0].dice).toEqual([3, 5, 2])
   })
 })

@@ -10,8 +10,27 @@ import { PerspectiveCamera, Vector3 } from 'three'
  * right place even on a device where the canvas never renders at all.
  */
 
-/** Where the eye is. A person sitting at a table, not standing over it. */
-export const CAMERA = { height: 1.05, distance: 2.72, fov: 33 } as const
+/**
+ * Where the eye is.
+ *
+ * A person at the table, leaning in — about thirty-five degrees above the
+ * surface. Lower than that and the cups stack up on each other and the far ones
+ * cannot be told apart; higher and it stops being a seat and becomes a security
+ * camera. The angle is chosen so the table fills the width of a phone held
+ * upright and still leaves room above it for the room itself, which is what
+ * stops the screen feeling like a table in a void.
+ */
+export const CAMERA = { height: 1.8, distance: 2.6, fov: 46 } as const
+
+/**
+ * What the camera is pointed at.
+ *
+ * A hand's height above the middle of the table rather than the middle itself.
+ * Aimed at the timber, the table sat high in the frame with a band of empty
+ * floor under it; lifted, it drops to where a table in front of you actually
+ * is, and the room gets the space above instead.
+ */
+export const LOOK_AT = { x: 0, y: 0.2, z: 0.02 } as const
 
 /**
  * The shape of the scene.
@@ -20,7 +39,7 @@ export const CAMERA = { height: 1.05, distance: 2.72, fov: 33 } as const
  * and an overlay computed for another would drift apart at the edges, which is
  * exactly where the player badges are.
  */
-export const STAGE_ASPECT = 1 / 0.9
+export const STAGE_ASPECT = 1 / 1.3
 
 /** Where the cups stand, as a fraction of the table's radius. */
 export const SEAT_RADIUS = 0.72
@@ -49,7 +68,7 @@ export const INLAY_RADIUS = 0.34
 
 const camera = new PerspectiveCamera(CAMERA.fov, STAGE_ASPECT, 0.1, 20)
 camera.position.set(0, CAMERA.height, CAMERA.distance)
-camera.lookAt(new Vector3(0, 0.03, -0.04))
+camera.lookAt(new Vector3(LOOK_AT.x, LOOK_AT.y, LOOK_AT.z))
 camera.updateMatrixWorld()
 camera.updateProjectionMatrix()
 

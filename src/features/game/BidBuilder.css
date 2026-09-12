@@ -1,20 +1,18 @@
 /*
- * The console.
+ * Building a bid.
  *
- * A slab docked under the table rather than a form: the face you want, how many
- * of them, and the word for it. Everything is inside a thumb's reach of the
- * bottom edge, and the commonest move — raising the bid in front of you — is
- * already loaded when it opens, so it costs one tap on Bid.
+ * The face you want, how many of them, and the word for it — in two rows along
+ * the bottom edge rather than a panel the table has to share the screen with.
+ * The commonest move in the game, raising the bid in front of you, is already
+ * loaded when this opens, so it costs one tap on Bid.
+ *
+ * The slab around it belongs to the console this sits in, not to the builder:
+ * on a wide screen the builder and the two challenges share one.
  */
 .builder {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border-radius: var(--radius-lg);
-  background: var(--panel);
-  box-shadow: var(--shadow-control);
-  backdrop-filter: blur(12px);
+  gap: var(--space-2);
 }
 
 /* -----------------------------------------------------------------------------
@@ -25,17 +23,17 @@
 .builder__deck {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: var(--space-1);
+  gap: 4px;
 }
 
 .builder__face {
   display: grid;
   place-items: center;
-  min-height: var(--tap);
-  padding: var(--space-1) 0;
+  min-height: 38px;
+  padding: 3px 0;
   border: 0;
-  border-radius: var(--radius);
-  background: rgb(255 255 255 / 0.04);
+  border-radius: var(--radius-sm);
+  background: rgb(255 255 255 / 0.05);
   cursor: pointer;
   transition:
     background-color var(--t-micro) var(--ease-ui),
@@ -47,7 +45,7 @@
   background: rgb(255 255 255 / 0.12);
   box-shadow:
     inset 0 0 0 2px var(--brass),
-    0 0 16px rgb(212 162 76 / 0.3);
+    0 0 14px rgb(212 162 76 / 0.3);
 }
 
 /* Disabled, not hidden: the shape of the rule stays visible, so a player can
@@ -62,12 +60,11 @@
 }
 
 /* -----------------------------------------------------------------------------
- * Quantity, with the bid in the middle of it
+ * How many, and saying it
  * ---------------------------------------------------------------------------*/
 .builder__row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-2);
 }
 
@@ -75,8 +72,8 @@
    and a circle under a thumb is unmistakable. */
 .builder__step {
   flex: 0 0 auto;
-  width: 52px;
-  height: 52px;
+  width: 42px;
+  height: 42px;
   border: 0;
   border-radius: 50%;
   background: radial-gradient(75% 75% at 50% 28%, #2b2937, #16151f);
@@ -85,7 +82,7 @@
     0 3px 10px rgb(0 0 0 / 0.5);
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: 500;
   line-height: 1;
   cursor: pointer;
@@ -101,19 +98,21 @@
   cursor: default;
 }
 
-/* The bid being built, and the dominant thing on the console. A player knows
+/* The bid being built, between the two steppers that change it. A player knows
    exactly what they are about to say before they say it. */
 .builder__preview {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  min-width: 58px;
   margin: 0;
 }
 
 .builder__quantity {
   font-family: var(--font-display);
-  font-size: var(--text-4xl);
+  font-size: var(--text-2xl);
   font-weight: 700;
   letter-spacing: var(--track-display);
   line-height: 0.85;
@@ -123,31 +122,30 @@
 .builder__why {
   margin: 0;
   text-align: center;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--dudo);
 }
 
-/* -----------------------------------------------------------------------------
- * Saying it
- * ---------------------------------------------------------------------------*/
 /* Brass, like the rim of every cup and the ring in the middle of the table.
    The bid is the game's ordinary move, so it takes the game's own metal rather
    than a colour of its own — the two colours in the product both mean
    "challenge". */
 .builder__submit {
-  min-height: 54px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 42px;
   border: 0;
   border-radius: var(--radius);
   background: linear-gradient(180deg, #ffdf9e 0%, var(--brass) 52%, #b0812c 100%);
   color: #241704;
   font-family: var(--font-display);
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: 700;
   letter-spacing: var(--track-display);
   cursor: pointer;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.6),
-    0 6px 18px rgb(212 162 76 / 0.28);
+    0 4px 14px rgb(212 162 76 / 0.26);
   transition:
     scale var(--t-micro) var(--ease-ui),
     filter var(--t-micro) var(--ease-ui);
@@ -171,5 +169,5 @@
   color: var(--ink);
   box-shadow:
     inset 0 0 0 1px rgb(255 255 255 / 0.14),
-    0 6px 18px rgb(0 0 0 / 0.45);
+    0 4px 14px rgb(0 0 0 / 0.45);
 }

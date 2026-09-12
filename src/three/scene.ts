@@ -13,7 +13,7 @@ import {
 } from 'three'
 import { roomEnvironment } from './environment'
 import { CUP_HEIGHT, makeCup, makeTable } from './objects'
-import { CAMERA, SEAT_RADIUS, seatAngle } from './layout'
+import { CAMERA, LOOK_AT, SEAT_RADIUS, seatAngle } from './layout'
 import { FACE_UP, DIE_SIZE, makeDie } from './die'
 import { makeRoom } from './room'
 
@@ -38,7 +38,7 @@ import { makeRoom } from './room'
  * as ordinary DOM, and two cameras that were meant to be identical are two
  * cameras that will disagree the first time one of them is retuned.
  */
-const LOOK_AT = new Vector3(0, 0.03, -0.04)
+const AIM = new Vector3(LOOK_AT.x, LOOK_AT.y, LOOK_AT.z)
 
 export type CupState = 'covered' | 'shaking' | 'lifted'
 
@@ -87,7 +87,7 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
 
   const camera = new PerspectiveCamera(CAMERA.fov, 1, 0.1, 20)
   camera.position.set(0, CAMERA.height, CAMERA.distance)
-  camera.lookAt(LOOK_AT)
+  camera.lookAt(AIM)
 
   scene.add(makeRoom())
   scene.add(makeTable())
@@ -216,7 +216,16 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
 
       seats.forEach((seat) => {
         const group = new Group()
-        group.position.copy(seatPosition(seat.index, seats.length))
+        /*
+         * Its own seat, not its place in this list.
+         *
+         * A player who has been knocked out keeps their chair: their cup leaves
+         * the table and everybody else stays where they were sitting. Placing
+         * cups by their position in the array instead put the last player in
+         * the empty chair every time somebody went out — and the cup under a
+         * name was then somebody else's.
+         */
+        group.position.copy(seatPosition(seat.index, seat.count))
         cups.add(group)
 
         const cup = makeCup(seat.colour)

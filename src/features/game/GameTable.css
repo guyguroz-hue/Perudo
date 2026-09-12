@@ -1,84 +1,18 @@
+/*
+ * The table screen.
+ *
+ * The table is the screen. Everything else is laid over it or docked along the
+ * bottom edge in as little height as it can be read in — a player opens this to
+ * look at six cups, not at a form, and a control panel that takes half the
+ * display is a form.
+ */
 .board {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
   width: 100%;
   max-width: 30rem;
   margin: 0 auto;
-}
-
-/* -----------------------------------------------------------------------------
- * The strip above the table
- * ---------------------------------------------------------------------------*/
-.board__strip {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: 0 var(--space-1);
-}
-
-.board__round {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-2xs);
-  font-weight: 500;
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-/* A Farewell Round is marked, not announced. It is a change in the rules, and
-   the rule it changes is already visible in what the bid builder will accept. */
-/* Dice in play. Quiet, permanent, and next to the round number because both
-   are facts about the table rather than about anybody's turn. */
-.board__count {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px 2px 5px;
-  border-radius: var(--radius-full);
-  background: rgb(255 255 255 / 0.06);
-  color: var(--ink-dim);
-}
-
-.board__count b {
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0;
-  color: var(--ink);
-}
-
-.board__farewell {
-  padding: 2px 7px;
-  border-radius: var(--radius-full);
-  background: rgb(212 162 76 / 0.16);
-  box-shadow: inset 0 0 0 1px rgb(212 162 76 / 0.45);
-  color: var(--brass-bright);
-  font-weight: 600;
-}
-
-.board__turn {
-  font-family: var(--font-display);
-  font-size: var(--text-base);
-  font-weight: 600;
-  letter-spacing: var(--track-display);
-  color: var(--ink-dim);
-}
-
-/* Arriving at your turn is the one moment allowed to be emphatic. A player must
-   never have to wonder whether it is their turn. */
-.board--yours .board__turn {
-  color: var(--turn);
-  animation: turn-arrives var(--t-short) var(--ease-arrive);
-}
-
-@keyframes turn-arrives {
-  from { opacity: 0.3; scale: 0.9; }
-  to { opacity: 1; scale: 1; }
 }
 
 /* -----------------------------------------------------------------------------
@@ -93,12 +27,71 @@
  */
 .board__stage {
   position: relative;
+  /*
+   * Edge to edge.
+   *
+   * The room behind the table is a picture, and a picture with a margin round
+   * it is a picture pasted on a page. Run to the sides of the display it is
+   * the room the player is sitting in — which is the whole reason it is there.
+   * Pulled out of the page's own gutter rather than given one.
+   */
+  width: min(100vw, 34rem);
+  margin-inline: calc((100% - min(100vw, 34rem)) / 2);
   /* A container, so the cups can be sized as a share of the table. Inline size
      only: the height comes from the camera's aspect ratio, and asking for both
      would make the box depend on itself. */
   container-type: inline-size;
-  /* The room for what hangs off the table's edges is inside the camera's view
-     box, so the scene needs no margin of its own. */
+}
+
+/* -----------------------------------------------------------------------------
+ * Laid over the table
+ * ---------------------------------------------------------------------------*/
+/* The round, and how many dice are still in play. Both are standing facts about
+   the game rather than anything anybody acts on, so they sit in the corner of
+   the table the way a table number does. */
+.board__strip {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+.board__count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px 2px 5px;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 0.07);
+  color: var(--ink-dim);
+}
+
+.board__count b {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+/* A Farewell Round is marked, not announced. It is a change in the rules, and
+   the rule it changes is already visible in what the bid builder will accept. */
+.board__farewell {
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background: rgb(212 162 76 / 0.16);
+  box-shadow: inset 0 0 0 1px rgb(212 162 76 / 0.45);
+  color: var(--brass-bright);
+  font-weight: 600;
 }
 
 .board__centre {
@@ -120,37 +113,58 @@
   pointer-events: none;
 }
 
-/* -----------------------------------------------------------------------------
- * Below the table
- * ---------------------------------------------------------------------------*/
-/* The last thing anybody did. It sits under the table rather than on it, so it
-   never competes with the bid — and it keeps clear of the near seat's tag,
-   which hangs off the table's front edge. */
-.board__log {
-  position: relative;
+/* The commentary: whose turn it is, or the last thing anybody did. One line at
+   the foot of the table, because it is talk about a move rather than a move. */
+.board__say {
+  position: absolute;
+  right: var(--space-4);
+  /* Just under the table's near edge, not at the foot of the scene. */
+  bottom: 6%;
+  left: var(--space-4);
   margin: 0;
   text-align: center;
   font-size: var(--text-sm);
   color: var(--ink-dim);
+  text-shadow: 0 1px 6px rgb(0 0 0 / 0.8);
+  pointer-events: none;
+}
+
+/* Arriving at your turn is the one moment allowed to be emphatic. A player must
+   never have to wonder whether it is their turn. */
+.board--yours .board__say {
+  color: var(--ink-dim);
+}
+
+/* -----------------------------------------------------------------------------
+ * The dock
+ * ---------------------------------------------------------------------------*/
+/*
+ * Along the bottom edge, as slim as it can be read in.
+ *
+ * Pulled up into the foot of the scene, where there is nothing but dark floor.
+ * The canvas fades out over the same band, so the controls sit under the table
+ * rather than on a rectangle that stops above them.
+ */
+.board__dock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: -6%;
 }
 
 /*
  * Your own dice.
  *
- * Larger than anything else on the screen, and the only information here that
- * nobody else has. They sit just above the controls, so a player's eye travels
- * hand → bid → act without leaving the bottom of the screen.
+ * The only information on this screen nobody else has, and the thing every bid
+ * is weighed against — so it sits directly above the controls, and a player's
+ * eye travels hand → bid → act without leaving the bottom of the display.
  */
 .board__hand {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 58px;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(0 0 0 / 0.25));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07);
+  min-height: 46px;
 }
 
 .board__nohand {
@@ -159,10 +173,33 @@
   color: var(--ink-faint);
 }
 
-/* The console. A slab docked to the bottom of the screen rather than a footer:
-   it is the part of the table the player's hands are on. */
+/*
+ * The console.
+ *
+ * One slab, low and wide. On a phone the bid and the two challenges stack;
+ * given the room, they take the arrangement a table would have — what you are
+ * about to say on one side, what you can say about somebody else's bid on the
+ * other.
+ */
 .board__console {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-control);
+  backdrop-filter: blur(12px);
+}
+
+@media (min-width: 33rem) {
+  .board__console {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .board__console > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }

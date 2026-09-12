@@ -10,6 +10,8 @@ import { CanvasTexture, RepeatWrapping, SRGBColorSpace, type Texture } from 'thr
  * disturbed by noise, sampled as a distance from the heart of the trunk.
  */
 
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v)
+
 /** Value noise with a fixed seed, so the table looks the same every time. */
 function makeNoise(seed: number) {
   const table = new Float32Array(256)
@@ -49,12 +51,19 @@ function fbm(noise: (x: number, y: number) => number, x: number, y: number): num
 }
 
 /**
- * Cherry, seen from above.
+ * Walnut, seen from above.
  *
  * The heart of the trunk is pushed off to one side of the tabletop, so the
  * rings run across the surface as arcs rather than as a bullseye — which is
  * what a board cut from a log actually looks like, and what stops the table
  * reading as a dartboard.
+ *
+ * Two things decide whether this reads as timber or as paint, and neither is
+ * the pattern. The first is how many rings there are: a dozen wide bands across
+ * a table is a fairground ride, and real grain is fine enough that you see the
+ * figure before you see any single line. The second is the colour — wood sits
+ * much closer to grey than it feels like it should, and a saturated red-brown
+ * comes out of the tone mapper looking like moulded plastic.
  */
 export function woodTexture(size = 1024): { map: Texture; rough: Texture } {
   const canvas = document.createElement('canvas')
@@ -82,29 +91,37 @@ export function woodTexture(size = 1024): { map: Texture; rough: Texture } {
       const u = (x / size) * 2 - 1
       const v = (y / size) * 2 - 1
 
-      const warped = fbm(noise, u * 3.5 + 11, v * 3.5 + 7) - 0.5
-      const r = Math.hypot(u - heartX, v - heartY) + warped * 0.05
-      const rings = Math.sin(r * 44) * 0.5 + 0.5
+      // Two scales of disturbance: a slow wander that bends whole rings, and a
+      // finer one that roughens their edges. Rings drawn from a clean radius
+      // come out as corduroy, which is the other way this can go wrong.
+      const wander = fbm(noise, u * 1.1 + 11, v * 1.1 + 7) - 0.5
+      const jitter = fbm(noise, u * 11 + 31, v * 11 + 2) - 0.5
+      const r = Math.hypot(u - heartX, v - heartY) + wander * 0.13 + jitter * 0.022
+      const rings = Math.sin(r * 62) * 0.5 + 0.5
       // Rings are not sine waves: the late wood is a narrow dark band.
-      const band = Math.pow(rings, 2.6)
+      const band = Math.pow(rings, 2.4)
 
       // Fine fibre running along the grain, which is what catches the light.
-      const fibre = (fbm(noise, u * 170 + 3, v * 10 + 19) - 0.5) * 0.7
+      const fibre = (fbm(noise, u * 210 + 3, v * 12 + 19) - 0.5) * 0.8
 
-      // Kept close together on purpose. Wide bands read as marble or as fire;
-      // cherry is nearly one colour, with the grain showing mostly in how it
+      // A slow drift across the whole board, so the table is not one flat tone
+      // with a pattern on it. Boards are lighter at one end than the other.
+      const drift = (fbm(noise, u * 0.8 + 41, v * 0.8 + 5) - 0.5) * 0.22
+
+      // Kept close together on purpose. Wide swings read as marble or as fire;
+      // walnut is nearly one colour, with the grain showing mostly in how it
       // takes the light rather than in how dark it is.
-      const shade = 0.42 + band * 0.24 + fibre * 0.07
+      const shade = clamp01(0.46 + band * 0.11 + fibre * 0.1 + drift * 0.8)
       const i = (y * size + x) * 4
-      image.data[i] = 118 * shade + 30
-      image.data[i + 1] = 50 * shade + 12
-      image.data[i + 2] = 26 * shade + 6
+      image.data[i] = 38 + 104 * shade
+      image.data[i + 1] = 26 + 74 * shade
+      image.data[i + 2] = 20 + 52 * shade
       image.data[i + 3] = 255
 
       // Late wood is denser and takes a polish differently, so the grain shows
       // in the reflection as well as in the colour. This is most of what makes
       // it read as a finished surface rather than a painted one.
-      const rough = 0.16 + (1 - band) * 0.2 + fibre * 0.08
+      const rough = 0.13 + (1 - band) * 0.2 + fibre * 0.1
       const g = Math.round(rough * 255)
       roughImage.data[i] = g
       roughImage.data[i + 1] = g

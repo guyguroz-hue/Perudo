@@ -13,20 +13,31 @@
 .challenge {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
+/*
+ * Low and wide.
+ *
+ * These used to be two tall tiles, and between them they took a third of the
+ * display to say two words. The icon and the name read across, the claim sits
+ * under them, and the whole control is the height of one tap — which is all a
+ * button that is pressed with a thumb has ever needed.
+ */
 .challenge__dudo,
 .challenge__bull {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'icon name'
+    'icon claim';
   align-items: center;
-  justify-content: center;
-  gap: 3px;
-  min-height: 92px;
-  padding: var(--space-3) var(--space-2);
+  gap: 0 var(--space-2);
+  min-height: 50px;
+  padding: 6px var(--space-2);
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
+  text-align: left;
   cursor: pointer;
   transition:
     scale var(--t-micro) var(--ease-ui),
@@ -50,23 +61,26 @@
 }
 
 .challenge__icon {
-  width: 26px;
-  height: 26px;
+  grid-area: icon;
+  width: 22px;
+  height: 22px;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.4));
 }
 
 .challenge__name {
+  grid-area: name;
   font-family: var(--font-display);
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: 700;
   letter-spacing: var(--track-display);
-  line-height: 1.05;
+  line-height: 1.1;
 }
 
 .challenge__claim {
+  grid-area: claim;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   /* The reading and the number are one phrase. Broken across lines it stops
      being one, which is the only thing this row is for. */
   white-space: nowrap;
@@ -85,15 +99,6 @@
   font-size: var(--text-base);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-.challenge__gloss {
-  font-size: var(--text-2xs);
-  color: rgb(255 255 255 / 0.72);
-}
-
-.challenge__body {
-  display: contents;
 }
 
 .challenge__dudo:disabled,
@@ -117,4 +122,18 @@
   0% { translate: 0; }
   40% { translate: -4px; }
   100% { translate: 0; }
+}
+
+/* Only a Burst Dudo can ever hand a die back (§9.3), and it is worth knowing
+   before the press rather than after. A mark on the name, not a line of its
+   own — this control has room for two lines and both are spoken for. */
+.challenge__prize {
+  margin-left: 5px;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 0.22);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0;
+  vertical-align: 1px;
 }

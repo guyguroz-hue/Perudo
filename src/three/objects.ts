@@ -84,7 +84,7 @@ export function makeTable(): Group {
   const edge = new Mesh(
     new LatheGeometry(profile, 128),
     new MeshPhysicalMaterial({
-      color: new Color('#5d3018'),
+      color: new Color('#4a2f1c'),
       roughness: 0.32,
       metalness: 0,
       clearcoat: 0.7,
