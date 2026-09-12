@@ -1,0 +1,200 @@
+/*
+ * The reveal, under the table it is happening on.
+ *
+ * The table above keeps every cup in its chair and lifts them where they stand.
+ * This is the part a rendered table cannot give you: the numbers, at a size a
+ * person can read in a hurry.
+ */
+.verdict {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-control);
+  backdrop-filter: blur(12px);
+}
+
+/* The claim on trial. On screen from the first frame, because the bid and any
+   Bull on it were public before anybody challenged. */
+.verdict__claim {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.verdict__reading {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--brass-bright) 80%, white);
+}
+
+.verdict__quantity {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* -----------------------------------------------------------------------------
+ * The count
+ * ---------------------------------------------------------------------------*/
+.verdict__tally {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 46px;
+  margin: 0;
+}
+
+.verdict__dice {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+
+/*
+ * A slot per counted die, empty until the count reaches it.
+ *
+ * The row is its full width from the first frame, so it fills rather than
+ * grows and the verdict under it never jumps. An empty slot is also the honest
+ * shape of the thing: the distance between what was claimed and what is on the
+ * table is exactly what everybody is looking at.
+ */
+.verdict__die {
+  opacity: 0.12;
+  scale: 0.86;
+  filter: grayscale(1);
+  transition:
+    opacity var(--t-short) var(--ease-arrive),
+    scale var(--t-short) var(--ease-arrive),
+    filter var(--t-short) var(--ease-ui);
+}
+
+.verdict__die--in {
+  opacity: 1;
+  scale: 1;
+  filter: none;
+}
+
+.verdict__none {
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+
+.verdict__total {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--brass-bright);
+}
+
+/* -----------------------------------------------------------------------------
+ * What it means
+ * ---------------------------------------------------------------------------*/
+.verdict__result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+/* The one line everybody is waiting for. */
+.verdict__says {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: var(--track-display);
+  color: var(--win);
+  animation: verdict-lands var(--t-short) var(--ease-arrive);
+}
+
+.verdict__says--broken {
+  color: var(--lie);
+}
+
+@keyframes verdict-lands {
+  from { opacity: 0; scale: 0.92; }
+  to { opacity: 1; scale: 1; }
+}
+
+.verdict__because {
+  margin: 0;
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--ink-dim);
+}
+
+/* Who paid, and who was paid. Read down the column, not across a sentence. */
+.verdict__changes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.verdict__change {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 0.06);
+  font-size: var(--text-sm);
+  color: var(--ink-dim);
+}
+
+.verdict__delta {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lie);
+}
+
+.verdict__change--gain .verdict__delta {
+  color: var(--win);
+}
+
+.verdict__out {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.verdict__next {
+  min-height: 46px;
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #ffdf9e 0%, var(--brass) 52%, #b0812c 100%);
+  color: #241704;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: var(--track-display);
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.6),
+    0 4px 14px rgb(212 162 76 / 0.26);
+}
+
+.verdict__next:active {
+  scale: 0.985;
+  filter: brightness(0.94);
+}

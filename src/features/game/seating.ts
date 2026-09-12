@@ -3,6 +3,7 @@ import type { BadgeAnchor } from '../../three/layout'
 import type { SceneSeat } from '../../three/scene'
 import { hexForSeat } from './colors'
 import type { Face } from '../../game'
+import type { RevealHand } from './reveal'
 import type { TablePlayer } from './view'
 
 /**
@@ -22,7 +23,11 @@ export interface SeatPlacement {
   readonly badge: BadgeAnchor
 }
 
-export function placeSeats(players: readonly TablePlayer[]): SeatPlacement[] {
+export function placeSeats(
+  players: readonly TablePlayer[],
+  /** True while the cups are off the table, which moves the badges up with them. */
+  lifted = false,
+): SeatPlacement[] {
   if (players.length === 0) return []
 
   const youIndex = Math.max(
@@ -35,9 +40,12 @@ export function placeSeats(players: readonly TablePlayer[]): SeatPlacement[] {
     player,
     index,
     count: ordered.length,
-    badge: badgeAnchor(index, ordered.length),
+    badge: badgeAnchor(index, ordered.length, lifted),
   }))
 }
+
+/** What the table is doing, which is the same thing for every cup on it. */
+export type TableMood = 'still' | 'dealing' | 'revealing'
 
 /**
  * What the renderer is told.
@@ -48,13 +56,16 @@ export function placeSeats(players: readonly TablePlayer[]): SeatPlacement[] {
  * table of four with one player out would put the last player in the empty
  * chair, and the cup under a name would be somebody else's.
  *
- * Faces are passed for one hand only: yours. Nobody else's values are in this
- * browser to pass, so there is nothing here to leak.
+ * Faces are passed for one hand only: yours — until a challenge is resolved,
+ * when the server releases every hand and `hands` carries them. Nobody else's
+ * values are in this browser before that, so until then there is nothing here
+ * to leak.
  */
 export function sceneSeats(
   seats: readonly SeatPlacement[],
   yourHand: readonly Face[] | null,
-  shaking = false,
+  mood: TableMood = 'still',
+  hands: readonly RevealHand[] | null = null,
 ): SceneSeat[] {
   return seats
     .filter((seat) => !seat.player.isEliminated)
@@ -63,10 +74,13 @@ export function sceneSeats(
       index: seat.index,
       count: seat.count,
       colour: hexForSeat(seat.player.seatIndex),
-      dice: seat.player.isYou ? (yourHand ?? undefined) : undefined,
-      // Every cup at once, because every cup was dealt at once. Shaking them
-      // one after another would say the deal is going round the table, and it
-      // is not — the server deals the whole round in one write.
-      state: shaking ? ('shaking' as const) : ('covered' as const),
+      dice:
+        hands?.find((hand) => hand.id === seat.player.id)?.dice ??
+        (seat.player.isYou ? (yourHand ?? undefined) : undefined),
+      // One mood for the whole table. Every cup was dealt at once and every cup
+      // is lifted at once, so shaking or lifting them in sequence would say the
+      // table is going round when it is not — the server does both in a single
+      // write.
+      state: mood === 'dealing' ? ('shaking' as const) : mood === 'revealing' ? ('lifted' as const) : ('covered' as const),
     }))
 }

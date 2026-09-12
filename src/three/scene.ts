@@ -13,7 +13,7 @@ import {
 } from 'three'
 import { roomEnvironment } from './environment'
 import { CUP_HEIGHT, makeCup, makeTable } from './objects'
-import { CAMERA, LOOK_AT, SEAT_RADIUS, seatAngle } from './layout'
+import { CAMERA, CUP_LIFT, LOOK_AT, SEAT_RADIUS, seatAngle } from './layout'
 import { FACE_UP, DIE_SIZE, makeDie } from './die'
 import { makeRoom } from './room'
 
@@ -174,7 +174,7 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
       const e = 1 - Math.pow(1 - k, 3)
       // A hand's height, not a crane's. Lifted further the cup leaves the
       // frame, and a cup you cannot see has not been lifted — it has vanished.
-      cup.position.set(0, e * 0.26, e * 0.05)
+      cup.position.set(0, e * CUP_LIFT, e * 0.05)
       cup.rotation.set(-e * 0.3, 0, e * 0.1)
       cup.scale.setScalar(1)
       // The dice appear the moment the rim clears them, not when the cup stops.

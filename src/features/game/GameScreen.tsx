@@ -2,11 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { ConnectionDot } from '../../components/ConnectionDot'
 import { GameTable } from './GameTable'
 import { Finish } from './Finish'
-import { Reveal } from './Reveal'
 import { PERUDO } from '../../game'
 import { openRound } from './api'
 import { toGameError } from './errors'
-import { claimFor, standingsFor } from './reveal'
+import { claimFor } from './reveal'
 import type { RevealClaim } from './reveal'
 import { useGame } from './useGame'
 import type { TableView } from './view'
@@ -15,10 +14,10 @@ import './GameScreen.css'
 /**
  * A game in progress.
  *
- * Two screens, and which one is showing is the whole state machine: the table,
- * or the reveal over it. A reveal is not a dialog — it takes the screen,
- * because while the cups are coming off there is nothing else to look at and
- * nothing else to do.
+ * One screen: the table, from the first deal to the last die. A reveal is not
+ * another screen and not a dialog — it happens on this table, the cups coming
+ * off where they stand, with the controls giving way to the count underneath.
+ * The only thing that ever replaces the table is the end of the game.
  */
 export function GameScreen({ gameId, youId }: { gameId: string; youId: string }) {
   const game = useGame(gameId, youId)
@@ -57,29 +56,6 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
     return <Finish winnerName={game.over.winnerName} view={game.view} />
   }
 
-  if (game.reveal !== null) {
-    return (
-      <Reveal
-        standings={
-          game.reveal.data === null
-            ? game.view.players.map((player) => ({
-                id: player.id,
-                name: player.name,
-                diceCount: player.diceCount,
-              }))
-            : standingsFor(game.reveal.data)
-        }
-        claim={
-          game.reveal.data === null
-            ? claimFromTable(game.view)
-            : claimFor(game.reveal.data)
-        }
-        data={game.reveal.data}
-        onDone={game.dismissReveal}
-      />
-    )
-  }
-
   return (
     <div className="game">
       <div className="game__bar">
@@ -100,6 +76,21 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
       <GameTable
         view={game.view}
         busy={game.busy}
+        reveal={
+          game.reveal === null
+            ? null
+            : {
+                // The claim comes off the table until the server answers: the
+                // bid and any Bull on it are public and already on screen, so
+                // the pause shows exactly what is being tested.
+                claim:
+                  game.reveal.data === null
+                    ? claimFromTable(game.view)
+                    : claimFor(game.reveal.data),
+                data: game.reveal.data,
+                onDone: game.dismissReveal,
+              }
+        }
         onBid={(bid) => void game.bid(bid)}
         onLie={() => void game.doubt()}
         onBull={() => void game.bull()}

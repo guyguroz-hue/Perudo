@@ -115,6 +115,40 @@ export interface RevealScenario {
 
 export { claimFor, standingsFor }
 
+/**
+ * The table a reveal is happening on.
+ *
+ * A reveal plays on the table now rather than replacing it, so the preview
+ * needs a table to play it on. Built from the same fixture players, with each
+ * hand's size read off the reveal itself, so the cups on the table match the
+ * dice that come out from under them.
+ */
+export function tableFor(data: RevealData): TableView {
+  const held = (id: string) => data.hands.find((hand) => hand.id === id)?.dice ?? []
+
+  return {
+    round: {
+      type: data.roundType,
+      lockedFace: data.roundType === 'farewell' ? data.face : null,
+      bid: {
+        quantity: data.quantity,
+        face: data.face,
+        bidderId: 'alice',
+        bull: data.bullCallerName === null ? null : { callerId: 'carl' },
+      },
+    },
+    roundNumber: 6,
+    players: PLAYERS.map((player) => ({
+      ...player,
+      diceCount: held(player.id).length,
+      isEliminated: held(player.id).length === 0,
+      hasTurn: false,
+    })),
+    yourHand: held('you'),
+    lastEvent: null,
+  }
+}
+
 export const REVEALS: readonly RevealScenario[] = [
   {
     id: 'lie-wins',

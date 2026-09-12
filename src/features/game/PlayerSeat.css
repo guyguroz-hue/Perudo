@@ -16,7 +16,11 @@
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  transition: opacity var(--t-short) var(--ease-ui);
+  transition:
+    opacity var(--t-short) var(--ease-ui),
+    /* The badge rides up with its cup when the cup is lifted, on the same
+       curve the renderer lifts it with, so the two move as one thing. */
+    top var(--t-medium) var(--ease-object);
   pointer-events: none;
 }
 

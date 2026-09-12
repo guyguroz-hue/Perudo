@@ -50,9 +50,18 @@ describe('the preview screen', () => {
     expect(outcome()).toBe('Nobody won')
   })
 
-  it('renders the reveal', async () => {
+  /*
+   * The reveal plays on the table, so the cups are in the scene and jsdom has
+   * no GPU to draw them with. What this can check is the half that is not the
+   * scene — and that half is the one that has to survive a device with no
+   * WebGL at all, so checking it here is checking the right thing.
+   */
+  it('renders the reveal on the table', async () => {
     render(<PreviewScreen />)
     await userEvent.click(screen.getByRole('tab', { name: 'Reveal' }))
-    expect(document.querySelectorAll('.cup').length).toBeGreaterThan(0)
+    expect(document.querySelector('.board__stage')).toBeTruthy()
+    expect(document.querySelector('.verdict')).toBeTruthy()
+    // The claim under trial is public, so it is there from the first frame.
+    expect(screen.getAllByText(/at least|exactly/).length).toBeGreaterThan(0)
   })
 })

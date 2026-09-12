@@ -126,4 +126,34 @@ describe('who sits where', () => {
     expect(cups.filter((s) => s.dice !== undefined)).toHaveLength(1)
     expect(cups[0].dice).toEqual([3, 5, 2])
   })
+
+  /*
+   * The one exception to the rule above, and the reason it is a test.
+   *
+   * Until a challenge is resolved this browser holds nobody's dice but its
+   * own — that is what `player_dice` and its policy are for. A reveal is the
+   * moment the server releases every hand, and only then does the renderer get
+   * them. Every cup lifts at once, because the server resolved them at once.
+   */
+  it('lifts every cup and shows every hand once the server has released them', () => {
+    const hands = [
+      { id: 'p0', name: 'P0', dice: [5, 5] as const },
+      { id: 'p1', name: 'P1', dice: [1, 3, 4] as const },
+      { id: 'p2', name: 'P2', dice: [6] as const },
+    ]
+    const cups = sceneSeats(placeSeats(table(3, 1)), [9 as never], 'revealing', hands)
+
+    expect(cups.map((cup) => cup.state)).toEqual(['lifted', 'lifted', 'lifted'])
+    for (const cup of cups) {
+      expect(cup.dice).toEqual(hands.find((hand) => hand.id === cup.id)?.dice)
+    }
+  })
+
+  // And before that moment, nothing changes: a cup is covered and the only
+  // faces in the list are the ones this browser was given.
+  it('lifts nothing and shows nothing while the round is still live', () => {
+    const cups = sceneSeats(placeSeats(table(3, 1)), [2, 4, 6])
+    expect(cups.map((cup) => cup.state)).toEqual(['covered', 'covered', 'covered'])
+    expect(cups.filter((cup) => cup.dice !== undefined)).toHaveLength(1)
+  })
 })

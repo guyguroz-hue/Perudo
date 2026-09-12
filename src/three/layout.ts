@@ -52,6 +52,15 @@ export const SEAT_RADIUS = 0.72
  */
 export const CUP_LID = 0.3
 
+/**
+ * How far a cup rises when it is lifted.
+ *
+ * Shared with the renderer, which does the lifting, because the badge floating
+ * over a cup has to get out of its way — and two copies of this number are two
+ * numbers that will disagree the first time one of them is tuned.
+ */
+export const CUP_LIFT = 0.26
+
 /** The air between a cup and the badge floating over it. */
 export const BADGE_GAP = '10px'
 
@@ -121,10 +130,12 @@ export interface BadgeAnchor extends Anchor {
   readonly translate: string
 }
 
-export function badgeAnchor(index: number, count: number): BadgeAnchor {
+export function badgeAnchor(index: number, count: number, lifted = false): BadgeAnchor {
   const near = index === 0
   const { x, z } = seatPoint(index, count)
-  const anchor = project(x, near ? 0 : CUP_LID, z)
+  // A lifted cup climbs into the badge that was floating over it, so the badge
+  // moves up with it and the gap between them stays the gap it was.
+  const anchor = project(x, near ? 0 : CUP_LID + (lifted ? CUP_LIFT : 0), z)
   return {
     left: `${clamp(BADGE_MARGIN, Number.parseFloat(anchor.left), 100 - BADGE_MARGIN)}%`,
     top: anchor.top,

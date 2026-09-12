@@ -3,8 +3,7 @@ import { Atoms } from './Atoms'
 import { Finish } from './Finish'
 import { RenderPreview } from './RenderPreview'
 import { GameTable } from './GameTable'
-import { Reveal } from './Reveal'
-import { ENDINGS, REVEALS, SCENARIOS, claimFor, standingsFor } from './fixtures'
+import { ENDINGS, REVEALS, SCENARIOS, claimFor, tableFor } from './fixtures'
 import type { RevealData } from './reveal'
 import './PreviewScreen.css'
 
@@ -158,12 +157,18 @@ export function PreviewScreen() {
               </button>
             ))}
           </nav>
-          <Reveal
+          {/* The real table, with the real reveal running on it. */}
+          <GameTable
             key={run}
-            standings={standingsFor(REVEALS[revealIndex].data)}
-            claim={claimFor(REVEALS[revealIndex].data)}
-            data={playing}
-            onDone={() => play(revealIndex)}
+            view={tableFor(REVEALS[revealIndex].data)}
+            reveal={{
+              claim: claimFor(REVEALS[revealIndex].data),
+              data: playing,
+              onDone: () => play(revealIndex),
+            }}
+            onBid={() => {}}
+            onLie={() => {}}
+            onBull={() => {}}
           />
         </>
       )}

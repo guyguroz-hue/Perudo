@@ -1,16 +1,19 @@
 import { useMemo } from 'react'
 import { Die } from '../../components/Die'
-import type { ProposedBid } from '../../game'
+import type { ActiveBid, ProposedBid } from '../../game'
 import { diceOnTable } from '../../game'
 import { INLAY_RADIUS, STAGE_ASPECT, centreAnchor, inlayWidth } from '../../three/layout'
 import { BidBuilder } from './BidBuilder'
 import { ChallengeActions } from './ChallengeActions'
 import { CurrentBid } from './CurrentBid'
 import { PlayerSeat } from './PlayerSeat'
+import { RevealPanel } from './RevealPanel'
 import { TableScene } from './TableScene'
 import { useDealShake } from './dealing'
+import type { RevealClaim, RevealData } from './reveal'
+import { useRevealStage } from './revealStage'
 import { placeSeats, sceneSeats } from './seating'
-import type { TableView } from './view'
+import type { TablePlayer, TableView } from './view'
 import { turnHolder, wouldBurst, you } from './view'
 import './GameTable.css'
 
@@ -33,16 +36,31 @@ import './GameTable.css'
  * announce that nothing is happening removes the one thing worth looking at,
  * and in this game waiting is not even idle: a Burst lets any active player bid
  * or challenge out of turn, so the actions stay live and say what they would be.
+ *
+ * A reveal does not take the screen either — it happens *on* this table. The
+ * cups come off where they stand, on the same wood, in front of the same room,
+ * and the controls give way to the count. Cutting to a separate screen for the
+ * one moment the game has been building to threw away the table at exactly the
+ * point it was worth the most.
  */
 export function GameTable({
   view,
   busy = false,
+  reveal = null,
   onBid,
   onLie,
   onBull,
 }: {
   view: TableView
   busy?: boolean
+  /**
+   * A challenge being resolved, from the moment it is made.
+   *
+   * `data` is null until the server answers, and that is deliberate: the table
+   * starts holding its breath before the answer exists, so the dramatic pause
+   * and the network wait are the same moment.
+   */
+  reveal?: { claim: RevealClaim; data: RevealData | null; onDone?: () => void } | null
   onBid: (bid: ProposedBid) => void
   onLie: () => void
   onBull: () => void
@@ -52,15 +70,6 @@ export function GameTable({
   const burst = wouldBurst(view)
   const yourTurn = holder !== null && holder.isYou
   const canAct = self !== null && !self.isEliminated
-  /*
-   * Held across renders.
-   *
-   * Handing the renderer a new array is handing it a new table: it rebuilds
-   * every cup, which throws away any animation in flight — so a shake that
-   * happened to span an unrelated render restarted from the beginning. Seats
-   * only actually change when somebody goes out.
-   */
-  const seats = useMemo(() => placeSeats(view.players), [view.players])
   const bid = view.round.bid
   // Every bid is a claim about this number, so it belongs beside the bid rather
   // than being counted off the seats each time somebody wants to weigh one.
@@ -74,9 +83,22 @@ export function GameTable({
    * different, and a banner saying so would be a banner covering the table.
    */
   const shaking = useDealShake(view.roundNumber)
+  const { stage, counted } = useRevealStage(reveal?.data ?? null)
+  const lifting = reveal !== null && stage !== 'held'
+  const mood = lifting ? 'revealing' : shaking ? 'dealing' : 'still'
+
+  /*
+   * Held across renders.
+   *
+   * Handing the renderer a new array is handing it a new table: it rebuilds
+   * every cup, which throws away any animation in flight — so a shake that
+   * happened to span an unrelated render restarted from the beginning. Seats
+   * only actually change when somebody goes out.
+   */
+  const seats = useMemo(() => placeSeats(view.players, lifting), [view.players, lifting])
   const cups = useMemo(
-    () => sceneSeats(seats, view.yourHand, shaking),
-    [seats, view.yourHand, shaking],
+    () => sceneSeats(seats, view.yourHand, mood, lifting ? (reveal?.data?.hands ?? null) : null),
+    [seats, view.yourHand, mood, lifting, reveal],
   )
 
   return (
@@ -99,7 +121,12 @@ export function GameTable({
 
         {/* Never narrower than the brass ring it sits in, never clipped by it
             either: the bid reads across, and a long name is worth more than a
-            tidy edge. */}
+            tidy edge.
+
+            It stays there through the reveal. It is the thing on trial, and
+            moving the evidence at the moment of judgement would be an odd thing
+            to do — the panel below carries it again because that is where the
+            count happens, not because it left the table. */}
         <div className="board__centre" style={{ ...centreAnchor(), minWidth: `${inlayWidth()}%` }}>
           <CurrentBid
             bid={bid}
@@ -121,16 +148,77 @@ export function GameTable({
             too many. It shares the bottom of the table with the log, because
             both are commentary on a move rather than a move. */}
         <p className="board__say" aria-live="polite">
-          {holder === null
-            ? 'Dealing'
-            : holder.isYou
-              ? (view.lastEvent ?? '')
-              : `${holder.name} is thinking`}
+          {reveal !== null
+            ? ''
+            : holder === null
+              ? 'Dealing'
+              : holder.isYou
+                ? (view.lastEvent ?? '')
+                : `${holder.name} is thinking`}
         </p>
       </div>
 
       <div className="board__dock">
-        <section className="board__hand" aria-label="Your dice">
+        {reveal !== null ? (
+          <RevealPanel
+            claim={reveal.claim}
+            data={reveal.data}
+            stage={stage}
+            counted={counted}
+            onDone={reveal.onDone}
+          />
+        ) : (
+          <TableDock
+            view={view}
+            self={self}
+            bid={bid}
+            burst={burst}
+            canAct={canAct}
+            busy={busy}
+            onTable={onTable}
+            onBid={onBid}
+            onLie={onLie}
+            onBull={onBull}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Your hand, and everything you can say about the table.
+ *
+ * Stands down for a reveal: while the cups are coming off there is nothing to
+ * bid on and nothing to challenge, and leaving the controls up would be
+ * offering moves that would be refused.
+ */
+function TableDock({
+  view,
+  self,
+  bid,
+  burst,
+  canAct,
+  busy,
+  onTable,
+  onBid,
+  onLie,
+  onBull,
+}: {
+  view: TableView
+  self: TablePlayer | null
+  bid: ActiveBid | null
+  burst: boolean
+  canAct: boolean
+  busy: boolean
+  onTable: number
+  onBid: (bid: ProposedBid) => void
+  onLie: () => void
+  onBull: () => void
+}) {
+  return (
+    <>
+      <section className="board__hand" aria-label="Your dice">
           {view.yourHand === null ? (
             <p className="board__nohand">
               {self?.isEliminated === true ? 'You are out. Watching.' : 'Waiting for dice'}
@@ -140,30 +228,29 @@ export function GameTable({
           )}
         </section>
 
-        {canAct && (
-          <div className="board__console">
-            <BidBuilder
-              round={view.round}
-              diceOnTable={onTable}
-              ownHand={view.yourHand ?? []}
+      {canAct && self !== null && (
+        <div className="board__console">
+          <BidBuilder
+            round={view.round}
+            diceOnTable={onTable}
+            ownHand={view.yourHand ?? []}
+            burst={burst}
+            busy={busy}
+            onBid={onBid}
+          />
+          {bid !== null && (
+            <ChallengeActions
+              bid={bid}
               burst={burst}
+              ownDiceCount={self.diceCount}
               busy={busy}
-              onBid={onBid}
+              onLie={onLie}
+              onBull={onBull}
             />
-            {bid !== null && (
-              <ChallengeActions
-                bid={bid}
-                burst={burst}
-                ownDiceCount={self.diceCount}
-                busy={busy}
-                onLie={onLie}
-                onBull={onBull}
-              />
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+          )}
+        </div>
+      )}
+    </>
   )
 }
 
