@@ -77,7 +77,10 @@ Completed items are marked `[x]` and kept, not deleted.
       the game asks a person to reason (how many of this face are likely to be
       out there, given my own hand) and they never Burst, because three
       opponents exercising the hardest rule in the game while somebody is
-      learning the word "bid" is noise. Tested by playing forty whole games and
+      learning the word "bid" is noise — the lesson demonstrates one Burst
+      deliberately instead, scripted so it lands at a moment the player has
+      just been told to watch for, and free play stays Burst-free. Tested by
+      playing forty whole games and
       asserting every single bot move against the engine's own `checkBid` —
       there is no list of positions a bot can reach, so nothing less covers it.
 

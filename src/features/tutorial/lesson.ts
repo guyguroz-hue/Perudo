@@ -27,6 +27,23 @@ export type Advance =
   | { readonly kind: 'bull' }
   /** The bots play; the step ends when it is the player's turn again. */
   | { readonly kind: 'watch' }
+  /**
+   * A scripted move by a named player, out of turn, so a Burst can be shown
+   * happening rather than described.
+   *
+   * Scripted rather than left to the bots on purpose. Burst is the hardest
+   * rule in this game to follow — anybody may act at any moment — and a table
+   * where three opponents exercise it freely is a table a beginner cannot
+   * read. One deliberate cut-in, at a moment chosen so the player is watching
+   * for it, teaches the rule; three unpredictable ones teach that the game is
+   * chaos.
+   */
+  | {
+      readonly kind: 'burst'
+      readonly actor: string
+      readonly quantity: number
+      readonly face: Face
+    }
 
 export interface Step {
   readonly id: string
@@ -96,6 +113,32 @@ export const LESSON: readonly Step[] = [
     point: 'seats',
   },
   {
+    id: 'burst',
+    title: 'Anybody can cut in, at any moment',
+    body:
+      'It is your turn — and it is about to not matter. Watch Bo, who is two seats away and not waiting for anyone.',
+    /*
+     * Nine sixes, against a table holding seven.
+     *
+     * Both halves are deliberate. It is false, so the player's own challenge
+     * two cards from now wins them a die back — which is the whole point of
+     * Burst Lie and cannot be taught by describing it. And nine clears any bid
+     * the bots could have reached beforehand, so the demonstration is legal
+     * whatever happened in the round leading up to it. `table.test.ts` pins
+     * both against the scripted hands, so editing those cannot quietly break
+     * this lesson.
+     */
+    advance: { kind: 'burst', actor: 'bo', quantity: 9, face: 6 },
+    point: 'seats',
+  },
+  {
+    id: 'burst-after',
+    title: 'That was a Burst',
+    body:
+      'Bo bid out of turn, and that is always allowed — for you too. It is not free, though: play carries on clockwise from whoever spoke last, so cutting in moves the turn as well as raising the bid.',
+    advance: { kind: 'read' },
+  },
+  {
     id: 'lie',
     title: 'When you stop believing it — call Lie',
     body:
@@ -113,9 +156,19 @@ export const LESSON: readonly Step[] = [
   },
   {
     id: 'call-it',
-    title: 'Your turn to doubt one',
+    title: 'Nine sixes? Doubt it',
+    /*
+     * Careful with the promise here.
+     *
+     * Burst Lie is the only move that wins a die back, and it is tempting to
+     * say so flatly — but the player is holding five, and five is the most
+     * anyone may ever hold (GAME_RULES §9.3). The die is simply not granted.
+     * A card promising one and a reveal that does not deliver it teaches that
+     * the game is arbitrary, so the ceiling is taught instead, in the same
+     * breath and for free.
+     */
     body:
-      'Look at the claim on the table and at your own dice. Whatever you make of it — call Lie, and watch every cup come off and the dice get counted.',
+      'Not your turn, so this is a Burst Lie — the only move that can win a die back. You are holding five, which is the most anyone may ever hold, so there is nothing here to take: this one is all cost to Bo.',
     advance: { kind: 'lie' },
     point: 'lie',
   },
@@ -123,7 +176,7 @@ export const LESSON: readonly Step[] = [
     id: 'free',
     title: 'That is the game. Play it out',
     body:
-      'Three of them, five dice each, nobody helping. Two more things you will meet: a Burst, which is acting out of turn — legal for anybody, any time — and a Farewell Round, which starts when somebody drops to their last die and locks one face for everyone.',
+      'Three of them, five dice each, nobody helping. One more thing you will meet: a Farewell Round, which starts when somebody drops to their last die — it locks one face for the whole round, and ones stop being wild.',
     advance: { kind: 'read' },
   },
 ]

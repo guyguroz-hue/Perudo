@@ -2,7 +2,18 @@ import { describe, expect, it } from 'vitest'
 import { checkBid } from '../../game'
 import type { Face } from '../../game'
 import { botToAct, decide } from './bots'
-import { active, bid, bull, challenge, deal, faceWord, onTable, seat, seatOf } from './table'
+import {
+  active,
+  bid,
+  bull,
+  challenge,
+  countFace,
+  deal,
+  faceWord,
+  onTable,
+  seat,
+  seatOf,
+} from './table'
 import type { TableState } from './table'
 
 /**
@@ -188,5 +199,100 @@ describe('how the table says a bid out loud', () => {
     expect(faceWord(2, 2)).toBe('twos')
     expect(faceWord(1, 1)).toBe('Perudo')
     expect(faceWord(1, 3)).toBe('Perudos')
+  })
+})
+
+/**
+ * The scripted demonstration's arithmetic.
+ *
+ * The lesson has Bo cut in with nine sixes, out of turn, and then asks the
+ * player to doubt it — so that the one move in the game that wins a die back
+ * is something they do rather than something they are told about. That only
+ * works if nine sixes is genuinely false against the hands the tutorial deals,
+ * and if nine is above anything the bots could have bid before it.
+ *
+ * Both are facts about a fixed set of dice, so they are checked here. Change
+ * the scripted hands and this fails rather than the lesson quietly teaching
+ * that a correct claim loses you a die.
+ */
+describe('the scripted Burst', () => {
+  const SCRIPTED: Record<string, Face[]> = {
+    you: [4, 4, 1, 2, 6],
+    ada: [4, 5, 5, 3, 2],
+    bo: [6, 6, 1, 3, 5],
+    cy: [2, 3, 4, 6, 6],
+  }
+
+  /** Exactly the hand `TutorialScreen` deals for the first round. */
+  function scripted(): TableState {
+    const state: TableState = {
+      seats: [
+        seat('you', 'You', 0, true),
+        seat('ada', 'Ada', 1),
+        seat('bo', 'Bo', 2),
+        seat('cy', 'Cy', 3),
+      ],
+      round: { type: 'normal', lockedFace: null, bid: null },
+      roundNumber: 0,
+      turnId: 'you',
+      farewellQueue: [],
+      lastEvent: null,
+      winnerId: null,
+      over: false,
+    }
+    deal(state, (id, n) => SCRIPTED[id].slice(0, n))
+    return state
+  }
+
+  it('claims more sixes than the table is holding', () => {
+    const state = scripted()
+    // Ones are wild in a normal round, so they answer to sixes too.
+    const sixes = countFace(state, 6, 'normal')
+    expect(sixes).toBe(7)
+    expect(9).toBeGreaterThan(sixes)
+  })
+
+  it('is a legal raise over anything the bots reach first', () => {
+    // Play the opening exactly as the lesson does: the player opens three
+    // fours, then the bots take a turn each.
+    const state = scripted()
+    expect(bid(state, 'you', 3, 4 as Face).ok).toBe(true)
+    for (const id of ['ada', 'bo', 'cy']) {
+      const move = decide(state, id)
+      if (move.kind !== 'bid') break
+      expect(bid(state, id, move.quantity, move.face).ok).toBe(true)
+    }
+    // And the cut-in still stands up as a bid.
+    expect(checkBid(state.round, { quantity: 9, face: 6 }).legal).toBe(true)
+  })
+
+  it('is a Burst — Bo is not the player whose turn it is', () => {
+    const state = scripted()
+    bid(state, 'you', 3, 4 as Face)
+    // Whoever holds the turn by then, it is not Bo cutting in politely.
+    expect(state.turnId).not.toBe('bo')
+    const done = bid(state, 'bo', 9, 6 as Face)
+    expect(done.ok).toBe(true)
+    expect(state.lastEvent).toContain('a Burst')
+  })
+
+  it('costs Bo a die and wins the player nothing, because five is the ceiling', () => {
+    /*
+     * The card says exactly this, so it is checked. Burst Lie is the only move
+     * that wins a die back — and never above five (GAME_RULES §9.3), which the
+     * player is already holding. A lesson that promised a die and did not
+     * deliver one would teach that the game is arbitrary.
+     */
+    const state = scripted()
+    bid(state, 'you', 3, 4 as Face)
+    bid(state, 'bo', 9, 6 as Face)
+    const done = challenge(state, 'you')
+    expect(done.ok).toBe(true)
+    if (!done.ok) return
+    expect(done.reveal.challengeKind).toBe('burst_lie')
+    expect(done.reveal.claimHolds).toBe(false)
+    expect(done.reveal.deltas.bo).toBe(-1)
+    expect(done.reveal.deltas.you).toBeUndefined()
+    expect(seatOf(state, 'you').diceCount).toBe(5)
   })
 })

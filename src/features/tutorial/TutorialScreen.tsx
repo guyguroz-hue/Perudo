@@ -124,6 +124,28 @@ export function TutorialScreen() {
     (step?.advance.kind === 'lie' || step?.advance.kind === 'bull') &&
     table.current.round.bid === null
   const waiting = step !== undefined && step.advance.kind !== 'watch' && !needsClaim
+
+  /*
+   * The scripted cut-in.
+   *
+   * Played by the lesson rather than by the bot policy, because the bots never
+   * Burst: at a table where three opponents may act at any moment, a beginner
+   * cannot tell a rule from chaos. This is the one Burst in the tutorial, at a
+   * moment the card has just told the player to watch for.
+   */
+  useEffect(() => {
+    const want = step?.advance
+    if (want === undefined || want.kind !== 'burst') return
+    const cut = setTimeout(() => {
+      const done = bid(table.current, want.actor, want.quantity, want.face)
+      // If the script has drifted past what the rules allow, say so here rather
+      // than stranding the player on a card that never resolves.
+      if (!done.ok) setNudge(done.why)
+      redraw()
+      next()
+    }, 1700)
+    return () => clearTimeout(cut)
+  }, [step, redraw, next])
   useEffect(() => {
     if (waiting || reveal !== null) return
     const state = table.current
