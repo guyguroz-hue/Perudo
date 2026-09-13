@@ -12,7 +12,7 @@ import { RevealPanel } from './RevealPanel'
 import { TableScene } from './TableScene'
 import { SHAKE_MS, useDealShake } from './dealing'
 import type { RevealClaim, RevealData } from './reveal'
-import { useRevealStage } from './revealStage'
+import { PAY_AFTER_MS, useRevealStage } from './revealStage'
 import { dueDice, placeSeats, sceneSeats } from './seating'
 import { usePrefersReducedMotion } from '../../lib/motion'
 import { useSound, useSoundEffect } from '../../lib/useSound'
@@ -166,9 +166,29 @@ export function GameTable({
    * is nothing to pay.
    */
   const settled = stage === 'result' ? (reveal?.data ?? null) : null
+
+  /*
+   * Nothing moves for a beat after the verdict.
+   *
+   * The answer lands and the count is marked out on the table, and that is the
+   * moment a player actually reads what happened. A die leaving on the same
+   * frame takes the answer away while they are still working it out — the
+   * thing that mattered most is over before they look up.
+   */
+  const [paidFor, setPaidFor] = useState<RevealData | null>(null)
+  useEffect(() => {
+    if (settled === null) return
+    const pays = setTimeout(() => setPaidFor(settled), PAY_AFTER_MS)
+    return () => clearTimeout(pays)
+  }, [settled])
+  // Derived rather than cleared, so closing a reveal needs no second render to
+  // undo the first: a resolution is due only while it is still the one on the
+  // table, and the next one arrives as a different object.
+  const dueNow = paidFor === settled ? settled : null
+
   const paying = useMemo(
-    () => (settled === null ? null : dueDice(seats, settled.deltas)),
-    [settled, seats],
+    () => (dueNow === null ? null : dueDice(seats, dueNow.deltas)),
+    [dueNow, seats],
   )
 
   return (

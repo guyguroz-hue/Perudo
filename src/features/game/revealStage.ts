@@ -37,6 +37,29 @@ const SETTLE_MS = 340
 const PER_DIE_MS = 150
 
 /**
+ * The beat between the verdict and the dice moving.
+ *
+ * The verdict lands and the count is on the table marked out — and that is the
+ * moment a player actually reads what happened. A die leaving on the same
+ * frame takes the answer away while they are still working it out: the thing
+ * that mattered most was over before they looked up.
+ *
+ * So nothing moves for a moment. The count is there to be read, the sentence
+ * under it says who pays, and only then is anybody's die taken.
+ */
+export const PAY_AFTER_MS = 1800
+
+/**
+ * How long a die takes to leave the table, or to arrive on it.
+ *
+ * Slow enough to follow from across the table — this is the only thing that
+ * ever changes what a player holds, and a player who missed it has missed the
+ * result. Kept here beside the rest of the reveal's timing rather than in the
+ * renderer, because it is the reveal's pacing and not a rendering detail.
+ */
+export const PAY_MS = 1000
+
+/**
  * How long the result stands before the table moves on by itself.
  *
  * The next round is dealt by the resolution that ended the last one, so by the
@@ -54,7 +77,12 @@ const PER_DIE_MS = 150
  * the longest thing this panel ever says.
  */
 export function resultHoldMs(changedPlayers: number): number {
-  return Math.min(5000 + changedPlayers * 700, 9000)
+  // Everything before the table settles, and then time to look at it settled.
+  // Written as a sum rather than as one number so the pause before the dice
+  // move and the hold can never drift apart: lengthen one and the other
+  // follows, instead of the table advancing over a die still in the air.
+  const settling = PAY_AFTER_MS + PAY_MS
+  return Math.min(settling + 2200 + changedPlayers * 700, 9000 + settling)
 }
 
 export interface Revealing {

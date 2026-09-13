@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { SceneSeat, TableScene as Scene } from '../../three/scene'
 import { createTableScene } from '../../three/scene'
+import { PAY_MS } from './revealStage'
 import './TableScene.css'
 
 /**
@@ -115,7 +116,7 @@ export function TableScene({
 
   useEffect(() => {
     if (paying === null) return
-    sceneRef.current?.pay(paying)
+    sceneRef.current?.pay(paying, PAY_MS / 1000)
   }, [paying])
 
   return <canvas ref={canvasRef} className="scene" aria-hidden="true" />

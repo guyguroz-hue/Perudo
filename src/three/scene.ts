@@ -120,7 +120,11 @@ export interface TableScene {
    * cup on the table, which would throw away the lift this is meant to land on
    * top of. `index` is the seat's place round the ring, as it was given.
    */
-  pay: (changes: readonly { index: number; delta: number }[]) => void
+  pay: (
+    changes: readonly { index: number; delta: number }[],
+    /** How long each die takes to travel, in seconds. */
+    seconds?: number,
+  ) => void
   /** How far up the eye is right now, eased — what the overlay must project through. */
   readonly overhead: number
   /** Replace who is at the table, and what their cups are doing. */
@@ -358,8 +362,14 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
     return true
   }
 
-  /** How long a die takes to be taken off the table, or set down on it. */
-  const PAY_SECONDS = 0.7
+  /**
+   * How long a die takes to change hands, in seconds.
+   *
+   * Set by the caller rather than fixed here: it is the reveal's pacing, and
+   * it belongs beside the rest of that pacing — how long the cups are held,
+   * how fast the count ticks up — not in the renderer, which only plays it.
+   */
+  let paySeconds = 0.7
 
   /** Advance every die changing hands at this seat. True while any is moving. */
   function settle(seat: Seated, dt: number): boolean {
@@ -368,7 +378,7 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
 
     for (const pay of seat.paying) {
       pay.elapsed += dt
-      const k = Math.min(1, pay.elapsed / PAY_SECONDS)
+      const k = Math.min(1, pay.elapsed / paySeconds)
       // A die leaving is lifted away and ends gently; one arriving falls and
       // lands, so it runs the same curve backwards.
       const e = pay.way < 0 ? 1 - Math.pow(1 - k, 2) : Math.pow(k, 2)
@@ -482,7 +492,8 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
       if (seated.some((seat) => seat.state !== 'covered')) start()
     },
 
-    pay(changes) {
+    pay(changes, seconds) {
+      if (seconds !== undefined) paySeconds = seconds
       for (const change of changes) {
         const seat = seated.find((s) => s.index === change.index)
         if (seat === undefined || change.delta === 0) continue
