@@ -86,9 +86,13 @@ describe('who sits where', () => {
          * upward lands on the cup behind. See src/three/layout.test.ts.
          */
         const { z } = seatPoint(seats.indexOf(seat), count)
-        const vertical = z > 0.001 ? '10px' : 'calc(-100% - 10px)'
+        // Written as numbers rather than as one of two fixed strings, because
+        // the same offsets have to travel continuously to their overhead
+        // positions during a reveal. At a seat they are at the near end of
+        // that trip: hard against the cup, with the gap fully open.
+        const vertical = z > 0.001 ? '0% + 10px' : '-100% - 10px'
         expect(seat.badge.translate).toMatch(
-          new RegExp(`^(-88%|-50%|-12%) ${vertical.replace(/[()-]/g, '\\$&')}$`),
+          new RegExp(`^(-88|-50|-12)% ${`calc(${vertical})`.replace(/[()+-]/g, '\\$&')}$`),
         )
         // Far enough inside the frame that a name is still a name.
         expect(pct(seat.badge.left)).toBeGreaterThanOrEqual(15)

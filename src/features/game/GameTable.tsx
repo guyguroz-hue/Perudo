@@ -134,7 +134,7 @@ export function GameTable({
   // Deliberately not a function of where the eye is: this is who is sitting
   // where, which does not change while the camera moves. The badges place
   // themselves from `eye`; the scene must keep the table it already built.
-  const seats = useMemo(() => placeSeats(view.players, lifting), [view.players, lifting])
+  const seats = useMemo(() => placeSeats(view.players), [view.players])
   const cups = useMemo(
     () =>
       sceneSeats(
@@ -228,7 +228,7 @@ export function GameTable({
             <PlayerSeat
               key={placement.player.id}
               placement={placement}
-              lifted={lifting}
+              lifted={eye}
               overhead={eye}
             />
           ))}

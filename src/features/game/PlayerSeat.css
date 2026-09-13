@@ -26,7 +26,24 @@
  * shrinks to what is still needed: who this is.
  */
 .badge--aerial .badge__dice {
-  display: none;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+}
+
+/*
+ * Collapsed, not switched off.
+ *
+ * `display: none` takes the blanks out in one frame, and the badge is centred
+ * on its anchor — so the whole label jumps sideways by half the width it just
+ * lost, in the middle of a move that is otherwise continuous. Shrinking it
+ * instead costs nothing and the badge closes up as the eye arrives.
+ */
+.badge__dice {
+  max-width: 12rem;
+  transition:
+    opacity var(--t-short) var(--ease-ui),
+    max-width var(--t-short) var(--ease-ui);
 }
 
 .badge--aerial {

@@ -27,8 +27,8 @@ export interface SeatPlacement {
 
 export function placeSeats(
   players: readonly TablePlayer[],
-  /** True while the cups are off the table, which moves the badges up with them. */
-  lifted = false,
+  /** How far the cups are off the table, 0 to 1, which the badges follow. */
+  lifted = 0,
 ): SeatPlacement[] {
   if (players.length === 0) return []
 

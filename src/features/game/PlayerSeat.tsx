@@ -23,12 +23,12 @@ import './PlayerSeat.css'
  */
 export function PlayerSeat({
   placement,
-  lifted = false,
+  lifted = 0,
   overhead = 0,
 }: {
   placement: SeatPlacement
-  /** True while the cups are off the table, which moves the badges up with them. */
-  lifted?: boolean
+  /** How far the cups are off the table, 0 to 1, which the badges follow. */
+  lifted?: number
   /**
    * Where the eye is this frame, 0 at a seat and 1 straight overhead.
    *

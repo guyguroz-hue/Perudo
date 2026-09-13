@@ -61,8 +61,8 @@ export const CUP_LID = 0.3
  */
 export const CUP_LIFT = 0.26
 
-/** The air between a cup and the badge floating over it. */
-export const BADGE_GAP = '10px'
+/** The air between a cup and the badge floating over it, in pixels. */
+export const BADGE_GAP = 10
 
 /**
  * How close to the frame a badge may be pushed.
@@ -207,7 +207,15 @@ export interface BadgeAnchor extends Anchor {
 export function badgeAnchor(
   index: number,
   count: number,
-  lifted = false,
+  /**
+   * How far the cup has been lifted off the dice, 0 to 1.
+   *
+   * A number rather than a flag, because the cup takes half a second to get
+   * up there and the badge floating over it used to arrive in one frame —
+   * forty pixels in a single step, at the front of a move that is otherwise
+   * smooth. That reads as the table stuttering, not as a decision.
+   */
+  lifted = 0,
   overhead = 0,
 ): BadgeAnchor {
   /*
@@ -235,7 +243,7 @@ export function badgeAnchor(
   const near = z > 0.001
   // A lifted cup climbs into the badge that was floating over it, so the badge
   // moves up with it and the gap between them stays the gap it was.
-  const anchor = project(x, near ? 0 : CUP_LID + (lifted ? CUP_LIFT : 0), z, overhead)
+  const anchor = project(x, near ? 0 : CUP_LID + lifted * CUP_LIFT, z, overhead)
 
   /*
    * Which way the badge runs.
@@ -247,7 +255,25 @@ export function badgeAnchor(
    * runs off the table instead, which is where there is nothing to cover.
    */
   const side = Math.abs(x) < 0.08 ? 'centre' : x < 0 ? 'left' : 'right'
-  const across = side === 'centre' ? '-50%' : side === 'left' ? '-88%' : '-12%'
+  const across = side === 'centre' ? -50 : side === 'left' ? -88 : -12
+
+  /*
+   * The hang, interpolated rather than switched.
+   *
+   * Seated, a badge hangs off its anchor: outward across, and clear above or
+   * below. Overhead it sits on the anchor, because the anchor has already
+   * moved out to the rim and hanging it any further would take it off the
+   * frame. Those are two different offsets, and choosing between them at the
+   * halfway point — which is what this did — popped the badge about a fifth of
+   * its width sideways and half its height down, once, in the middle of an
+   * otherwise smooth move. Small, and exactly the kind of thing that reads as
+   * the table stuttering rather than as one considered flaw.
+   *
+   * So both ends are numbers and the trip between them is continuous. The gap
+   * closes in step, because at the top there is no cup left to be clear of.
+   */
+  const hangsBelow = near ? 0 : -100
+  const gap = (near ? BADGE_GAP : -BADGE_GAP) * (1 - overhead)
 
   /*
    * The frame margin relaxes as the eye rises.
@@ -263,16 +289,19 @@ export function badgeAnchor(
   return {
     left: `${clamp(margin, Number.parseFloat(anchor.left), 100 - margin)}%`,
     top: anchor.top,
-    // Overhead the badge sits on its anchor rather than hanging off it: the
-    // anchor is already out at the rim, and hanging it further would take it
-    // off the frame. The changeover is a single frame in the middle of a move
-    // where everything else is travelling too.
-    translate:
-      overhead > 0.5
-        ? '-50% -50%'
-        : near
-          ? `${across} ${BADGE_GAP}`
-          : `${across} calc(-100% - ${BADGE_GAP})`,
+    /*
+     * Rounded, and signed by hand.
+     *
+     * Both matter. An interpolation that lands on zero arrives as something
+     * like -4.4e-15, and `calc()` does not accept exponential notation — the
+     * whole transform is invalid and silently dropped, which puts the badge
+     * back on its anchor with no error anywhere. And a negative operand is
+     * written as a subtraction rather than as "+ -10px", which is the form
+     * every browser agrees about.
+     */
+    translate: `${round(lerp(across, -50, overhead))}% calc(${round(
+      lerp(hangsBelow, -50, overhead),
+    )}% ${gap < 0 ? '-' : '+'} ${round(Math.abs(gap))}px)`,
   }
 }
 
@@ -298,6 +327,15 @@ export function emptySeatAnchor(index: number, count: number): BadgeAnchor {
 
 function clamp(low: number, value: number, high: number): number {
   return Math.min(Math.max(value, low), high)
+}
+
+function lerp(from: number, to: number, t: number): number {
+  return from + (to - from) * t
+}
+
+/** Three decimals is well past a pixel at any screen size, and is finite. */
+function round(value: number): number {
+  return Math.round(value * 1000) / 1000
 }
 
 /**

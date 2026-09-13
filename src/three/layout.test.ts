@@ -69,8 +69,8 @@ describe('badge anchors', () => {
   it('lifts a badge with the cup it belongs to', () => {
     // Only a far seat has a badge riding on the cup's lid; a near one is
     // anchored to the timber and does not move when the cup comes up.
-    const still = Number.parseFloat(badgeAnchor(3, 6, false).top)
-    const lifted = Number.parseFloat(badgeAnchor(3, 6, true).top)
+    const still = Number.parseFloat(badgeAnchor(3, 6, 0).top)
+    const lifted = Number.parseFloat(badgeAnchor(3, 6, 1).top)
     expect(lifted).toBeLessThan(still)
   })
 })
@@ -152,7 +152,7 @@ describe('looking straight down', () => {
     // below their cup, and from above there is no above or below.
     for (const count of SIZES) {
       for (let index = 0; index < count; index += 1) {
-        const badge = badgeAnchor(index, count, true, 1)
+        const badge = badgeAnchor(index, count, 1, 1)
         const hand = project(
           seatPoint(index, count).x,
           0,
@@ -168,18 +168,55 @@ describe('looking straight down', () => {
     }
   })
 
-  it('travels without jumping', () => {
-    // Every step of the rise is a frame somebody sees. A discontinuity here is
-    // a badge teleporting across the table mid-move.
-    let previous = badgeAnchor(2, 6, true, 0)
-    for (let t = 0.02; t <= 1.0001; t += 0.02) {
-      const next = badgeAnchor(2, 6, true, t)
-      const step = Math.hypot(
-        Number.parseFloat(next.left) - Number.parseFloat(previous.left),
-        Number.parseFloat(next.top) - Number.parseFloat(previous.top),
-      )
-      expect(step).toBeLessThan(6)
-      previous = next
+  /**
+   * Where a badge actually lands, in pixels.
+   *
+   * The anchor is only half of it: the badge is then hung off that point by a
+   * transform, and the transform changes over the rise too. Measuring the
+   * anchor alone is how a visible pop survived a test that claimed to be about
+   * smoothness — the anchor slid perfectly while the hang switched between two
+   * fixed offsets at the halfway mark, jerking the badge about a fifth of its
+   * own width sideways and half its height down in a single frame.
+   */
+  function lands(
+    anchor: ReturnType<typeof badgeAnchor>,
+    stage = { w: 390, h: 507 },
+    badge = { w: 110, h: 34 },
+  ): { x: number; y: number } {
+    // `<a>% calc(<b>% + <c>px)` — the three numbers, in order.
+    const parsed = anchor.translate.match(/^(-?[\d.]+)% calc\((-?[\d.]+)% ([+-]) ([\d.]+)px\)$/)
+    if (parsed === null) throw new Error(`unreadable translate: ${anchor.translate}`)
+    const [, across, ofHeight, sign, pixels] = parsed
+    const px = (sign === '-' ? -1 : 1) * Number(pixels)
+    return {
+      x: (Number.parseFloat(anchor.left) / 100) * stage.w + (Number(across) / 100) * badge.w,
+      y:
+        (Number.parseFloat(anchor.top) / 100) * stage.h +
+        (Number(ofHeight) / 100) * badge.h +
+        px,
+    }
+  }
+
+  it('travels without jumping, transform and all', () => {
+    // Every step of the rise is a frame somebody sees, and the rise is short —
+    // so a step twice the size of its neighbours is not a slow frame, it is the
+    // table stuttering.
+    for (const count of SIZES) {
+      for (let index = 0; index < count; index += 1) {
+        const steps: number[] = []
+        let previous = lands(badgeAnchor(index, count, 1, 0))
+        for (let t = 0.02; t <= 1.0001; t += 0.02) {
+          const next = lands(badgeAnchor(index, count, 1, t))
+          steps.push(Math.hypot(next.x - previous.x, next.y - previous.y))
+          previous = next
+        }
+        const biggest = Math.max(...steps)
+        const typical = steps.reduce((a, b) => a + b, 0) / steps.length
+        // Eased travel speeds up and slows down, so the largest step is
+        // legitimately bigger than the average — but only by a factor, never
+        // by the order of magnitude a discontinuity produces.
+        expect(biggest).toBeLessThan(typical * 4)
+      }
     }
   })
 })
