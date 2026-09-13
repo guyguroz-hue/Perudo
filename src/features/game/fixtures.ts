@@ -1,6 +1,8 @@
+import { faceWord } from './events'
 import { claimFor, standingsFor } from './reveal'
 import type { RevealData } from './reveal'
-import type { TableView } from './view'
+import type { PlayerId } from '../../game'
+import type { TableMove, TableView } from './view'
 
 /**
  * Table and reveal states, so every screen can be looked at without a game
@@ -19,6 +21,16 @@ const PLAYERS = [
   { id: 'maya', name: 'Maya', seatIndex: 3, diceCount: 5, isYou: false, isEliminated: false, hasTurn: false },
 ] as const
 
+/** A round's worth of moves, oldest first, as the log renders them. */
+function log(...moves: readonly (readonly [PlayerId, string, boolean?])[]): TableMove[] {
+  return moves.map(([actorId, text, burst = false], i) => ({
+    id: `m${i}`,
+    actorId,
+    text,
+    burst,
+  }))
+}
+
 export interface Scenario {
   readonly id: string
   readonly label: string
@@ -36,7 +48,7 @@ export const SCENARIOS: readonly Scenario[] = [
       roundNumber: 3,
       players: [...PLAYERS],
       yourHand: [5, 1, 3, 6],
-      lastEvent: 'Alice bid 4 fives',
+      moves: log(['maya', 'Maya bid 3 fives'], ['alice', 'Alice bid 4 fives']),
     },
   },
   {
@@ -48,7 +60,10 @@ export const SCENARIOS: readonly Scenario[] = [
       roundNumber: 3,
       players: PLAYERS.map((p) => ({ ...p, hasTurn: p.id === 'maya' })),
       yourHand: [5, 1, 3, 6],
-      lastEvent: 'Carl burst in with 6 twos',
+      moves: log(
+        ['alice', 'Alice bid 5 twos'],
+        ['carl', 'Carl burst in with 6 twos', true],
+      ),
     },
   },
   {
@@ -60,7 +75,7 @@ export const SCENARIOS: readonly Scenario[] = [
       roundNumber: 4,
       players: [...PLAYERS],
       yourHand: [6, 6, 1, 2],
-      lastEvent: null,
+      moves: [],
     },
   },
   {
@@ -76,7 +91,10 @@ export const SCENARIOS: readonly Scenario[] = [
       roundNumber: 5,
       players: [...PLAYERS],
       yourHand: [5, 5, 1, 2],
-      lastEvent: 'Carl called Bull on 7 fives',
+      moves: log(
+        ['alice', 'Alice bid 7 fives'],
+        ['carl', 'Carl called Bull — exactly 7'],
+      ),
     },
   },
   {
@@ -88,7 +106,7 @@ export const SCENARIOS: readonly Scenario[] = [
       roundNumber: 6,
       players: PLAYERS.map((p) => (p.id === 'carl' ? { ...p, diceCount: 1 } : p)),
       yourHand: [3, 1, 1, 4],
-      lastEvent: 'Carl is down to one die',
+      moves: log(['carl', 'Carl bid 2 threes']),
     },
   },
   {
@@ -102,7 +120,7 @@ export const SCENARIOS: readonly Scenario[] = [
         p.isYou ? { ...p, diceCount: 0, isEliminated: true, hasTurn: false } : p,
       ),
       yourHand: null,
-      lastEvent: 'You lost your last die',
+      moves: log(['maya', 'Maya bid 5 fours']),
     },
   },
 ]
@@ -122,6 +140,11 @@ export { claimFor, standingsFor }
  * needs a table to play it on. Built from the same fixture players, with each
  * hand's size read off the reveal itself, so the cups on the table match the
  * dice that come out from under them.
+ *
+ * The log is built from the reveal too, and has to be: the point of keeping it
+ * up while the cups come off is that it is the only thing naming the player who
+ * doubted, and a preview that left it empty would be previewing the wrong
+ * screen.
  */
 export function tableFor(data: RevealData): TableView {
   const held = (id: string) => data.hands.find((hand) => hand.id === id)?.dice ?? []
@@ -145,7 +168,17 @@ export function tableFor(data: RevealData): TableView {
       hasTurn: false,
     })),
     yourHand: held('you'),
-    lastEvent: null,
+    moves: log(
+      ['alice', `${data.bidderName} bid ${data.quantity} ${faceWord(data.face, data.quantity)}`],
+      ...(data.bullCallerName === null
+        ? []
+        : ([['carl', `${data.bullCallerName} called Bull — exactly ${data.quantity}`]] as const)),
+      [
+        'you',
+        `${data.challengerName} ${data.challengeKind === 'burst_lie' ? 'burst in with Lie' : 'called Lie'}`,
+        data.challengeKind === 'burst_lie',
+      ],
+    ),
   }
 }
 
@@ -270,7 +303,7 @@ export const ENDINGS: readonly {
           : { ...p, diceCount: 0, isEliminated: true, hasTurn: false },
       ),
       yourHand: null,
-      lastEvent: 'Dana called Lie',
+      moves: log(['alice', 'Alice bid 9 fives'], ['you', 'Dana called Lie']),
     },
   },
   {
@@ -286,7 +319,7 @@ export const ENDINGS: readonly {
           : { ...p, diceCount: 0, isEliminated: true, hasTurn: false },
       ),
       yourHand: null,
-      lastEvent: 'Maya burst in with Lie',
+      moves: log(['carl', 'Carl bid 8 sixes'], ['maya', 'Maya burst in with Lie', true]),
     },
   },
   {
@@ -303,7 +336,7 @@ export const ENDINGS: readonly {
         hasTurn: false,
       })),
       yourHand: null,
-      lastEvent: 'Carl called Bull — exactly',
+      moves: log(['alice', 'Alice bid 4 twos'], ['carl', 'Carl called Bull — exactly 4']),
     },
   },
 ]

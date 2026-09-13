@@ -36,7 +36,7 @@ function table(names: readonly string[]): TableState {
     roundNumber: 0,
     turnId: 'p0',
     farewellQueue: [],
-    lastEvent: null,
+    moves: [],
     winnerId: null,
     over: false,
   }
@@ -236,7 +236,7 @@ describe('the scripted Burst', () => {
       roundNumber: 0,
       turnId: 'you',
       farewellQueue: [],
-      lastEvent: null,
+      moves: [],
       winnerId: null,
       over: false,
     }
@@ -273,7 +273,9 @@ describe('the scripted Burst', () => {
     expect(state.turnId).not.toBe('bo')
     const done = bid(state, 'bo', 9, 6 as Face)
     expect(done.ok).toBe(true)
-    expect(state.lastEvent).toContain('a Burst')
+    const last = state.moves[state.moves.length - 1]
+    expect(last.burst).toBe(true)
+    expect(last.text).toContain('Bo bid 9 sixes')
   })
 
   it('costs Bo a die and wins the player nothing, because five is the ceiling', () => {
@@ -314,7 +316,7 @@ describe('what a bot is allowed to know', () => {
       roundNumber: 1,
       turnId: 'you',
       farewellQueue: [],
-      lastEvent: null,
+      moves: [],
       winnerId: null,
       over: false,
     }

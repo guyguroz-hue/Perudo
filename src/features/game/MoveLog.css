@@ -1,0 +1,101 @@
+/*
+ * The round's moves, over the room behind the table.
+ *
+ * Top left, under the round number, in the band of empty room above the far
+ * cup. It is the one region of this screen with nothing in it at either camera
+ * angle: from a seat the far rim is 39% of the way down the stage, and even
+ * straight overhead — where the table fills much more of the frame — the
+ * nearest die is still 30% down, about 150px on a phone, against three lines
+ * of log ending around 93px. So it can stay up through a reveal, which is the
+ * whole point of it, without ever covering the thing being counted.
+ *
+ * Laid over a picture rather than over a surface, so every part of it carries
+ * its own shadow. A panel behind it would be a second rectangle on a screen
+ * whose whole idea is that there are none.
+ */
+.log {
+  position: absolute;
+  top: calc(var(--space-2) + 1.35rem);
+  left: var(--space-4);
+  /* Wide enough for "Someone burst in with 6 Perudos", never wide enough to
+     reach the sound toggle on the far corner. */
+  max-width: min(62%, 19rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  /* The table is behind this, and a press meant for a cup must reach it. */
+  pointer-events: none;
+}
+
+.log__move {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 8px 3px 6px;
+  border-radius: var(--radius-full);
+  background: rgb(12 10 18 / 0.42);
+  font-size: var(--text-2xs);
+  line-height: 1.3;
+  color: var(--ink-dim);
+  /* Oldest first, top to bottom: the newest move is the one nearest the table,
+     at full strength, and the ones above it step back a level at a time. */
+  opacity: calc(1 - var(--age, 0) * 0.28);
+  box-shadow: 0 1px 8px rgb(0 0 0 / 0.45);
+}
+
+/* A new move arrives from under the one before it, the way the next thing said
+   arrives after the last. Short enough to be felt rather than watched. */
+@media (prefers-reduced-motion: no-preference) {
+  .log__move {
+    animation: log-said 220ms ease-out both;
+  }
+}
+
+@keyframes log-said {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+
+/* The player's colour, the same one they wear at their seat and on their cup.
+   A dot rather than a coloured name: the name has to stay readable, and tinted
+   text on a dark photograph is not. */
+.log__who {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--seat-tone, var(--ink-faint));
+  box-shadow: 0 0 6px var(--seat-tone, transparent);
+}
+
+.log__text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Out of turn. Brass, the one accent this table already owns — the inlay, the
+   die in the round strip — rather than a warning colour the screen has never
+   used. A Burst is a legal move, not a fault. */
+.log__burst {
+  flex: none;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: rgb(212 162 76 / 0.16);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--brass-bright);
+}
+
+.log__move--burst {
+  color: var(--ink);
+}

@@ -27,6 +27,17 @@ export interface TablePlayer {
   readonly hasTurn: boolean
 }
 
+/** One move, as the table would recount it. */
+export interface TableMove {
+  /** Stable within a round, so a list of these can be keyed and animated. */
+  readonly id: string
+  /** Whose move it was. Null only for something the table did to itself. */
+  readonly actorId: PlayerId | null
+  readonly text: string
+  /** Made out of turn (GAME_RULES §9.1), which is worth marking. */
+  readonly burst: boolean
+}
+
 export interface TableView {
   readonly round: RoundState
   readonly roundNumber: number
@@ -36,8 +47,16 @@ export interface TableView {
    * The only hand any client is ever given.
    */
   readonly yourHand: readonly Face[] | null
-  /** One line of what just happened. Null at the start of a round. */
-  readonly lastEvent: string | null
+  /**
+   * What has been said this round, oldest first.
+   *
+   * A list rather than a line, because Burst means turn order tells you
+   * nothing: anybody may act at any moment, so "whose bid is this" cannot be
+   * worked out from where the turn sits, and by the time the cups come off the
+   * one line saying who doubted has already been replaced. Who said what is not
+   * decoration in this game — it is most of what a player is reasoning about.
+   */
+  readonly moves: readonly TableMove[]
 }
 
 /** The player whose normal turn it is, if anyone's. */

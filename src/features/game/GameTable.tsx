@@ -7,6 +7,8 @@ import { INLAY_RADIUS, STAGE_ASPECT, centreAnchor, inlayWidth } from '../../thre
 import { BidBuilder } from './BidBuilder'
 import { ChallengeActions } from './ChallengeActions'
 import { CurrentBid } from './CurrentBid'
+import type { ClaimOwner } from './CurrentBid'
+import { MoveLog } from './MoveLog'
 import { PlayerSeat } from './PlayerSeat'
 import { RevealPanel } from './RevealPanel'
 import { TableScene } from './TableScene'
@@ -220,6 +222,26 @@ export function GameTable({
           <SoundToggle on={sound.on} onToggle={sound.toggle} />
         </div>
 
+        {/*
+          * What has been said, under the round number.
+          *
+          * This used to be one line at the foot of the scene, and one line is
+          * not enough in a game with Burst. Whose bid is on the table cannot be
+          * read off turn order when anybody may speak at any moment, and the
+          * line naming the challenger was overwritten by the reveal it caused —
+          * so the one moment a player most needs to know who doubted them was
+          * the one moment nothing said.
+          *
+          * It stays up through the reveal for exactly that reason, and it moved
+          * to the top because the foot of the scene is where the cups end up
+          * once the eye goes overhead.
+          */}
+        {holder === null && reveal === null && view.moves.length === 0 ? (
+          <p className="board__dealing">Dealing</p>
+        ) : (
+          <MoveLog moves={view.moves} players={view.players} />
+        )}
+
         {/* Never narrower than the brass ring it sits in, never clipped by it
             either: the bid reads across, and a long name is worth more than a
             tidy edge.
@@ -235,12 +257,8 @@ export function GameTable({
           // gets out of their way rather than sitting on the evidence.
           data-overhead={eye > 0.5 ? 'true' : undefined}
         >
-          <CurrentBid
-            bid={bid}
-            bullCallerName={
-              view.players.find((p) => p.id === bid?.bull?.callerId)?.name ?? null
-            }
-          />
+          {/* The claim's owner, which a Bull changes hands (§8.3). */}
+          <CurrentBid bid={bid} owner={claimOwner(view, bid)} />
         </div>
 
         <ul className="board__seats">
@@ -254,23 +272,6 @@ export function GameTable({
           ))}
         </ul>
 
-        {/*
-          * What just happened. Always.
-          *
-          * This used to give way to "so-and-so is thinking" whenever the turn
-          * was not yours, which meant the one person guaranteed not to see a
-          * move announced was the person who had just made it — the turn moves
-          * on the instant you act. A Bull is where that became a bug rather
-          * than a slight: it leaves the numbers exactly as they were, so with
-          * no line saying so, calling one is indistinguishable from nothing
-          * happening at all.
-          *
-          * Whose turn it is does not need words here. It is at the seat, where
-          * a table puts it: the badge lights, and your own says "Your turn".
-          */}
-        <p className="board__say" aria-live="polite">
-          {reveal !== null ? '' : holder === null ? 'Dealing' : (view.lastEvent ?? '')}
-        </p>
       </div>
 
       <div className="board__dock">
@@ -379,6 +380,20 @@ function TableDock({
       )}
     </>
   )
+}
+
+/**
+ * Whoever the claim on the table belongs to.
+ *
+ * The bidder, until somebody Bulls it — a Bull takes the claim over, and after
+ * that it is the caller's to defend and the bidder's to doubt (§8.3). Which
+ * makes it the one name the middle of the table should carry.
+ */
+function claimOwner(view: TableView, bid: ActiveBid | null): ClaimOwner | null {
+  if (bid === null) return null
+  const ownerId = bid.bull?.callerId ?? bid.bidderId
+  const player = view.players.find((p) => p.id === ownerId)
+  return player === undefined ? null : { name: player.name, seatIndex: player.seatIndex }
 }
 
 export { INLAY_RADIUS }

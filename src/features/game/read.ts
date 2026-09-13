@@ -3,7 +3,7 @@ import type { Face, PlayerId, RoundType } from '../../game'
 import { GameActionError } from './errors'
 import { describeEvent } from './events'
 import type { RevealData } from './reveal'
-import type { TablePlayer, TableView } from './view'
+import type { TableMove, TablePlayer, TableView } from './view'
 
 /**
  * Reading the table.
@@ -86,7 +86,7 @@ export function toTableView(
   round: RoundRead | null,
   players: readonly TablePlayer[],
   yourHand: readonly Face[] | null,
-  lastEvent: string | null,
+  moves: readonly TableMove[],
 ): TableView {
   return {
     round: {
@@ -114,7 +114,7 @@ export function toTableView(
       hasTurn: round !== null && round.turn_player_id === player.id,
     })),
     yourHand,
-    lastEvent,
+    moves,
   }
 }
 
@@ -245,39 +245,85 @@ export async function fetchGameStanding(gameId: string): Promise<GameStanding> {
   return { status: row?.status ?? 'abandoned', winnerId: row?.winner_id ?? null }
 }
 
+/** One row of the log, as it comes back from Postgres. */
+export interface EventRow {
+  readonly id: number
+  readonly round_id: string | null
+  readonly actor_id: PlayerId | null
+  readonly kind: string
+  readonly payload: Record<string, unknown>
+}
+
 /**
- * The most recent thing anybody did, as a sentence.
+ * The log rows, turned into the round's moves, oldest first.
  *
- * Deliberately one row. The log is the whole history of the game and the screen
- * wants the last line of it — fetching more to show one would be paying for
- * scrollback nobody is reading.
+ * Trimmed to the round in play rather than to a count. Moves from the round
+ * before are not context, they are a different game state: the dice have been
+ * re-rolled, and nothing said then is a claim about anything now. The newest
+ * row names the round, so this needs no round id of its own — which also makes
+ * it right between rounds, where there is no open round at all and the last
+ * thing said still belongs to the one that just finished.
+ *
+ * Pure, and separate from the fetching, because the fiddly parts are all here:
+ * newest-first out of Postgres and oldest-first on the screen, a round boundary
+ * that is not a fixed number of rows back, and an event kind this build cannot
+ * say out loud, which is left out rather than printed raw at a player.
  */
-export async function fetchLastEvent(
+export function movesFromEvents(
+  rows: readonly EventRow[],
+  names: ReadonlyMap<PlayerId, string>,
+): TableMove[] {
+  if (rows.length === 0) return []
+
+  const thisRound = rows[0].round_id
+  const moves: TableMove[] = []
+  for (const row of rows) {
+    if (row.round_id !== thisRound) break
+    const quantity = row.payload.quantity
+    const face = row.payload.face
+    const text = describeEvent({
+      kind: row.kind,
+      actorName: (row.actor_id === null ? null : names.get(row.actor_id)) ?? 'Someone',
+      quantity: typeof quantity === 'number' ? quantity : undefined,
+      face: typeof face === 'number' ? (face as Face) : undefined,
+    })
+    if (text === null) continue
+    moves.unshift({
+      id: String(row.id),
+      actorId: row.actor_id,
+      text,
+      burst: row.kind.startsWith('burst_'),
+    })
+  }
+  return moves
+}
+
+/**
+ * What has been said this round, oldest first.
+ *
+ * One line was not enough. Burst means anybody may act at any moment, so turn
+ * order tells a player nothing about whose bid is on the table, and the single
+ * line that said so was overwritten by the next move — including by the
+ * challenge itself, which is precisely the moment "who doubted this?" matters
+ * most.
+ *
+ * Asks for more rows than it will show. The log is per game and the moves
+ * wanted are per round, so the round boundary has to be found rather than
+ * assumed; a dozen rows covers any round a table of six could actually play
+ * through, and is still one small query.
+ */
+export async function fetchRecentMoves(
   gameId: string,
   names: ReadonlyMap<PlayerId, string>,
-): Promise<string | null> {
+  limit = 12,
+): Promise<TableMove[]> {
   const { data, error } = await supabase
     .from('game_events')
-    .select('actor_id, kind, payload')
+    .select('id, round_id, actor_id, kind, payload')
     .eq('game_id', gameId)
     .order('id', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+    .limit(limit)
   if (error !== null) throw new GameActionError('UNKNOWN', error.message, false)
-  if (data === null) return null
 
-  const row = data as {
-    actor_id: PlayerId | null
-    kind: string
-    payload: Record<string, unknown>
-  }
-  const quantity = row.payload.quantity
-  const face = row.payload.face
-
-  return describeEvent({
-    kind: row.kind,
-    actorName: (row.actor_id === null ? null : names.get(row.actor_id)) ?? 'Someone',
-    quantity: typeof quantity === 'number' ? quantity : undefined,
-    face: typeof face === 'number' ? (face as Face) : undefined,
-  })
+  return movesFromEvents((data ?? []) as EventRow[], names)
 }

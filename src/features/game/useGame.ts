@@ -5,7 +5,7 @@ import * as api from './api'
 import { toGameError } from './errors'
 import {
   fetchGameStanding,
-  fetchLastEvent,
+  fetchRecentMoves,
   fetchPlayers,
   fetchReveal,
   fetchRound,
@@ -105,15 +105,15 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
         started.current && previous !== null && round?.id !== previous
 
       const names = new Map(players.map((player) => [player.id, player.name]))
-      const [hand, lastEvent] = await Promise.all([
+      const [hand, moves] = await Promise.all([
         round === null ? Promise.resolve(null) : api.fetchOwnHand(round.id, youId),
-        fetchLastEvent(gameId, names),
+        fetchRecentMoves(gameId, names),
       ])
       if (generation.current !== mine) return
 
       seenRound.current = round?.id ?? null
       started.current = true
-      setView(toTableView(round, players, hand, lastEvent))
+      setView(toTableView(round, players, hand, moves))
       setOver(
         standing.status === 'completed'
           ? { winnerName: standing.winnerId === null ? null : (names.get(standing.winnerId) ?? null) }

@@ -74,7 +74,7 @@ function fresh(names: readonly string[]): TableState {
     roundNumber: 0,
     turnId: 'you',
     farewellQueue: [],
-    lastEvent: null,
+    moves: [],
     winnerId: null,
     over: false,
   }
@@ -153,7 +153,7 @@ export function useBotTable(options: BotTableOptions): BotTable {
         hasTurn: state.turnId === s.id,
       })),
       yourHand: yours.diceCount > 0 ? yours.dice : null,
-      lastEvent: state.lastEvent,
+      moves: state.moves,
     }
     // Rebuilt on every redraw, which is the point: the table is mutable.
     // oxlint-disable-next-line react-hooks/exhaustive-deps

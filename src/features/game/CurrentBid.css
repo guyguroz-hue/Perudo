@@ -61,14 +61,28 @@
   text-shadow: 0 2px 10px rgb(0 0 0 / 0.65);
 }
 
+/* Whose bid this is. A dot in their colour and their name, small enough that
+   the numbers stay the thing being read. */
 .bid__by {
-  max-width: 11ch;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 13ch;
   overflow: hidden;
   font-size: var(--text-2xs);
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: rgb(255 236 210 / 0.72);
+  color: rgb(255 236 210 / 0.78);
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+}
+
+.bid__dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--seat-tone, var(--brass));
+  box-shadow: 0 0 6px var(--seat-tone, transparent);
 }
 
 /* How many dice are still in play. Quiet, but never absent: it is the

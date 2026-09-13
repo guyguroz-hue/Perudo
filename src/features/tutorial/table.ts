@@ -2,12 +2,14 @@ import {
   checkBid,
   countsToward,
   diceOnTable,
+  farewellApplies,
   isBurst,
   nextActive,
   resolveChallenge,
 } from '../../game'
 import type { ChallengeKind, Face, PlayerId, RoundState, RoundType } from '../../game'
 import type { RevealData } from '../game/reveal'
+import type { TableMove } from '../game/view'
 
 /**
  * A whole game of Perudo, in one browser tab.
@@ -45,7 +47,8 @@ export interface TableState {
   turnId: PlayerId
   /** Players owed a Farewell Round, in the order they will take them (R-003). */
   farewellQueue: PlayerId[]
-  lastEvent: string | null
+  /** What has been said this round, oldest first. Same shape the table renders. */
+  moves: TableMove[]
   winnerId: PlayerId | null
   over: boolean
 }
@@ -91,6 +94,15 @@ export function seatOf(table: TableState, id: PlayerId): SeatState {
   return found
 }
 
+/** Write a move into the round's log. Keyed by round and position, so the
+    list can be animated without a move ever changing identity under it. */
+function say(table: TableState, actorId: PlayerId, text: string, burst: boolean): void {
+  table.moves = [
+    ...table.moves,
+    { id: `${table.roundNumber}-${table.moves.length}`, actorId, text, burst },
+  ]
+}
+
 /**
  * Open a round: everyone still in gets as many dice as they hold.
  *
@@ -108,7 +120,9 @@ export function deal(table: TableState, roll: Roll = fairRoll): void {
   for (const s of table.seats) s.dice = s.diceCount > 0 ? roll(s.id, s.diceCount) : []
   table.round = { type, lockedFace: null, bid: null }
   table.roundNumber += 1
-  table.lastEvent = null
+  // A new deal is a new set of facts. Nothing said about the last hand is a
+  // claim about this one.
+  table.moves = []
 }
 
 export interface Refusal {
@@ -142,7 +156,7 @@ export function bid(
   }
   // Play continues clockwise from whoever acted, in turn or not (§9.1).
   table.turnId = nextActive(seated(table), actorId)
-  table.lastEvent = `${actor.name} bid ${quantity} ${faceWord(face, quantity)}${burst ? ' — a Burst' : ''}`
+  say(table, actorId, `${actor.name} bid ${quantity} ${faceWord(face, quantity)}`, burst)
   return { ok: true }
 }
 
@@ -155,12 +169,14 @@ export function bull(table: TableState, actorId: PlayerId): Done | Refusal {
 
   const actor = seatOf(table, actorId)
   const claim = table.round.bid
+  // Read before the turn moves: afterwards every move looks like it was in turn.
+  const burst = isBurst(table.turnId, actorId)
   table.round = {
     ...table.round,
     bid: { ...claim, bull: { callerId: actorId } },
   }
   table.turnId = nextActive(seated(table), actorId)
-  table.lastEvent = `${actor.name} called Bull — exactly ${claim.quantity}`
+  say(table, actorId, `${actor.name} called Bull — exactly ${claim.quantity}`, burst)
   return { ok: true }
 }
 
@@ -193,6 +209,10 @@ export function challenge(
 
   const kind: ChallengeKind = isBurst(table.turnId, actorId) ? 'burst_lie' : 'lie'
   const actualCount = countFace(table, current.face, table.round.type)
+  // Written before the cups come off, not after. Who doubted is the one thing a
+  // player cannot work out from the dice on the table, and it is exactly what
+  // they are looking at while the reveal plays.
+  say(table, actorId, `${seatOf(table, actorId).name} called Lie`, kind === 'burst_lie')
 
   const outcome = resolveChallenge({
     round: table.round,
@@ -211,9 +231,10 @@ export function challenge(
   }
 
   const survivors = new Set(active(table).map((s) => s.id))
-  table.farewellQueue = [...table.farewellQueue, ...outcome.farewellQueue].filter((id) =>
-    survivors.has(id),
-  )
+  // Dropped once only two are left, like a newly owed one (R-012).
+  table.farewellQueue = !farewellApplies(survivors.size)
+    ? []
+    : [...table.farewellQueue, ...outcome.farewellQueue].filter((id) => survivors.has(id))
   table.over = outcome.gameOver
   table.winnerId = outcome.winnerId
   if (!outcome.gameOver) table.turnId = outcome.nextStarterId

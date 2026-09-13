@@ -3,6 +3,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GameTable } from './GameTable'
+import type { RevealClaim, RevealData } from './reveal'
 import type { TableView } from './view'
 import { bid, normalRound } from '../../game/testing'
 
@@ -17,7 +18,7 @@ const BASE: TableView = {
     { id: 'carl', name: 'Carl', seatIndex: 2, diceCount: 2, isYou: false, isEliminated: false, hasTurn: false },
   ],
   yourHand: [5, 1, 3],
-  lastEvent: 'Alice bid 4 fives',
+  moves: [{ id: 'm0', actorId: 'alice', text: 'Alice bid 4 fives', burst: false }],
 }
 
 /**
@@ -31,10 +32,23 @@ function theBid(): HTMLElement {
   return el as HTMLElement
 }
 
-function show(view: TableView) {
+function show(
+  view: TableView,
+  reveal?: { claim: RevealClaim; data: RevealData | null },
+) {
   const handlers = { onBid: vi.fn(), onLie: vi.fn(), onBull: vi.fn() }
-  const result = render(<GameTable view={view} {...handlers} />)
+  const result = render(<GameTable view={view} reveal={reveal ?? null} {...handlers} />)
   return { ...result, ...handlers }
+}
+
+/** Moves in the order they were made, the way the log is handed them. */
+function said(...lines: readonly (readonly [string, string, boolean?])[]) {
+  return lines.map(([actorId, text, burst = false], i) => ({
+    id: `m${i}`,
+    actorId,
+    text,
+    burst,
+  }))
 }
 
 describe('waiting is a state, not a curtain', () => {
@@ -77,9 +91,91 @@ describe('waiting is a state, not a curtain', () => {
     show({
       ...BASE,
       players: BASE.players.map((p) => ({ ...p, hasTurn: p.id === 'alice' })),
-      lastEvent: 'Dana called Bull on 4 fives — exactly',
+      moves: [
+        { id: 'm0', actorId: 'alice', text: 'Alice bid 4 fives', burst: false },
+        { id: 'm1', actorId: 'you', text: 'Dana called Bull — exactly 4', burst: false },
+      ],
     })
-    expect(screen.getByText('Dana called Bull on 4 fives — exactly')).toBeTruthy()
+    expect(screen.getByText('Dana called Bull — exactly 4')).toBeTruthy()
+  })
+})
+
+/*
+ * Who said it.
+ *
+ * The table used to carry one line of what just happened, and one line is not
+ * enough in a game with Burst. Anybody may bid or doubt at any moment, so the
+ * bid on the table is not necessarily the last player's and turn order answers
+ * nothing; and the line naming a challenger was overwritten by the reveal that
+ * challenge caused, which is the one moment the name matters most.
+ */
+describe('the move log', () => {
+  it('keeps the last few moves, oldest first, and names who made each', () => {
+    const { container } = show({
+      ...BASE,
+      moves: said(
+        ['carl', 'Carl bid 2 fives'],
+        ['maya', 'Maya bid 3 fives'],
+        ['alice', 'Alice bid 4 fives'],
+      ),
+    })
+
+    const lines = [...container.querySelectorAll('.log__text')].map((el) => el.textContent)
+    expect(lines).toEqual(['Carl bid 2 fives', 'Maya bid 3 fives', 'Alice bid 4 fives'])
+  })
+
+  it('does not grow without bound as a round runs long', () => {
+    const { container } = show({
+      ...BASE,
+      moves: said(
+        ['carl', 'Carl bid 1 fives'],
+        ['maya', 'Maya bid 2 fives'],
+        ['carl', 'Carl bid 3 fives'],
+        ['maya', 'Maya bid 4 fives'],
+        ['alice', 'Alice bid 5 fives'],
+      ),
+    })
+
+    const lines = [...container.querySelectorAll('.log__text')].map((el) => el.textContent)
+    expect(lines).toEqual(['Carl bid 3 fives', 'Maya bid 4 fives', 'Alice bid 5 fives'])
+    expect(lines).not.toContain('Carl bid 1 fives')
+  })
+
+  it('marks a move made out of turn as a Burst', () => {
+    const { container } = show({
+      ...BASE,
+      moves: said(['alice', 'Alice bid 4 fives'], ['carl', 'Carl burst in with 6 twos', true]),
+    })
+
+    const burst = container.querySelectorAll('.log__move--burst')
+    expect(burst.length).toBe(1)
+    expect(burst[0].textContent).toContain('Carl burst in with 6 twos')
+  })
+
+  /*
+   * The whole reason this exists.
+   *
+   * A challenge is followed instantly by six cups coming off, and the panel
+   * that eventually names the challenger only does so after the count has been
+   * read out. In between — which is the part the player is actually watching —
+   * nothing on screen said who had doubted them.
+   */
+  it('still says who called Lie while the cups are coming off', () => {
+    const { container } = show(
+      {
+        ...BASE,
+        moves: said(['alice', 'Alice bid 4 fives'], ['carl', 'Carl called Lie']),
+      },
+      { claim: { quantity: 4, face: 5, reading: 'at least' }, data: null },
+    )
+
+    const lines = [...container.querySelectorAll('.log__text')].map((el) => el.textContent)
+    expect(lines).toContain('Carl called Lie')
+  })
+
+  it('says nothing at all before the round has been opened', () => {
+    const { container } = show({ ...BASE, moves: [] })
+    expect(container.querySelector('.log')).toBeNull()
   })
 })
 
@@ -141,6 +237,23 @@ describe('a Bull on the table', () => {
     const { container } = show(BASE)
     expect(container.querySelector('.bid__bull')).toBeNull()
     expect(container.querySelector('.bid--bulled')).toBeNull()
+  })
+
+  /*
+   * A claim belongs to somebody, and under Burst the table cannot work out who
+   * by counting round the seats. A Bull moves that ownership (§8.3), so the
+   * name in the middle follows the claim rather than the numbers.
+   */
+  it('signs an ordinary bid with its bidder', () => {
+    const { container } = show(BASE)
+    expect(container.querySelector('.bid__by')?.textContent).toContain('Alice')
+  })
+
+  it('hands the signature to the Bull caller, and shows one name only', () => {
+    const { container } = show({ ...BASE, round: normalRound(bid(4, 5, 'alice', 'carl')) })
+    expect(container.querySelector('.bid__by')).toBeNull()
+    expect(theBid().textContent).toContain('Carl')
+    expect(theBid().textContent).not.toContain('Alice')
   })
 
   /*

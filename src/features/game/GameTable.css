@@ -125,10 +125,12 @@
 
 /* The commentary: whose turn it is, or the last thing anybody did. One line at
    the foot of the table, because it is talk about a move rather than a move. */
-.board__say {
+/* The one beat before a round has anything to say. Under the table's near edge,
+   not at the foot of the scene, and gone the moment the first bid lands and the
+   log above takes over. */
+.board__dealing {
   position: absolute;
   right: var(--space-4);
-  /* Just under the table's near edge, not at the foot of the scene. */
   bottom: 6%;
   left: var(--space-4);
   margin: 0;
@@ -137,12 +139,6 @@
   color: var(--ink-dim);
   text-shadow: 0 1px 6px rgb(0 0 0 / 0.8);
   pointer-events: none;
-}
-
-/* Arriving at your turn is the one moment allowed to be emphatic. A player must
-   never have to wonder whether it is their turn. */
-.board--yours .board__say {
-  color: var(--ink-dim);
 }
 
 /* -----------------------------------------------------------------------------

@@ -1,5 +1,7 @@
+import type { CSSProperties } from 'react'
 import { Die } from '../../components/Die'
 import type { ActiveBid } from '../../game'
+import { toneForSeat } from './colors'
 import './CurrentBid.css'
 
 /**
@@ -18,8 +20,13 @@ import './CurrentBid.css'
  *
  * A Bull does not replace a bid — it re-reads the same numbers as "exactly"
  * instead of "at least" (GAME_RULES §8.1) — so it changes the word beside the
- * quantity and the light around it, and leaves the numbers alone. It is also
- * the one time a name belongs here, because the claim has changed hands.
+ * quantity and the light around it, and leaves the numbers alone.
+ *
+ * It is signed, because a claim in this game belongs to somebody. Burst means
+ * the bid on the table is not necessarily the last player's — anybody may have
+ * put it there out of turn — so "whose is this?" cannot be answered by counting
+ * round the seats, and it is the first thing a player weighs before doubting.
+ * One name only: whoever owns the claim now, which a Bull changes (§8.3).
  */
 /** The same mark the Bull button carries, so the two are one idea. */
 function Bullseye() {
@@ -32,13 +39,14 @@ function Bullseye() {
   )
 }
 
-export function CurrentBid({
-  bid,
-  bullCallerName,
-}: {
-  bid: ActiveBid | null
-  bullCallerName: string | null
-}) {
+/** Whoever the claim on the table belongs to: its Bull caller, or its bidder. */
+export interface ClaimOwner {
+  readonly name: string
+  /** Their colour, the one they wear at their seat and in the log. */
+  readonly seatIndex: number
+}
+
+export function CurrentBid({ bid, owner }: { bid: ActiveBid | null; owner: ClaimOwner | null }) {
   if (bid === null) {
     return (
       <div className="bid bid--open">
@@ -48,24 +56,33 @@ export function CurrentBid({
   }
 
   const bulled = bid.bull !== null
+  const tone = { '--seat-tone': toneForSeat(owner?.seatIndex ?? 0) } as CSSProperties
 
   return (
     <div className={`bid${bulled ? ' bid--bulled' : ''}`}>
       {/*
-        * Who made a plain bid is in the log under the table, and printing it
-        * here too put the same name on the screen twice.
+        * Signed, either way, in the one slot above the numbers.
         *
-        * A Bull is different, and it is the one thing on this table that has to
-        * announce itself. It takes the claim over (GAME_RULES §8.3) — so whose
-        * claim this is has changed — and it does that without touching a single
-        * number. Left as quiet as a bid, calling one looks like nothing
-        * happened, which is exactly how it read.
+        * A Bull is the louder of the two, and has to be: it takes the claim
+        * over (GAME_RULES §8.3) without touching a single number, so left as
+        * quiet as a bid, calling one looks like nothing happened at all. A
+        * plain bid gets the same slot, a size down — a dot in the bidder's
+        * colour and their name — because the question it answers is the same
+        * one, and under Burst it is a question the table cannot answer for
+        * itself.
         */}
-      {bulled && (
+      {bulled ? (
         <span className="bid__bull">
           <Bullseye />
-          Bull · {bullCallerName ?? 'someone'}
+          Bull · {owner?.name ?? 'someone'}
         </span>
+      ) : (
+        owner !== null && (
+          <span className="bid__by" style={tone}>
+            <i className="bid__dot" aria-hidden="true" />
+            {owner.name}
+          </span>
+        )
       )}
       {/* One line. The open timber between the far cup and your own is only so
           tall, and a bid stacked three high grew up into the cup across the
