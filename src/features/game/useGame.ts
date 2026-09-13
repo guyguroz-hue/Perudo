@@ -41,7 +41,17 @@ export interface GameHandle {
    * there is no winner rather than one awarded on a tiebreak (R-004).
    */
   readonly over: { readonly winnerName: string | null } | null
-  readonly error: string | null
+  /*
+   * Why the last action did not take.
+   *
+   * `stale` separates the two kinds, and the difference is not cosmetic. With
+   * Burst in the rules anybody may act at any time, so two players reaching
+   * for the same bid is the game being played correctly, not a fault — it is
+   * news, it has already been answered by refetching, and there is nothing for
+   * the player to do about it. Everything else is a refusal they have to read
+   * and act on.
+   */
+  readonly error: { readonly message: string; readonly stale: boolean } | null
   bid: (bid: ProposedBid) => Promise<void>
   bull: () => Promise<void>
   doubt: () => Promise<void>
@@ -55,7 +65,22 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
   const [busy, setBusy] = useState(false)
   const [reveal, setReveal] = useState<GameHandle['reveal']>(null)
   const [over, setOver] = useState<GameHandle['over']>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<GameHandle['error']>(null)
+
+  /*
+   * News expires; refusals do not.
+   *
+   * "Somebody got there first" describes a moment that has already passed, and
+   * the table it was about was refetched before the words appeared. Left on
+   * screen it becomes a permanent label on a game that has moved several
+   * rounds beyond it. A refusal stays until the player acts again, because it
+   * is still true.
+   */
+  useEffect(() => {
+    if (error === null || !error.stale) return
+    const fades = setTimeout(() => setError(null), 4000)
+    return () => clearTimeout(fades)
+  }, [error])
 
   const generation = useRef(0)
   // The round we last rendered. A change in it is how every player who did not
@@ -105,7 +130,7 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
       }
     } catch (caught) {
       if (generation.current !== mine) return
-      setError(toGameError(caught).message)
+      setError({ message: toGameError(caught).message, stale: false })
     }
   }, [gameId, youId])
 
@@ -182,7 +207,7 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
         await refresh()
       } catch (caught) {
         const failure = toGameError(caught)
-        setError(failure.message)
+        setError({ message: failure.message, stale: failure.stale })
         // "Somebody got there first" is answered by looking again, not by the
         // player doing anything differently.
         if (failure.stale) await refresh()
@@ -218,7 +243,7 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
       // cups held over a challenge that never happened.
       setReveal(null)
       const failure = toGameError(caught)
-      setError(failure.message)
+      setError({ message: failure.message, stale: failure.stale })
       if (failure.stale) await refresh()
     } finally {
       setBusy(false)

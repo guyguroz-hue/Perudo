@@ -94,11 +94,23 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
           )}
         </div>
       )}
-      {game.error !== null && (
-        <p className="game__error" role="alert">
-          {game.error}
-        </p>
-      )}
+      {game.error !== null &&
+        (game.error.stale ? (
+          /*
+           * Not a fault. Burst lets anybody act at any moment, so being
+           * beaten to a bid is the game working — the table has already been
+           * refetched and there is nothing to do but look at it. Said once,
+           * quietly, in the voice used for news rather than for refusals, and
+           * announced politely rather than interrupting a screen reader.
+           */
+          <p className="game__aside" role="status">
+            {game.error.message}
+          </p>
+        ) : (
+          <p className="game__error" role="alert">
+            {game.error.message}
+          </p>
+        ))}
 
       <GameTable
         view={game.view}

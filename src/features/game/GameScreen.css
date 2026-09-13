@@ -17,6 +17,7 @@
 }
 
 .game__error,
+.game__aside,
 .game__blocked {
   margin: 0;
   padding: var(--space-3);
@@ -28,6 +29,15 @@
 .game__error {
   background: rgb(192 71 47 / 0.18);
   color: var(--lie);
+}
+
+/* Somebody got there first. That is the game, not a fault, so it is said in
+   the colour everything else uninteresting is said in — red here would alarm a
+   player for playing correctly, and with Burst in the rules it would do so
+   several times a round. */
+.game__aside {
+  background: rgb(255 255 255 / 0.05);
+  color: var(--ink-dim);
 }
 
 /* The table did not arrive. Either a rule the house has not decided yet — not
