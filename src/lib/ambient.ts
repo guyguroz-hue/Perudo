@@ -17,8 +17,23 @@
  * knock of cups, anything with an opinion is in the way.
  */
 
-/** Concert A below middle C, which everything here is measured from. */
-const ROOT = 110
+/*
+ * Where the bed sits, and why it sits there.
+ *
+ * A phone speaker is a few millimetres across and produces essentially nothing
+ * below about 500Hz. This was voiced an octave lower, with a lowpass at 760, so
+ * on the only device this game is ever played on the chords were inaudible and
+ * the one thing that came through was the filter skirt of the room tone
+ * underneath them — measured, 78% of the bed's energy was below 400Hz. The
+ * result was not quiet music. It was a hiss.
+ *
+ * So the whole bed lives where a phone can actually reproduce it. On
+ * headphones this is a smaller, closer room than it was, which is the right
+ * trade: nobody plays this on headphones.
+ */
+
+/** D above middle C. Everything here is measured from it. */
+const ROOT = 294
 
 /**
  * Four chords from one mode, in semitones from the root.
@@ -79,13 +94,20 @@ export function startAmbient(ctx: AudioContext, destination: AudioNode): Ambient
    * does not change how loud the room is.
    */
   const bus = ctx.createGain()
-  bus.gain.value = 3.2
+  bus.gain.value = 2.4
   bus.connect(destination)
 
-  // The air in the room: filtered noise, far too quiet to identify, loud enough
-  // that the silence between chords is not digital silence.
-  const air = roomTone(ctx)
-  air.connect(bus)
+  /*
+   * There is no room tone.
+   *
+   * There was: filtered noise under everything, so the gaps between chords
+   * were a quiet room rather than a muted speaker. On studio monitors that is
+   * true and rather nice. On a phone, whose speaker throws away everything the
+   * chords are made of and keeps the noise's top end, it was the only audible
+   * layer in the mix — and a game whose soundtrack is hiss is worse than a
+   * game with no soundtrack. The chords overlap by design, so the gaps it was
+   * covering do not exist.
+   */
 
   let next = ctx.currentTime + 0.4
   let last = -1
@@ -146,11 +168,17 @@ function pad(ctx: AudioContext, out: AudioNode, hz: number, at: number, hold: nu
   gain.gain.setValueAtTime(0.09, at + hold - FADE)
   gain.gain.exponentialRampToValueAtTime(0.0001, at + hold)
 
-  // Well below anything the dice occupy, so the two never fight for the same
-  // part of the ear.
+  /*
+   * Open enough to survive a phone.
+   *
+   * It was 760, which on a small speaker removes the note and leaves the
+   * filter's own skirt. A pad needs some harmonics above its fundamental to be
+   * a sound at all rather than a pressure change — and it still stops well
+   * below the 1.4-4kHz band the dice live in, so the two never fight.
+   */
   const tone = ctx.createBiquadFilter()
   tone.type = 'lowpass'
-  tone.frequency.value = 760
+  tone.frequency.value = 2200
   tone.Q.value = 0.4
 
   // Spread across the stereo field by pitch, so the chord has width without
@@ -158,9 +186,24 @@ function pad(ctx: AudioContext, out: AudioNode, hz: number, at: number, hold: nu
   const place = ctx.createStereoPanner()
   place.pan.value = Math.max(-0.55, Math.min(0.55, Math.log2(hz / ROOT) / 3 - 0.25))
 
+  /*
+   * Three voices, and one of them has harmonics on purpose.
+   *
+   * It was a triangle and a sine, which between them put almost nothing above
+   * their own fundamental — and a fundamental is the part of a note a phone
+   * speaker cannot produce. So the chord was inaudible on a phone even after
+   * it was moved up: 84% of its energy still sat in a band the speaker rolls
+   * off. A quiet sawtooth gives the note a body in the range the speaker
+   * actually has, and the lowpass above keeps it from ever being a buzz.
+   *
+   * The detunes are the other half of why this sounds like an instrument
+   * rather than a test tone: the beating between them moves, and movement is
+   * what the ear reads as a real thing making a sound.
+   */
   for (const [type, detune, level] of [
-    ['triangle', -5, 0.6],
-    ['sine', 5, 0.4],
+    ['triangle', -5, 0.55],
+    ['sine', 5, 0.32],
+    ['sawtooth', -11, 0.16],
   ] as const) {
     const osc = ctx.createOscillator()
     osc.type = type
@@ -207,40 +250,4 @@ function bell(ctx: AudioContext, out: AudioNode, hz: number, at: number) {
 
   gain.connect(place)
   place.connect(out)
-}
-
-/**
- * The sound of a room with nothing happening in it.
- *
- * Eight seconds of noise, heavily filtered and looped. It is under everything
- * else by a long way and its only job is that the gaps between chords are a
- * quiet room rather than a muted speaker.
- */
-function roomTone(ctx: AudioContext): AudioNode {
-  const length = ctx.sampleRate * 8
-  const buffer = ctx.createBuffer(1, length, ctx.sampleRate)
-  const data = buffer.getChannelData(0)
-  // A running average rather than raw noise: white noise is a hiss, and this
-  // leans it toward the low rumble a room actually has.
-  let value = 0
-  for (let i = 0; i < length; i += 1) {
-    value = value * 0.985 + (Math.random() * 2 - 1) * 0.015
-    data[i] = value
-  }
-
-  const source = ctx.createBufferSource()
-  source.buffer = buffer
-  source.loop = true
-
-  const shape = ctx.createBiquadFilter()
-  shape.type = 'lowpass'
-  shape.frequency.value = 420
-
-  const level = ctx.createGain()
-  level.gain.value = 0.5
-
-  source.connect(shape)
-  shape.connect(level)
-  source.start()
-  return level
 }

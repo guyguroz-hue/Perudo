@@ -83,6 +83,27 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🐛 Bugs
 
+- [x] **B-11** ~~The music was a hiss.~~ Reported, accurately, as "white noise,
+      awful". It was — and the cause is that the whole bed was voiced for a
+      speaker this game is never played on. Measured: 78% of its energy sat
+      below 400Hz, which a phone speaker a few millimetres across cannot move
+      air at. So the chords were inaudible and the one layer that came through
+      was the filter skirt of the room tone underneath them.
+
+      The room tone is gone — on monitors it is a nice touch and on a phone it
+      was the entire soundtrack. The pad moved up to D above middle C, its
+      lowpass opened from 760Hz to 2.2kHz, and it gained a quiet sawtooth: a
+      triangle and a sine put almost nothing above their own fundamental, and a
+      fundamental is exactly the part a phone cannot produce. Measured after:
+      nothing below 150Hz, 28.6% in the band a phone reproduces (was 15.5%
+      after the first pass), and spectral flatness 0.009 — firmly tonal, where
+      the hiss had made it broadband.
+
+      **This shipped because the levels were raised without listening to what
+      was being raised.** Nothing measured the difference between a tone and a
+      noise until it was measured on purpose; spectral flatness over the
+      phone-audible band is the number that says which one it is.
+
 - [x] **B-10** ~~No sound at all.~~ Four separate causes, found by measuring the
       audio graph rather than by listening.
 
