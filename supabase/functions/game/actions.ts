@@ -2,6 +2,7 @@ import {
   UnresolvedRuleError,
   checkBid,
   chooseStarter,
+  farewellApplies,
   isBurst,
   nextActive,
   resolveChallenge,
@@ -203,9 +204,12 @@ export async function challenge(
       .filter((player) => player.diceCount + (outcome.dieDeltas.get(player.playerId) ?? 0) > 0)
       .map((player) => player.playerId),
   )
-  const queue = [...round.farewell_queue, ...outcome.farewellQueue].filter((id) =>
-    survivors.has(id),
-  )
+  // A Farewell owed from an earlier round is dropped once only two players are
+  // left, for the same reason a new one is not awarded: there is no rest of the
+  // table left to pay for it (R-012).
+  const queue = !farewellApplies(survivors.size)
+    ? []
+    : [...round.farewell_queue, ...outcome.farewellQueue].filter((id) => survivors.has(id))
   const nextStarter = queue.length > 0 ? queue[0] : outcome.nextStarterId
   const nextType: RoundType = queue.length > 0 ? 'farewell' : 'normal'
   const nextQueue = queue.length > 0 ? queue.slice(1) : []

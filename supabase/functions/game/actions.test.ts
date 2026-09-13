@@ -387,3 +387,41 @@ describe('calling Bull', () => {
     await expect(challenge(store, { id: 'bob' }, 'g1')).rejects.toThrow(/yours/i)
   })
 })
+
+/**
+ * A Farewell owed from an earlier round, once only two players are left.
+ *
+ * The queue outlives the resolution that filled it — a correct Bull can owe
+ * three at once and they are taken one round at a time — so the engine saying
+ * "none this time" is not enough on its own. The action layer carries the
+ * queue, so it has to ask the same question about what it is carrying (R-012).
+ */
+describe('a Farewell Round head to head', () => {
+  it('drops a queue carried in from an earlier round', async () => {
+    const store = new Fake({
+      players: [seat('alice', 0, 2), seat('bob', 1, 3)],
+      // Alice was owed one before this round began.
+      round: { farewell_queue: ['alice'], bid_quantity: 9, bid_player_id: 'alice' },
+      count: 1,
+    })
+    await challenge(store, { id: 'bob' }, 'g1')
+
+    const applied = store.challenges[0]
+    expect(applied.p_next_type).toBe('normal')
+    expect(applied.p_next_queue).toEqual([])
+  })
+
+  it('still carries one at a fuller table', async () => {
+    // The control: the same owed Farewell, one more player, and it is honoured.
+    const store = new Fake({
+      players: [seat('alice', 0, 2), seat('bob', 1, 3), seat('carl', 2, 4)],
+      round: { farewell_queue: ['alice'], bid_quantity: 9, bid_player_id: 'alice' },
+      count: 1,
+    })
+    await challenge(store, { id: 'bob' }, 'g1')
+
+    const applied = store.challenges[0]
+    expect(applied.p_next_type).toBe('farewell')
+    expect(applied.p_next_starter).toBe('alice')
+  })
+})

@@ -236,6 +236,22 @@ The trigger is the **transition** down to one die, not the state of holding one:
 Authoritative state must explicitly represent: farewell-active, farewell
 player, locked face, round progression, and the transition back to normal.
 
+### Not when only two are left ✅ (resolved by R-012)
+
+**With two players still holding dice, there is no Farewell Round at all.**
+
+It is a rule about the rest of the table: a Farewell Round locks one face and
+takes the wildcard away for everybody, which is a real cost paid by the players
+who did *not* lose a die. Head to head there is no "everybody" — the cost falls
+entirely on the one opponent, and the player who just lost a die would be
+handing themselves a locked face and the lead every time they were knocked
+down. The last two play normal rounds until one of them is out.
+
+Evaluated on who is left **after** the resolution, not before: a resolution that
+takes the table from three players to two cancels the Farewell it would
+otherwise have owed. A queue carried in from an earlier round is dropped for the
+same reason.
+
 ### Several players at once ✅ (resolved by R-003)
 
 A correct Bull can drive several players down to one die simultaneously. Each is

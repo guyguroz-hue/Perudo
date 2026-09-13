@@ -19,6 +19,27 @@ function active(players: readonly PlayerStanding[]): readonly PlayerStanding[] {
   return players.filter((player) => player.diceCount > 0)
 }
 
+/**
+ * Whether a Farewell Round is played at all (R-012).
+ *
+ * It is a rule about the rest of the table. A Farewell Round locks one face and
+ * takes the wildcard away for everybody, which is a cost paid by the players
+ * who did *not* lose a die. Head to head there is no "everybody": the whole
+ * cost lands on the single opponent, so the player who just lost a die would be
+ * handing themselves a locked face and the lead every time they were knocked
+ * down to one.
+ *
+ * Exported because the queue outlives a single resolution — a Farewell can be
+ * owed from an earlier round — so the action layer has to ask the same question
+ * about what it is carrying. One place decides, and the engine, the server and
+ * the practice table cannot disagree about it.
+ *
+ * @param survivors how many players hold dice *after* the resolution.
+ */
+export function farewellApplies(survivors: number): boolean {
+  return survivors > 2
+}
+
 export interface ChallengeInput {
   /** Must carry an active bid; challenging nothing is not a move. */
   readonly round: RoundState
@@ -266,7 +287,11 @@ function buildOutcome(
     // Order among simultaneous claimants is explicitly arbitrary by rule, so
     // this keeps seat order: deterministic, replayable, and identical on every
     // machine that resolves the same round.
-    farewellQueue,
+    //
+    // Judged on who is left when the dust settles rather than who went in: a
+    // resolution that takes the table from three players to two cancels the
+    // Farewell it would otherwise have owed (R-012).
+    farewellQueue: farewellApplies(survivors) ? farewellQueue : [],
     winnerId: survivors === 1 ? lastSurvivor : null,
     gameOver: survivors <= 1,
     nextStarterId: provedRight,

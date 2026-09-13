@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChallengeKind } from './types'
-import { resolveChallenge } from './resolution'
+import { farewellApplies, resolveChallenge } from './resolution'
 import { bid, blanks, challengeWithHands, hand, normalRound } from './testing'
 
 // Four relevant fives on this table: three fives plus one wild one. So a bid of
@@ -151,7 +151,9 @@ describe('Farewell Round trigger (GAME_RULES §10)', () => {
   it('nominates the player driven down to exactly one die', () => {
     const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'alice')),
-      hands: [hand('alice', 5, 5), blanks('bob', 3)],
+      // Three at the table: with only two left there is no Farewell at all
+      // (R-012), so a third player is what makes this the case under test.
+      hands: [hand('alice', 5, 5), blanks('bob', 3), blanks('carol', 4)],
       challengerId: 'bob',
       kind: 'lie',
     })
@@ -246,7 +248,9 @@ describe('simultaneous Farewell Rounds (R-003)', () => {
     // second Farewell Round.
     const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'bob')),
-      hands: [blanks('alice', 3), hand('bob', 5, 2)],
+      // Carol makes three at the table, which is what a Farewell needs to
+      // exist at all (R-012).
+      hands: [blanks('alice', 3), hand('bob', 5, 2), blanks('carol', 4)],
       challengerId: 'alice',
       kind: 'lie',
     })
@@ -456,7 +460,9 @@ describe('the next round opens with whoever was proved right (R-002)', () => {
     // Bob was the one proved right.
     const outcome = challengeWithHands({
       round: normalRound(bid(9, 5, 'alice')),
-      hands: [hand('alice', 5, 5), blanks('bob', 3)],
+      // Three at the table, because a Farewell is not owed head to head
+      // (R-012) and this is a test about what happens when one is.
+      hands: [hand('alice', 5, 5), blanks('bob', 3), blanks('carol', 4)],
       challengerId: 'bob',
       kind: 'lie',
     })
@@ -571,9 +577,17 @@ describe('the engine resolves from counts alone', () => {
       challengerId: 'bob',
       kind: 'lie',
     })
-    // A correct Bull: everyone but Carol loses one.
+    /*
+     * A correct Bull: everyone but Carol loses one. Bob had a single die and
+     * is out, Alice drops from two to one.
+     *
+     * And Alice is owed nothing, because that leaves two players. The Farewell
+     * she would have earned at a fuller table is cancelled by the same
+     * resolution that earned it (R-012) — a resolution is judged on who is
+     * left when it is done, not on who went into it.
+     */
     expect(outcome.eliminated).toEqual(['bob'])
-    expect(outcome.farewellQueue).toEqual(['alice'])
+    expect(outcome.farewellQueue).toEqual([])
     expect(outcome.gameOver).toBe(false)
   })
 
@@ -665,5 +679,69 @@ describe('players who are already out', () => {
     expect(outcome.eliminated).toEqual(['alice'])
     expect(outcome.winnerId).toBe('bob')
     expect(outcome.gameOver).toBe(true)
+  })
+})
+
+// R-012 — no Farewell Round head to head
+describe('no Farewell Round with two players left (R-012)', () => {
+  /*
+   * A Farewell Round is a rule about the rest of the table. It locks one face
+   * and takes the wildcard away for everybody, which is a cost paid by the
+   * players who did not lose a die — so head to head the whole cost lands on
+   * the single opponent, and the player who just lost a die would be handing
+   * themselves a locked face and the lead every time they were knocked down.
+   */
+  it('owes nothing when the loser drops to one die and only two remain', () => {
+    const outcome = challengeWithHands({
+      round: normalRound(bid(9, 5, 'alice')),
+      hands: [hand('alice', 5, 5), blanks('bob', 3)],
+      challengerId: 'bob',
+      kind: 'lie',
+    })
+    expect(outcome.dieDeltas.get('alice')).toBe(-1)
+    expect(outcome.farewellQueue).toEqual([])
+    // The player proved right still opens, as they would in any normal round.
+    expect(outcome.nextStarterId).toBe('bob')
+  })
+
+  it('owes one at the same table with a third player in it', () => {
+    // The control: identical resolution, one more player, and the Farewell is
+    // back. Without this the test above would pass just as well if the trigger
+    // had been broken outright.
+    const outcome = challengeWithHands({
+      round: normalRound(bid(9, 5, 'alice')),
+      hands: [hand('alice', 5, 5), blanks('bob', 3), blanks('carol', 4)],
+      challengerId: 'bob',
+      kind: 'lie',
+    })
+    expect(outcome.farewellQueue).toEqual(['alice'])
+  })
+
+  it('cancels a Farewell earned by the very resolution that empties a seat', () => {
+    // Three go in, two come out: the rule is about who is left, not who was
+    // there. Alice is knocked to one die and Bob is eliminated in one move.
+    const outcome = resolveChallenge({
+      round: normalRound(bid(2, 5, 'alice', 'carol')),
+      players: [
+        { playerId: 'alice', diceCount: 2 },
+        { playerId: 'bob', diceCount: 1 },
+        { playerId: 'carol', diceCount: 4 },
+      ],
+      actualCount: 2,
+      challengerId: 'bob',
+      kind: 'lie',
+    })
+    expect(outcome.eliminated).toEqual(['bob'])
+    expect(outcome.farewellQueue).toEqual([])
+    expect(outcome.gameOver).toBe(false)
+  })
+
+  it('is decided by one function, so nothing can disagree about it', () => {
+    // The queue outlives a resolution — a Farewell can be owed from an earlier
+    // round — so the action layer asks the same question about what it carries.
+    expect(farewellApplies(1)).toBe(false)
+    expect(farewellApplies(2)).toBe(false)
+    expect(farewellApplies(3)).toBe(true)
+    expect(farewellApplies(6)).toBe(true)
   })
 })

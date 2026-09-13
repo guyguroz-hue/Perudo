@@ -120,6 +120,26 @@ function active(players) {
 	return players.filter((player) => player.diceCount > 0);
 }
 /**
+* Whether a Farewell Round is played at all (R-012).
+*
+* It is a rule about the rest of the table. A Farewell Round locks one face and
+* takes the wildcard away for everybody, which is a cost paid by the players
+* who did *not* lose a die. Head to head there is no "everybody": the whole
+* cost lands on the single opponent, so the player who just lost a die would be
+* handing themselves a locked face and the lead every time they were knocked
+* down to one.
+*
+* Exported because the queue outlives a single resolution — a Farewell can be
+* owed from an earlier round — so the action layer has to ask the same question
+* about what it is carrying. One place decides, and the engine, the server and
+* the practice table cannot disagree about it.
+*
+* @param survivors how many players hold dice *after* the resolution.
+*/
+function farewellApplies(survivors) {
+	return survivors > 2;
+}
+/**
 * Resolve a challenge against the current bid.
 *
 * Everything here is server-authoritative: the count, the verdict and the die
@@ -206,7 +226,7 @@ function buildOutcome(actualCount, claimHolds, dieDeltas, players, provedRight) 
 		claimHolds,
 		dieDeltas: capped,
 		eliminated,
-		farewellQueue,
+		farewellQueue: farewellApplies(survivors) ? farewellQueue : [],
 		winnerId: survivors === 1 ? lastSurvivor : null,
 		gameOver: survivors <= 1,
 		nextStarterId: provedRight
@@ -374,7 +394,7 @@ async function challenge(store, actor, gameId) {
 		kind
 	});
 	const survivors = new Set(seated.filter((player) => player.diceCount + (outcome.dieDeltas.get(player.playerId) ?? 0) > 0).map((player) => player.playerId));
-	const queue = [...round.farewell_queue, ...outcome.farewellQueue].filter((id) => survivors.has(id));
+	const queue = !farewellApplies(survivors.size) ? [] : [...round.farewell_queue, ...outcome.farewellQueue].filter((id) => survivors.has(id));
 	const nextStarter = queue.length > 0 ? queue[0] : outcome.nextStarterId;
 	const nextType = queue.length > 0 ? "farewell" : "normal";
 	const nextQueue = queue.length > 0 ? queue.slice(1) : [];

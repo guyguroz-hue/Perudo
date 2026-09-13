@@ -253,6 +253,24 @@ kept for the log and for display rather than for computing anything.
 
 ---
 
+### ✅ R-012 — no Farewell Round head to head (2026-09-13)
+**With two players still holding dice, there is no Farewell Round.** Raised by
+Guy, who plays this game; the specification had not covered it, and the engine
+was therefore awarding one.
+
+The reasoning is that a Farewell Round is a rule about the rest of the table. It
+locks one face and takes the wildcard away *for everybody*, which is a cost paid
+by the players who did not lose a die. Head to head there is no "everybody": the
+whole cost lands on the single opponent, so the player who just lost a die would
+be handing themselves a locked face and the lead every time they were knocked
+down to one. The last two play normal rounds until it is over.
+
+*Consequence:* evaluated on the survivors of the resolution, not the players who
+went into it — a challenge that takes a table from three to two cancels the
+Farewell it would otherwise owe, and a queue carried from an earlier round is
+dropped. `farewellApplies` in `src/game/resolution.ts` is the single place that
+decides, so the engine, the action layer and the practice table cannot disagree.
+
 ### ✅ R-011 — who opens the first round: **drawn at random** (2026-09-12)
 
 R-002 says who opens every round after a resolution. Nothing said who opens the

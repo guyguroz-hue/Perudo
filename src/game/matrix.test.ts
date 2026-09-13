@@ -278,6 +278,11 @@ describe.each(SIZES)('a table of %i', (count) => {
    * A Farewell Round is owed to whoever was knocked down to one die, and to
    * nobody else (GAME_RULES §10, R-003). A correct Bull at a table sitting on
    * two dice each owes one to everybody but the caller at once.
+   *
+   * Except head to head, where none is owed at all (R-012) — a Farewell is a
+   * cost paid by the rest of the table, and with two players there is no rest
+   * of the table. The sweep covers both, because the rule is about how many
+   * are left and this is the one place every table size is played.
    */
   it('queues a Farewell Round for everyone knocked down to a single die', () => {
     const { outcome } = resolve({
@@ -289,9 +294,10 @@ describe.each(SIZES)('a table of %i', (count) => {
       challenger: 'p0',
     })
 
-    const expected = Array.from({ length: count }, (_, i) => `p${i}`).filter(
-      (id) => id !== 'p1',
-    )
+    const expected =
+      count <= 2
+        ? []
+        : Array.from({ length: count }, (_, i) => `p${i}`).filter((id) => id !== 'p1')
     expect(outcome.farewellQueue).toEqual(expected)
     expect(outcome.eliminated).toEqual([])
   })
