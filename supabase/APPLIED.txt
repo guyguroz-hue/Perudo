@@ -3,4 +3,4 @@
 #
 # Update this after running the pending SQL. `scripts/pending-sql.sh` reads it
 # and prints exactly what is left, so nothing depends on anyone remembering.
-20260912100000_two_player_games.sql
+20260913000000_deal_round_race.sql
