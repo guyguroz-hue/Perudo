@@ -24,11 +24,17 @@
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  transition:
-    opacity var(--t-short) var(--ease-ui),
-    /* The badge rides up with its cup when the cup is lifted, on the same
-       curve the renderer lifts it with, so the two move as one thing. */
-    top var(--t-medium) var(--ease-object);
+  /*
+   * No transition on `top`.
+   *
+   * There was one, for a time when the cup's lift was a flag and the badge
+   * over it jumped in a single frame — six hundred milliseconds of easing to
+   * cover one discontinuity. The lift is a number now and the camera moves
+   * during a reveal, so this position is recomputed every frame; easing it
+   * would leave every badge trailing up to six hundred milliseconds behind the
+   * cup it is naming, which is the opposite of the thing it was added to fix.
+   */
+  transition: opacity var(--t-short) var(--ease-ui);
   pointer-events: none;
 }
 

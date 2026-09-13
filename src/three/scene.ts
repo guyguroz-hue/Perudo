@@ -13,7 +13,7 @@ import {
 } from 'three'
 import { roomEnvironment } from './environment'
 import { CUP_HEIGHT, makeCup, makeTable } from './objects'
-import { CAMERA, CUP_LIFT, SEAT_RADIUS, placeCamera, seatAngle } from './layout'
+import { CAMERA, CUP_LIFT, HAND_DRAW_IN, SEAT_RADIUS, placeCamera, seatAngle } from './layout'
 import { FACE_UP, DIE_SIZE, fadeDie, makeDie } from './die'
 import type { Die } from './die'
 import { makeRoom } from './room'
@@ -295,10 +295,18 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
         e * 0.05 + seat.out.z * e * up * SLIDE_OUT,
       )
       cup.rotation.set(-e * 0.3 * (1 - up), 0, e * 0.1 * (1 - up))
-      // Gone by the time the eye is all the way up, and back the moment it
-      // starts down again — the same gesture in reverse, not a second one.
-      cup.scale.setScalar(Math.max(0.001, 1 - up))
-      cup.visible = up < 0.995
+      /*
+       * Gone before the eye finishes arriving, and back the moment it starts
+       * down again — the same gesture in reverse, not a second one.
+       *
+       * Fully away by the time the rise is 85% done rather than at the very
+       * end: shrinking all the way to zero left each cup as a two-pixel speck
+       * of colour sitting at the edge of the frame for the last fraction of a
+       * second, which reads as grit on the screen rather than as a cup.
+       */
+      const away = Math.min(1, up / 0.85)
+      cup.scale.setScalar(Math.max(0.001, 1 - away))
+      cup.visible = away < 1
       // The dice appear the moment the rim clears them, not when the cup stops.
       seat.dice.visible = e > 0.12
       /*
@@ -310,7 +318,7 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
        * enough to reach the next chair along: five dice spread about a tenth of
        * the table's radius, and neighbouring chairs are most of a radius apart.
        */
-      seat.dice.scale.setScalar(1 + up * 0.55)
+      seat.dice.scale.setScalar(1 + up * 0.6)
       /*
        * And drawn in off the rim, which now belongs to the names.
        *
@@ -321,7 +329,7 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
        * same band of table and a name lands on the dice it names, which is the
        * problem the whole move was made to solve.
        */
-      seat.dice.position.set(-seat.out.x * up * 0.14, 0, -seat.out.z * up * 0.14)
+      seat.dice.position.set(-seat.out.x * up * HAND_DRAW_IN, 0, -seat.out.z * up * HAND_DRAW_IN)
       // Still moving while the eye is, because the slide is a function of both.
       return k < 1 || overhead !== wantOverhead
     }
@@ -345,6 +353,18 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
     // also what the interface projects through, and two easings would disagree.
     const up = ease(overhead)
     placeCamera(camera, up)
+
+    /*
+     * The lamp backs off as the eye comes over the table.
+     *
+     * The pool light hangs low over the middle so the bid sits in light, which
+     * is right from a chair — you see its glow across the timber. From directly
+     * above you see its hotspot, a blown-out patch of wood lying across the
+     * middle of the table with somebody's dice in it. Lifted and softened it
+     * still lights the table and stops competing with the thing being counted.
+     */
+    pool.position.y = 0.8 + up * 1.6
+    pool.intensity = 2.6 - up * 1.25
 
     /*
      * The count is marked as the eye arrives, not before.

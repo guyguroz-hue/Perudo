@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { CUP_LID, badgeAnchor, emptySeatAnchor, project, seatPoint } from './layout'
+import {
+  CUP_LID,
+  HAND_DRAW_IN,
+  SEAT_RADIUS,
+  badgeAnchor,
+  emptySeatAnchor,
+  project,
+  seatPoint,
+} from './layout'
 
 /**
  * Where a label lands, at every table size.
@@ -148,22 +156,27 @@ describe('looking straight down', () => {
   })
 
   it('moves every badge off the hand it names', () => {
-    // The reason the badges ride outward at all: at a seat they hang above or
-    // below their cup, and from above there is no above or below.
+    /*
+     * The reason the badges ride outward at all: at a seat they hang above or
+     * below their cup, and from above there is no above or below.
+     *
+     * Measured against where the hand actually is, not against the chair. The
+     * hand is drawn in off the rim during a reveal — the rim is the badges' —
+     * so comparing against the chair would quietly stop testing anything the
+     * moment either of those two numbers moved.
+     */
     for (const count of SIZES) {
       for (let index = 0; index < count; index += 1) {
         const badge = badgeAnchor(index, count, 1, 1)
-        const hand = project(
-          seatPoint(index, count).x,
-          0,
-          seatPoint(index, count).z,
-          1,
-        )
+        const chair = seatPoint(index, count, SEAT_RADIUS - HAND_DRAW_IN)
+        const hand = project(chair.x, 0, chair.z, 1)
         const apart = Math.hypot(
           Number.parseFloat(badge.left) - Number.parseFloat(hand.left),
           Number.parseFloat(badge.top) - Number.parseFloat(hand.top),
         )
-        expect(apart).toBeGreaterThan(3)
+        // Percent of the stage. The hands spread about this far again around
+        // their own middle, so this is the clearance beyond that.
+        expect(apart).toBeGreaterThan(9)
       }
     }
   })

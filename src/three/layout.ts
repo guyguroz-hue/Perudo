@@ -74,6 +74,16 @@ export const BADGE_GAP = 10
 export const BADGE_MARGIN = 21
 
 /**
+ * How far a hand is drawn in off the rim when the eye is straight overhead.
+ *
+ * Shared with the renderer, which does the drawing-in, for the same reason
+ * CUP_LIFT is: this number and BADGE_RIM are the two ends of the gap between a
+ * name and the hand it names, and a copy of either is a copy that will
+ * disagree the first time one of them is tuned.
+ */
+export const HAND_DRAW_IN = 0.19
+
+/**
  * How far out a badge rides when the eye is straight overhead.
  *
  * Just inside the table's rim, which is at 1. Beyond the cups, which have slid
@@ -280,11 +290,12 @@ export function badgeAnchor(
    *
    * It exists because a seat at the side of the table projects almost to the
    * edge at a seated camera, and a name pushed off the frame is not a name.
-   * From above the anchor is already well inside the picture, and holding it
-   * twenty-one percent in would drag every badge back over the dice — undoing
-   * the outward slide it was given in the line above.
+   * From above the anchor is already well inside the picture, so it relaxes —
+   * but not to nothing. A badge up there lies on its side, which makes it wide,
+   * and the chairs at the sides of the table project close to the frame: left
+   * alone they run off the edge, and a name cut in half is not a name.
    */
-  const margin = BADGE_MARGIN * (1 - overhead) + 8 * overhead
+  const margin = BADGE_MARGIN * (1 - overhead) + 14 * overhead
 
   return {
     left: `${clamp(margin, Number.parseFloat(anchor.left), 100 - margin)}%`,

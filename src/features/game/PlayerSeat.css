@@ -49,3 +49,50 @@
 .badge--aerial {
   gap: 4px;
 }
+
+/*
+ * Narrow, up there.
+ *
+ * A name badge is centred on its anchor once the eye is overhead, so it
+ * reaches half its own width back toward the middle of the table — which is
+ * where that player's hand now is. Everything on the table is competing for
+ * one disc, and of the two the hand is the thing being read.
+ */
+.badge--aerial .badge__name {
+  max-width: 5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge--aerial .badge__avatar {
+  width: 26px;
+  height: 26px;
+  font-size: var(--text-xs);
+}
+
+/*
+ * Lying down, up there.
+ *
+ * A badge is a stack — a face over a name — which is the right shape beside a
+ * cup and the wrong one above a hand. Centred on its anchor at the rim it
+ * reaches half its own height back toward the table, and for the chair
+ * straight across from you that is exactly where the dice are. On its side it
+ * is half as tall and clears them, and it is the shape the lobby already uses
+ * for the same reason.
+ */
+.badge--aerial {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border-radius: var(--radius-full);
+  background: rgb(8 7 12 / 0.86);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.6);
+}
+
+.badge--aerial .badge__tag {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}

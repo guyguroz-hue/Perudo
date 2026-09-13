@@ -88,16 +88,26 @@ function faceTexture(face: number): CanvasTexture {
   const ctx = canvas.getContext('2d')
   if (ctx === null) throw new Error('no 2d context for a die face')
 
-  ctx.fillStyle = '#f4efe2'
+  ctx.fillStyle = '#f7f2e6'
   ctx.fillRect(0, 0, size, size)
-  ctx.fillStyle = '#1b1712'
+  /*
+   * Nearly black, and blacker than the pip anywhere else in the product.
+   *
+   * A pip drawn flat on a screen keeps whatever colour it was given. This one
+   * is a texture on an object: it is lit, it is under a clearcoat, and at the
+   * size a die occupies on a phone it is a handful of pixels being averaged
+   * with the bone around it by the mipmap. Every one of those steps lifts it
+   * toward the face it is drawn on, so it starts further down than the flat
+   * die's #1b1712 in order to arrive in the same place.
+   */
+  ctx.fillStyle = '#07060a'
 
   if (face === 1) {
     // The crown sits on the face rather than filling it, and it is wider than
     // it is tall, so it is centred on both axes from its own box rather than
     // from a square it does not fill.
     ctx.save()
-    const mark = size * 0.6
+    const mark = size * 0.66
     const scale = mark / JOKER_BOX.width
     ctx.translate((size - mark) / 2, (size - JOKER_BOX.height * scale) / 2)
     ctx.scale(scale, scale)
@@ -106,7 +116,10 @@ function faceTexture(face: number): CanvasTexture {
   } else {
     for (const [u, v] of PIPS[face]) {
       ctx.beginPath()
-      ctx.arc(u * size, v * size, size * 0.085, 0, Math.PI * 2)
+      // A fifth of the face across, which is what the flat die uses. It was
+      // 17%, and the difference is most of why the two did not look like the
+      // same die — the count was readable on one and a smudge on the other.
+      ctx.arc(u * size, v * size, size * 0.11, 0, Math.PI * 2)
       ctx.fill()
     }
   }
@@ -148,10 +161,18 @@ export function makeDie(): Die {
       new MeshPhysicalMaterial({
         map: faceTexture(face),
         color: new Color('#ffffff'),
-        roughness: 0.34,
+        /*
+         * Less of a sheen than a die on a shelf would have.
+         *
+         * The lamp is nearly overhead and, during a reveal, so is the camera —
+         * so the top face of every die reflects the light straight back at the
+         * viewer, exactly across the pips they are being asked to count. A
+         * glossier die is a prettier object and a worse number.
+         */
+        roughness: 0.46,
         metalness: 0,
-        clearcoat: 0.7,
-        clearcoatRoughness: 0.14,
+        clearcoat: 0.28,
+        clearcoatRoughness: 0.35,
       }),
   )
 
