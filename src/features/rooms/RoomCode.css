@@ -1,57 +1,125 @@
+/*
+ * The invite rail.
+ *
+ * Brass, because the code belongs to the house rather than to any player —
+ * the same metal as the trim on a cup and the ring cut into the table. It is
+ * the only bright thing in a lobby that has no turn to light up yet, which is
+ * correct: in an empty room, sending the code is the only move.
+ */
 .code {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  width: 100%;
 }
 
 .code__value {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
+  align-items: baseline;
+  gap: var(--space-3);
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: var(--tap);
-  padding: var(--space-2) var(--space-5);
+  padding: 0 var(--space-4);
   border: none;
-  border-radius: var(--radius-lg);
-  background: rgb(0 0 0 / 0.25);
-  box-shadow: inset 0 0 0 1px rgb(244 239 228 / 0.14);
+  border-radius: var(--radius);
+  background: linear-gradient(rgb(255 255 255 / 0.05), rgb(0 0 0 / 0.25));
+  box-shadow:
+    inset 0 0 0 1px rgb(212 162 76 / 0.28),
+    inset 0 1px 0 rgb(255 255 255 / 0.06);
   cursor: pointer;
+  transition: box-shadow var(--t-micro) var(--ease-ui);
+}
+
+.code__value:hover,
+.code__value:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px rgb(212 162 76 / 0.55),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+.code__value:active {
+  scale: 0.99;
 }
 
 .code__label {
-  font-size: var(--text-xs);
-  letter-spacing: 0.18em;
-  color: var(--bone-faint);
+  flex: 0 0 auto;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
+/* The one thing on the screen somebody reads aloud. Wide tracking so the
+   letters are dictated one at a time rather than read as a word. */
 .code__digits {
-  font-family: var(--font-numeric);
-  font-size: var(--text-2xl);
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
   font-weight: 700;
-  letter-spacing: 0.22em;
-  /* The trailing letter-spacing would otherwise push the code off-centre. */
-  text-indent: 0.22em;
+  letter-spacing: 0.2em;
+  /* The trailing letter-space would otherwise push the code off-centre. */
+  text-indent: 0.2em;
+  text-align: center;
   color: var(--brass-bright);
-}
-
-.code__hint {
-  font-size: var(--text-xs);
-  color: var(--bone-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .code__share {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
   min-height: var(--tap);
-  padding: var(--space-2) var(--space-5);
+  padding: 0 var(--space-4);
   border: none;
-  border-radius: var(--radius-full);
-  background: transparent;
-  box-shadow: inset 0 0 0 1px rgb(244 239 228 / 0.22);
-  color: var(--bone-dim);
+  border-radius: var(--radius);
+  background: var(--panel-lift);
+  box-shadow:
+    inset 0 0 0 1px var(--panel-edge),
+    var(--shadow-object);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
+  transition: filter var(--t-micro) var(--ease-ui);
 }
 
 .code__share:hover {
-  color: var(--bone);
+  filter: brightness(1.25);
+}
+
+.code__share:active {
+  scale: 0.97;
+}
+
+/* The confirmation. It occupies no space when there is nothing to say, so the
+   rail does not jump a line taller the first time somebody copies. */
+.code__said {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The plate acknowledges the copy itself — its label reads "Copied" and its
+   edge lights for the moment the state is held. Feedback on the thing that was
+   pressed, rather than a line of text appearing somewhere else. */
+.code__value--said {
+  box-shadow:
+    inset 0 0 0 1px rgb(240 205 135 / 0.7),
+    inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+
+.code__value--said .code__label {
+  color: var(--brass);
 }

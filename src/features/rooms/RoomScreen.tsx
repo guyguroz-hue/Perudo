@@ -1,18 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import * as Dialog from '@radix-ui/react-dialog'
-import { Button } from '../../components/Button'
-import { ConnectionDot } from '../../components/ConnectionDot'
 import { Die } from '../../components/Die'
 import { useAuth } from '../auth/useAuth'
 import { endRoom, fetchGame, kickPlayer, leaveRoom, returnToLobby, startGame } from './api'
+import { Button } from '../../components/Button'
 import { Countdown } from './Countdown'
 import { toRoomError } from './errors'
 import { GameScreen } from '../game/GameScreen'
-import { RoomCode } from './RoomCode'
-import { RoomTable } from './RoomTable'
+import { LobbyView } from './LobbyView'
 import { useRoom } from './useRoom'
-import { MIN_PLAYERS, SEAT_COUNT } from './types'
 import type { Seat } from './types'
 import './RoomScreen.css'
 
@@ -114,7 +111,6 @@ export function RoomScreen() {
 
   const { room, seats } = view
   const youAreHost = room.host_id === youId
-  const enough = seats.length >= MIN_PLAYERS
 
   if (counting) {
     return (
@@ -125,154 +121,100 @@ export function RoomScreen() {
   }
 
   return (
-    <div className="lobby">
-      {room.status === 'lobby' && <RoomCode code={room.code} />}
-
-      <div className="lobby__status">
-        <p className="lobby__count">
-          {room.status === 'lobby'
-            ? `${seats.length} / ${SEAT_COUNT} players`
-            : room.status === 'finished'
-              ? 'Game over'
-              : 'Game in progress'}
-        </p>
-        <ConnectionDot connection={connection} />
-      </div>
-
-      {room.status === 'lobby' ? (
-        <RoomTable seats={seats} canManage={youAreHost} onManage={setPendingKick} />
-      ) : gameId === null ? (
-        <p className="lobby__muted">Finding the game…</p>
-      ) : (
-        <GameScreen gameId={gameId} youId={youId as string} />
-      )}
-
-      {error !== null && (
-        <p className="lobby__error" role="alert">
-          {error}
-        </p>
-      )}
-
-      <div className="lobby__controls">
-        {youAreHost && room.status === 'lobby' && (
-          <>
-            <Button
-              disabled={!enough}
-              busy={busy}
-              onClick={() => void act(() => startGame(room.id))}
-            >
-              Start game
-            </Button>
-            {!enough && (
-              <p className="lobby__muted">
-                {MIN_PLAYERS - seats.length} more{' '}
-                {MIN_PLAYERS - seats.length === 1 ? 'player' : 'players'} to start
-              </p>
-            )}
-          </>
+    <>
+      <LobbyView
+      code={room.code}
+      status={room.status}
+      seats={seats}
+      connection={connection}
+      youAreHost={youAreHost}
+      busy={busy}
+      error={error}
+      onStart={() => void act(() => startGame(room.id))}
+      onPlayAgain={() => void act(() => returnToLobby(room.id))}
+      onManage={setPendingKick}
+      onEnd={() => setConfirmEnd(true)}
+      onLeave={() =>
+        void act(async () => {
+          await leaveRoom(room.id)
+          navigate('/')
+        })
+      }
+    >
+        {gameId === null ? (
+          <p className="lobby__muted">Finding the game…</p>
+        ) : (
+          <GameScreen gameId={gameId} youId={youId as string} />
         )}
+      </LobbyView>
 
-        {youAreHost && room.status === 'finished' && (
-          <Button busy={busy} onClick={() => void act(() => returnToLobby(room.id))}>
-            Play again
-          </Button>
-        )}
-
-        {!youAreHost && room.status === 'lobby' && (
-          <p className="lobby__muted">Waiting for the host to start</p>
-        )}
-        {!youAreHost && room.status === 'finished' && (
-          <p className="lobby__muted">Waiting for the host to set up another game</p>
-        )}
-
-        {youAreHost && room.status !== 'closed' && (
-          <button type="button" className="lobby__leave" onClick={() => setConfirmEnd(true)}>
-            End room
-          </button>
-        )}
-        {!youAreHost && (
-          <button
-            type="button"
-            className="lobby__leave"
-            onClick={() =>
-              void act(async () => {
-                await leaveRoom(room.id)
-                navigate('/')
-              })
-            }
-          >
-            Leave room
-          </button>
-        )}
-      </div>
-
-      <Dialog.Root
-        open={pendingKick !== null}
-        onOpenChange={(open) => !open && setPendingKick(null)}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay className="sheet__overlay" />
-          <Dialog.Content className="sheet">
-            <Dialog.Title className="sheet__title">
-              Remove {pendingKick?.display_name}?
-            </Dialog.Title>
-            <Dialog.Description className="sheet__body">
-              They will lose their seat and cannot rejoin this room.
-            </Dialog.Description>
-            <div className="sheet__actions">
-              <Dialog.Close asChild>
-                <button type="button" className="sheet__cancel">
-                  Cancel
+        <Dialog.Root
+          open={pendingKick !== null}
+          onOpenChange={(open) => !open && setPendingKick(null)}
+        >
+          <Dialog.Portal>
+            <Dialog.Overlay className="sheet__overlay" />
+            <Dialog.Content className="sheet">
+              <Dialog.Title className="sheet__title">
+                Remove {pendingKick?.display_name}?
+              </Dialog.Title>
+              <Dialog.Description className="sheet__body">
+                They will lose their seat and cannot rejoin this room.
+              </Dialog.Description>
+              <div className="sheet__actions">
+                <Dialog.Close asChild>
+                  <button type="button" className="sheet__cancel">
+                    Cancel
+                  </button>
+                </Dialog.Close>
+                <button
+                  type="button"
+                  className="sheet__danger"
+                  onClick={() => {
+                    const target = pendingKick
+                    setPendingKick(null)
+                    if (target !== null) void act(() => kickPlayer(room.id, target.user_id))
+                  }}
+                >
+                  Remove
                 </button>
-              </Dialog.Close>
-              <button
-                type="button"
-                className="sheet__danger"
-                onClick={() => {
-                  const target = pendingKick
-                  setPendingKick(null)
-                  if (target !== null) void act(() => kickPlayer(room.id, target.user_id))
-                }}
-              >
-                Remove
-              </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
 
-      <Dialog.Root open={confirmEnd} onOpenChange={setConfirmEnd}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="sheet__overlay" />
-          <Dialog.Content className="sheet">
-            <Dialog.Title className="sheet__title">End this room?</Dialog.Title>
-            <Dialog.Description className="sheet__body">
-              Everyone leaves the table and the room closes for good. Any game
-              still running is abandoned.
-            </Dialog.Description>
-            <div className="sheet__actions">
-              <Dialog.Close asChild>
-                <button type="button" className="sheet__cancel">
-                  Keep playing
+        <Dialog.Root open={confirmEnd} onOpenChange={setConfirmEnd}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="sheet__overlay" />
+            <Dialog.Content className="sheet">
+              <Dialog.Title className="sheet__title">End this room?</Dialog.Title>
+              <Dialog.Description className="sheet__body">
+                Everyone leaves the table and the room closes for good. Any game
+                still running is abandoned.
+              </Dialog.Description>
+              <div className="sheet__actions">
+                <Dialog.Close asChild>
+                  <button type="button" className="sheet__cancel">
+                    Keep playing
+                  </button>
+                </Dialog.Close>
+                <button
+                  type="button"
+                  className="sheet__danger"
+                  onClick={() => {
+                    setConfirmEnd(false)
+                    void act(async () => {
+                      await endRoom(room.id)
+                      navigate('/')
+                    })
+                  }}
+                >
+                  End room
                 </button>
-              </Dialog.Close>
-              <button
-                type="button"
-                className="sheet__danger"
-                onClick={() => {
-                  setConfirmEnd(false)
-                  void act(async () => {
-                    await endRoom(room.id)
-                    navigate('/')
-                  })
-                }}
-              >
-                End room
-              </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
-    </div>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+    </>
   )
 }

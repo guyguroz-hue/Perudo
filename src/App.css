@@ -17,12 +17,12 @@
 
 .app__status p {
   margin: 0;
-  color: var(--bone-dim);
+  color: var(--ink-dim);
 }
 
 .app__detail {
   font-size: var(--text-sm);
-  color: var(--bone-faint);
+  color: var(--ink-faint);
 }
 
 .app__rolling {

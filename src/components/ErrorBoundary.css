@@ -19,7 +19,7 @@
   padding: var(--space-3);
   border-radius: var(--radius);
   background: rgb(0 0 0 / 0.35);
-  color: var(--bone-faint);
+  color: var(--ink-faint);
   font-size: var(--text-xs);
   text-align: left;
   white-space: pre-wrap;

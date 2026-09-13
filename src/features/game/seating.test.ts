@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { seatPoint } from '../../three/layout'
 import { placeSeats, sceneSeats } from './seating'
 import type { TablePlayer } from './view'
 
@@ -75,12 +76,17 @@ describe('who sits where', () => {
       const seats = placeSeats(table(count, 0))
       for (const seat of seats) {
         /*
-         * Away from the table, not over it. Yours drops below your cup and
-         * everybody else's rises above theirs — and a badge at the side of the
-         * table also runs outward, because a name is wider than a cup and one
-         * centred on a side chair lands on the next chair's cup.
+         * Away from the table, not over it. A badge at the side of the table
+         * runs outward, because a name is wider than a cup and one centred on
+         * a side chair lands on the next chair's cup — and it hangs down off
+         * the front of the table if its chair is on the near side of the
+         * middle, up over the cup if it is on the far side. Which half a chair
+         * is in, rather than whether it is yours: the chairs flanking you are
+         * in front of the ones across from them, and a badge of theirs hung
+         * upward lands on the cup behind. See src/three/layout.test.ts.
          */
-        const vertical = seat.player.isYou ? '10px' : 'calc(-100% - 10px)'
+        const { z } = seatPoint(seats.indexOf(seat), count)
+        const vertical = z > 0.001 ? '10px' : 'calc(-100% - 10px)'
         expect(seat.badge.translate).toMatch(
           new RegExp(`^(-88%|-50%|-12%) ${vertical.replace(/[()-]/g, '\\$&')}$`),
         )

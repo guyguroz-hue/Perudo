@@ -230,34 +230,3 @@
     scroll-behavior: auto !important;
   }
 }
-
-/*
- * Bridge to the old palette.
- *
- * The lobby, the name screen and the way in have not been redesigned yet, and
- * they are built from tokens the new system does not have. The table, the
- * reveal and the end of a game are done and no longer appear here.
- * Rather than leave them referencing names that resolve to nothing — which
- * fails silently and looks like a rendering bug — each old name points at its
- * nearest new equivalent until that screen is rebuilt.
- *
- * Every line here is a screen still owed a redesign. The block should be empty
- * when the work is finished, and it is a list of what is left until then.
- */
-:root {
-  --bone-dim: var(--ink-dim);
-  --bone-faint: var(--ink-faint);
-  --brass-dim: var(--brass-deep);
-  --danger: var(--loss);
-  --danger-bright: var(--lie);
-  --felt-edge: var(--room-deep);
-  --felt-raised: var(--room-lift);
-  --font-numeric: var(--font-display);
-  --leather: var(--wood-light);
-  --wood-dark: var(--wood-deep);
-  --shadow: var(--shadow-object);
-  --shadow-lg: var(--shadow-overlay);
-  --duration: var(--t-short);
-  --duration-fast: var(--t-micro);
-  --ease: var(--ease-ui);
-}

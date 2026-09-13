@@ -15,22 +15,25 @@
 }
 
 .name__title {
+  margin: 0;
+  font-family: var(--font-display);
   font-size: var(--text-3xl);
+  font-weight: 700;
+  letter-spacing: var(--track-display);
   text-align: center;
-  letter-spacing: 0.02em;
-  color: var(--bone);
+  color: var(--ink);
 }
 
 .name__blurb {
   margin: 0 0 var(--space-4);
   text-align: center;
-  color: var(--bone-faint);
+  color: var(--ink-faint);
   font-size: var(--text-sm);
 }
 
 .name__label {
   font-size: var(--text-sm);
-  color: var(--bone-dim);
+  color: var(--ink-dim);
 }
 
 .name__input {
@@ -38,19 +41,19 @@
   padding: var(--space-3);
   border: none;
   border-radius: var(--radius);
-  background: rgb(0 0 0 / 0.28);
-  box-shadow: inset 0 0 0 1px rgb(244 239 228 / 0.16);
-  color: var(--bone);
+  background: rgb(0 0 0 / 0.3);
+  box-shadow: inset 0 0 0 1px var(--panel-edge);
+  color: var(--ink);
 }
 
 .name__input[aria-invalid='true'] {
-  box-shadow: inset 0 0 0 1px var(--danger-bright);
+  box-shadow: inset 0 0 0 1px var(--loss);
 }
 
 .name__error {
   margin: 0;
   font-size: var(--text-sm);
-  color: var(--danger-bright);
+  color: var(--loss);
 }
 
 /* The submit button sits directly under the field, so it needs a little air to

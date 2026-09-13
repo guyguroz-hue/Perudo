@@ -26,9 +26,12 @@ export function Countdown({ onDone }: { onDone: () => void }) {
   return (
     <div className="countdown" role="status" aria-live="polite">
       <p className="countdown__label">Everyone ready</p>
-      <p className="countdown__number" key={n}>
-        {n === 0 ? 'Play' : n}
-      </p>
+      <div className="countdown__stage">
+        <span className="countdown__ring" key={`ring-${n}`} aria-hidden="true" />
+        <p className="countdown__number" key={n}>
+          {n === 0 ? 'Play' : n}
+        </p>
+      </div>
     </div>
   )
 }

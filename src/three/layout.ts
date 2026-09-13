@@ -122,9 +122,9 @@ export function seatPoint(index: number, count: number, radius = SEAT_RADIUS) {
  * it. Above the cup there is always room, and the gap between the cup and the
  * disc floating over it is the same at every seat.
  *
- * Your own seat is the exception. You sit at the near edge with your cup in
- * front of you, so your tag hangs below it, off the front of the table, where
- * it covers nothing.
+ * The near half of the table is the exception. Those chairs are in front of
+ * everything else, so their badges hang below their cups instead, off the front
+ * edge, where the only thing under them is floor.
  */
 export interface BadgeAnchor extends Anchor {
   /** Which way the badge hangs off its anchor point. */
@@ -132,8 +132,18 @@ export interface BadgeAnchor extends Anchor {
 }
 
 export function badgeAnchor(index: number, count: number, lifted = false): BadgeAnchor {
-  const near = index === 0
   const { x, z } = seatPoint(index, count)
+  /*
+   * Near is a half of the table, not one chair.
+   *
+   * It was one chair, and at five and six seats that was the collision it was
+   * written to prevent, moved one seat round: the chairs flanking yours are in
+   * front of the ones across from them, so a badge of theirs hung upward lands
+   * on the cup behind — Alice's name on Carl's cup, every time the room filled
+   * up. Anybody on the near side of the middle hangs their badge down off the
+   * front of the table, where the only thing under them is floor.
+   */
+  const near = z > 0.001
   // A lifted cup climbs into the badge that was floating over it, so the badge
   // moves up with it and the gap between them stays the gap it was.
   const anchor = project(x, near ? 0 : CUP_LID + (lifted ? CUP_LIFT : 0), z)
@@ -156,6 +166,26 @@ export function badgeAnchor(index: number, count: number, lifted = false): Badge
     translate: near
       ? `${across} ${BADGE_GAP}`
       : `${across} calc(-100% - ${BADGE_GAP})`,
+  }
+}
+
+/**
+ * Where an empty chair's invitation goes.
+ *
+ * Not a badge anchor with the cup left out. A badge hangs clear of the cup it
+ * belongs to, and hanging clear of a cup that is not there leaves the label
+ * floating in the room above the table — at two players, three of them hover
+ * in the window like notices pinned to the glass. An empty chair has nothing
+ * to hang off, so its invitation lies flat on the timber, in the ring of wood
+ * where the cup would stand, which is the thing it is inviting somebody to.
+ */
+export function emptySeatAnchor(index: number, count: number): BadgeAnchor {
+  const { x, z } = seatPoint(index, count)
+  const anchor = project(x, 0, z)
+  return {
+    left: `${clamp(BADGE_MARGIN, Number.parseFloat(anchor.left), 100 - BADGE_MARGIN)}%`,
+    top: anchor.top,
+    translate: '-50% -50%',
   }
 }
 

@@ -1,45 +1,74 @@
+/*
+ * The room.
+ *
+ * The table is the screen. Everything else is a rail above it and a panel
+ * below it, and both are sized so that six chairs and their names are never
+ * pushed off the bottom of a phone. Chrome in this product is near-black
+ * rather than glass: the wood and the brass are the material, and the controls
+ * stay out of their way.
+ */
 .lobby {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-3);
   width: 100%;
-  max-width: 24rem;
-  padding-bottom: var(--space-4);
+  max-width: 26rem;
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
 }
 
-.lobby__centered {
+/* -----------------------------------------------------------------------------
+ * Above the table
+ * ---------------------------------------------------------------------------*/
+.lobby__head {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  text-align: center;
-}
-
-.lobby__centered p {
-  margin: 0;
-  color: var(--bone-dim);
-}
-
-.lobby__dice {
-  display: flex;
+  align-items: stretch;
   gap: var(--space-2);
+  width: 100%;
 }
 
+/* How full the room is, and — only when something is wrong — the connection.
+   A count is a fact, so it is set as a label rather than as a sentence. */
 .lobby__status {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 1.25rem;
 }
 
 .lobby__count {
   margin: 0;
-  font-size: var(--text-sm);
-  letter-spacing: 0.1em;
-  color: var(--bone-faint);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
+/* The seats filled so far, drawn rather than counted: at a glance you see that
+   one more person makes a game, without reading "3 / 6". */
+.lobby__pips {
+  display: flex;
+  gap: 5px;
+}
+
+.lobby__pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.14);
+}
+
+.lobby__pip--taken {
+  background: var(--brass);
+  box-shadow: 0 0 8px rgb(212 162 76 / 0.5);
+}
+
+/* -----------------------------------------------------------------------------
+ * Below the table
+ * ---------------------------------------------------------------------------*/
 .lobby__controls {
   display: flex;
   flex-direction: column;
@@ -55,68 +84,164 @@
 .lobby__muted {
   margin: 0;
   font-size: var(--text-sm);
-  color: var(--bone-faint);
+  color: var(--ink-faint);
   text-align: center;
 }
 
 .lobby__error {
   margin: 0;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--lie) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lie) 40%, transparent);
   font-size: var(--text-sm);
-  color: var(--danger-bright);
+  color: var(--ink);
   text-align: center;
 }
 
+/* Leaving is a real action and it is not the one anybody came for, so it is
+   legible and unemphasised rather than hidden. */
 .lobby__leave {
   min-height: var(--tap);
   padding: 0 var(--space-4);
   border: none;
   background: none;
-  color: var(--bone-faint);
+  color: var(--ink-faint);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
   cursor: pointer;
+  transition: color var(--t-micro) var(--ease-ui);
 }
 
 .lobby__leave:hover {
-  color: var(--bone-dim);
+  color: var(--ink-dim);
 }
 
-/* Confirmation sheet — Radix handles focus trapping, escape and scroll lock;
-   the appearance is ours. */
+/* -----------------------------------------------------------------------------
+ * Before the room is there, and when it is not
+ * ---------------------------------------------------------------------------*/
+.lobby__centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 26rem;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.lobby__centered h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: var(--track-display);
+}
+
+.lobby__centered p {
+  margin: 0;
+  color: var(--ink-dim);
+}
+
+/* Two dice, rolling gently. The wait for a room is short and this is not a
+   progress bar — it is the product saying it is still here. */
+.lobby__dice {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.lobby__dice > * {
+  animation: lobby-settle 1.8s var(--ease-object) infinite;
+}
+
+.lobby__dice > *:last-child {
+  animation-delay: 0.24s;
+}
+
+@keyframes lobby-settle {
+  0%, 60%, 100% { transform: translateY(0) rotate(0deg); }
+  30% { transform: translateY(-7px) rotate(-8deg); }
+}
+
+/* Raw text for the failures we did not anticipate. Small, quiet, and readable
+   from a screenshot — which is how these get reported. */
+.lobby__detail {
+  margin: 0;
+  max-width: 20rem;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgb(0 0 0 / 0.35);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* -----------------------------------------------------------------------------
+ * Confirmation sheet
+ * ---------------------------------------------------------------------------*/
+/* Radix handles focus trapping, escape and scroll lock; the appearance is ours.
+   It rises from the bottom edge because it is answering a question about the
+   thing the thumb just touched. */
 .sheet__overlay {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 0.6);
+  background: rgb(3 2 6 / 0.72);
+  backdrop-filter: blur(3px);
+  animation: sheet-fade var(--t-short) var(--ease-ui);
 }
 
 .sheet {
   position: fixed;
   left: 50%;
   bottom: 0;
-  width: min(100%, 24rem);
+  width: min(100%, 26rem);
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  background: var(--felt-raised);
-  box-shadow: var(--shadow-lg);
+  background: var(--panel-solid);
+  box-shadow:
+    inset 0 1px 0 var(--panel-edge),
+    var(--shadow-overlay);
+  animation: sheet-rise var(--t-short) var(--ease-arrive);
+}
+
+@keyframes sheet-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheet-rise {
+  from { transform: translate(-50%, 100%); }
+  to { transform: translate(-50%, 0); }
 }
 
 .sheet__title {
   margin: 0;
   font-family: var(--font-display);
   font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: var(--track-display);
+  color: var(--ink);
 }
 
 .sheet__body {
   margin: 0;
   font-size: var(--text-sm);
-  color: var(--bone-dim);
+  line-height: 1.5;
+  color: var(--ink-dim);
 }
 
 .sheet__actions {
   display: flex;
   gap: var(--space-2);
+  margin-top: var(--space-1);
 }
 
 .sheet__cancel,
@@ -125,28 +250,32 @@
   min-height: var(--tap);
   border: none;
   border-radius: var(--radius);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
+  transition: filter var(--t-micro) var(--ease-ui);
 }
 
 .sheet__cancel {
-  background: transparent;
-  box-shadow: inset 0 0 0 1px rgb(244 239 228 / 0.22);
-  color: var(--bone-dim);
+  background: var(--panel-lift);
+  box-shadow: inset 0 0 0 1px var(--panel-edge);
+  color: var(--ink-dim);
 }
 
+.sheet__cancel:hover {
+  color: var(--ink);
+}
+
+/* The irreversible one. Stated in the colour the game already uses for a loss,
+   so it is recognisable as "this costs something" rather than as a generic red
+   that every product paints its second button. */
 .sheet__danger {
-  background: var(--danger);
-  color: var(--bone);
+  background: linear-gradient(var(--loss), color-mix(in srgb, var(--loss) 70%, #000));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18);
+  color: #fff;
 }
 
-/* Raw text for the failures we did not anticipate. Small, quiet, and readable
-   from a screenshot — which is how these get reported. */
-.lobby__detail {
-  margin: 0;
-  max-width: 20rem;
-  font-size: var(--text-xs);
-  color: var(--bone-faint);
-  text-align: center;
-  overflow-wrap: anywhere;
+.sheet__danger:hover {
+  filter: brightness(1.1);
 }

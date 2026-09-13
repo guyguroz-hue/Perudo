@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import { TableScene } from '../game/TableScene'
 import { hexForSeat, toneForSeat } from '../game/colors'
-import { STAGE_ASPECT, badgeAnchor } from '../../three/layout'
+import { STAGE_ASPECT, badgeAnchor, emptySeatAnchor } from '../../three/layout'
 import { SEAT_COUNT } from './types'
 import type { Seat as SeatModel } from './types'
 import '../../components/TableBadge.css'
@@ -68,7 +68,10 @@ export function RoomTable({
 
         <ul className="lobby-table__seats">
           {ring.map(({ position, step, taken }) => {
-            const anchor = badgeAnchor(step, SEAT_COUNT)
+            // An empty chair is marked on the table; a taken one is labelled
+            // above or below the cup standing on it.
+            const anchor =
+              taken === undefined ? emptySeatAnchor(step, SEAT_COUNT) : badgeAnchor(step, SEAT_COUNT)
             const style = {
               ...anchor,
               '--seat-tone': toneForSeat(position),

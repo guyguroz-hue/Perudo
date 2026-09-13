@@ -3,7 +3,7 @@ import { Atoms } from './Atoms'
 import { Finish } from './Finish'
 import { RenderPreview } from './RenderPreview'
 import { GameTable } from './GameTable'
-import { RoomTable } from '../rooms/RoomTable'
+import { LobbyView } from '../rooms/LobbyView'
 import { ENDINGS, LOBBIES, REVEALS, SCENARIOS, claimFor, tableFor } from './fixtures'
 import type { RevealData } from './reveal'
 import './PreviewScreen.css'
@@ -127,10 +127,22 @@ export function PreviewScreen() {
             ))}
           </nav>
           <p className="preview__note">{LOBBIES[lobby].note}</p>
-          <RoomTable
+          {/* The whole lobby, not just its table: the invite rail and the
+              controls are the parts that decide whether a six-seat room still
+              fits on a phone, and they cannot be judged apart from it. */}
+          <LobbyView
+            code="4821"
+            status="lobby"
             seats={LOBBIES[lobby].seats}
-            canManage={LOBBIES[lobby].seats.some((s) => s.is_host && s.is_you)}
+            connection="live"
+            youAreHost={LOBBIES[lobby].seats.some((s) => s.is_host && s.is_you)}
+            busy={false}
+            error={null}
+            onStart={() => setActed('Start game')}
+            onPlayAgain={() => setActed('Play again')}
             onManage={(seat) => setActed(`Manage ${seat.display_name}`)}
+            onEnd={() => setActed('End room')}
+            onLeave={() => setActed('Leave room')}
           />
         </>
       ) : tab === 'render' ? (

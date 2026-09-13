@@ -17,6 +17,17 @@
   position: relative;
   width: min(100vw, 34rem);
   margin-inline: calc((100% - min(100vw, 34rem)) / 2);
+  /*
+   * The floor in front of the table is not content.
+   *
+   * The stage is as tall as the camera needs it to be, and the camera needs
+   * room above the table for the room. Below the table it needs nothing: the
+   * bottom sixth of the frame is empty floor, and on a phone that is the
+   * difference between the start button sitting under the table and sitting
+   * below the fold. Measured at 360, 390 and 430 wide — the band is 16-17.5%
+   * of the stage, and 12% is reclaimed, so the nearest badge keeps its air.
+   */
+  margin-bottom: calc(min(100vw, 34rem) * -0.156);
   container-type: inline-size;
 }
 
