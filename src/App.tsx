@@ -6,6 +6,7 @@ import { HomeScreen } from './features/rooms/HomeScreen'
 import { JoinScreen } from './features/rooms/JoinScreen'
 import { RoomScreen } from './features/rooms/RoomScreen'
 import { PreviewScreen } from './features/game/PreviewScreen'
+import { TutorialScreen } from './features/tutorial/TutorialScreen'
 import { Button } from './components/Button'
 import { Die } from './components/Die'
 import { supabaseUrl } from './lib/supabaseClient'
@@ -33,10 +34,22 @@ export default function App() {
 function Gate() {
   const { state, retry } = useAuth()
 
+  const path = useLocation().pathname
+
   // Every game screen, driven by fixtures and reaching nothing. It needs no
   // identity, so it is answered before the gate rather than behind it — which
   // also makes it the one screen that still works when Supabase does not.
-  if (useLocation().pathname === '/preview') return <PreviewScreen />
+  if (path === '/preview') return <PreviewScreen />
+
+  /*
+   * Learning the game needs no account.
+   *
+   * The whole tutorial is a game against bots in this tab: no room, no seat, no
+   * network. Putting it behind sign-in would mean the one person who most needs
+   * it — somebody handed a link to a game they have never heard of — has to
+   * commit to the product before finding out what it is.
+   */
+  if (path === '/learn') return <TutorialScreen />
 
   switch (state.status) {
     case 'connecting':

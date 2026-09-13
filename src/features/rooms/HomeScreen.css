@@ -113,3 +113,25 @@
   letter-spacing: 0.16em;
   color: var(--brass-bright);
 }
+
+/* The way in for somebody who has just been invited to a game they have never
+   heard of. Quiet, because most people arriving here already know how to play
+   and came for the code field. */
+.home__learn {
+  min-height: var(--tap);
+  margin-top: var(--space-2);
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius);
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--panel-edge);
+  color: var(--ink-dim);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: color var(--t-micro) var(--ease-ui);
+}
+
+.home__learn:hover {
+  color: var(--ink);
+}

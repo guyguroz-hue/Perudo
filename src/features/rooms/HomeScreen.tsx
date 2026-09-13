@@ -118,6 +118,14 @@ export function HomeScreen({ name }: { name: string }) {
           {error}
         </p>
       )}
+
+      {/* Offered last and quietly: most people opening this have been handed a
+          code by a friend and want to be at the table, not in a lesson. The
+          one who needs it is the one who has just been invited to a game they
+          have never heard of, and they will read the whole screen. */}
+      <button type="button" className="home__learn" onClick={() => navigate('/learn')}>
+        Never played? Learn in two minutes
+      </button>
     </div>
   )
 }

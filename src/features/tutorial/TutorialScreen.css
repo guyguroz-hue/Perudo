@@ -1,0 +1,143 @@
+/*
+ * The coach.
+ *
+ * A card over the table rather than a screen in front of it. Everything it
+ * talks about — your dice, the bid controls, the two challenges — has to stay
+ * visible while it is talking, or the player is reading about a thing they
+ * cannot see and then hunting for it afterwards.
+ */
+.learn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 26rem;
+}
+
+.coach {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  z-index: 20;
+  width: min(100% - var(--space-4) * 2, 24rem);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--panel-solid);
+  box-shadow:
+    inset 0 1px 0 var(--panel-edge),
+    var(--shadow-overlay);
+  animation: coach-in var(--t-short) var(--ease-arrive);
+}
+
+@keyframes coach-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/*
+ * When the card is about a control, it gets out of that control's way.
+ *
+ * The bid builder and the two challenges live at the foot of the screen, which
+ * is also the only comfortable place for a card on a phone. A card explaining
+ * the Lie button while sitting on top of the Lie button is the single easiest
+ * way to make a tutorial useless.
+ */
+.coach--bid,
+.coach--lie,
+.coach--bull,
+.coach--hand {
+  bottom: auto;
+  top: var(--space-4);
+}
+
+.coach__step {
+  margin: 0;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.coach__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: var(--track-display);
+  color: var(--ink);
+}
+
+.coach__body {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+
+/* A wrong move is a chance to say the rule again, not an error. */
+.coach__nudge {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: rgb(201 162 39 / 0.14);
+  font-size: var(--text-sm);
+  color: var(--brass-bright);
+}
+
+.coach__next {
+  min-height: var(--tap);
+  margin-top: var(--space-1);
+  padding: 0 var(--space-5);
+  border: none;
+  border-radius: var(--radius);
+  background: linear-gradient(var(--brass-bright), var(--brass));
+  color: #2a1f05;
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.coach__next:active {
+  scale: 0.985;
+}
+
+.coach__ends {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.coach__ends > .coach__next {
+  flex: 1;
+}
+
+.coach__leave {
+  flex: 1;
+  min-height: var(--tap);
+  border: none;
+  border-radius: var(--radius);
+  background: var(--panel-lift);
+  box-shadow: inset 0 0 0 1px var(--panel-edge);
+  color: var(--ink-dim);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.learn__leave {
+  align-self: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border: none;
+  background: none;
+  color: var(--ink-faint);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}

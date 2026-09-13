@@ -59,6 +59,28 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## ✨ Polish
 
+- [x] **T-38** ~~Nobody can learn this game from the app.~~ `/learn` is a whole
+      game against three bots, in the tab, reaching no network and no database
+      — so it sits *before* the sign-in gate: the one person who most needs it
+      is somebody handed a link to a game they have never heard of, and making
+      them commit to the product first is backwards.
+
+      It does not re-implement anything. The table is driven by `src/game`, the
+      same module the Edge Function imports, and the screen is the real
+      `GameTable`. So the tutorial cannot teach a rule the game does not have,
+      or a screen the player will not meet again five minutes later. Every word
+      of the lesson comes from `docs/GAME_RULES.md` — these are house rules, and
+      Bull, Burst and the Farewell Round do not exist in the game somebody may
+      already know.
+
+      The bots are built to be legible rather than strong: they reason the way
+      the game asks a person to reason (how many of this face are likely to be
+      out there, given my own hand) and they never Burst, because three
+      opponents exercising the hardest rule in the game while somebody is
+      learning the word "bid" is noise. Tested by playing forty whole games and
+      asserting every single bot move against the engine's own `checkBid` —
+      there is no list of positions a bot can reach, so nothing less covers it.
+
 - [ ] **T-27** `expires_at` only advances when the `rooms` row itself is
       written. A lobby nobody touches for four hours expires even with people
       sitting in it, since joins write `room_members`, not `rooms`. Unlikely to
