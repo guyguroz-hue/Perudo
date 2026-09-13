@@ -30,9 +30,38 @@
   color: var(--lie);
 }
 
-/* A rule the house has not decided yet. Distinct from an error, because it is
-   not a fault and retrying will not help — somebody has to answer it. */
+/* The table did not arrive. Either a rule the house has not decided yet — not
+   a fault, and nothing to retry, somebody has to answer it — or a request that
+   failed, which is worth pressing again. Both read as "stopped, not broken",
+   which is why this is brass rather than the error's red. */
 .game__blocked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
   background: rgb(201 162 39 / 0.14);
   color: var(--brass-bright);
+}
+
+.game__blocked p {
+  margin: 0;
+}
+
+.game__retry {
+  min-height: var(--tap);
+  padding: 0 var(--space-5);
+  border: none;
+  border-radius: var(--radius);
+  background: rgb(240 205 135 / 0.14);
+  box-shadow: inset 0 0 0 1px rgb(240 205 135 / 0.4);
+  color: var(--brass-bright);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter var(--t-micro) var(--ease-ui);
+}
+
+.game__retry:hover {
+  filter: brightness(1.2);
 }

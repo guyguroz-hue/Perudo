@@ -70,3 +70,12 @@ else
   "$ROOT/scripts/test-concurrency.sh" "$PGDIR" "$PGPORT" 5 raw
   "$ROOT/scripts/test-concurrency.sh" "$PGDIR" "$PGPORT" 5 rpc
 fi
+
+echo
+echo "==> concurrency: every client opening the first round at once"
+if [ "$(id -u)" -eq 0 ]; then
+  chmod +x "$ROOT/scripts/test-round-race.sh"
+  su postgres -c "$ROOT/scripts/test-round-race.sh $PGDIR $PGPORT 6"
+else
+  "$ROOT/scripts/test-round-race.sh" "$PGDIR" "$PGPORT" 6
+fi

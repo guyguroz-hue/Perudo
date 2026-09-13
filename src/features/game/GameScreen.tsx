@@ -21,7 +21,17 @@ import './GameScreen.css'
  */
 export function GameScreen({ gameId, youId }: { gameId: string; youId: string }) {
   const game = useGame(gameId, youId)
-  const [opening, setOpening] = useState<string | null>(null)
+  /*
+   * Why the table never arrived.
+   *
+   * The code travels with the message because the two failures that land here
+   * want opposite things from the player. A rule the house has not decided
+   * (R-002) will refuse identically forever, and offering a retry for it is a
+   * lie. Anything else — a dropped request, a function cold-starting past its
+   * timeout — is worth pressing again, and without something to press the
+   * player is left watching a game that never began.
+   */
+  const [opening, setOpening] = useState<{ code: string; message: string } | null>(null)
 
   // The only moment a running game has no round is immediately after it starts:
   // every later round is dealt by the resolution that ended the previous one.
@@ -42,7 +52,11 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
         const failure = toGameError(caught)
         // Another player opened it first, which is the race working.
         if (failure.code === 'ROUND_ALREADY_OPEN') return void game.refresh()
-        setOpening(failure.message)
+        // Anything else has not opened a round, so the game has not started
+        // and nobody else will start it for this client. The ask stays spent —
+        // this effect re-runs on every render, so releasing it here would
+        // retry in a loop — and the player is given the retry instead.
+        setOpening({ code: failure.code, message: failure.message })
       })
   }, [gameId, game])
 
@@ -63,9 +77,22 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
       </div>
 
       {opening !== null && (
-        <p className="game__blocked" role="alert">
-          {opening}
-        </p>
+        <div className="game__blocked" role="alert">
+          <p>{opening.message}</p>
+          {opening.code !== 'UNRESOLVED_RULE' && (
+            <button
+              type="button"
+              className="game__retry"
+              onClick={() => {
+                setOpening(null)
+                asked.current = false
+                void game.refresh()
+              }}
+            >
+              Try again
+            </button>
+          )}
+        </div>
       )}
       {game.error !== null && (
         <p className="game__error" role="alert">

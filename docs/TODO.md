@@ -84,6 +84,35 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🐛 Bugs
 
+- [x] **B-6** ~~Opening the first round could reach a player as a server
+      fault.~~ Every client opens the first round, because every client is told
+      the game started at the same instant — so the race is not rare, it is how
+      every game begins, once per player at the table. `deal_round` checked for
+      a live round before inserting, which narrows the window and cannot close
+      it: two sessions both read "no round yet", and the loser came back with
+      `duplicate key value violates unique constraint "rounds_unique_number"`,
+      which the Edge Function does not recognise and therefore does not
+      translate. Losers outnumber the winner at every table. `deal_round` now
+      catches `unique_violation` at the insert and raises `ROUND_ALREADY_OPEN`,
+      which the client already handles as the race working.
+      `scripts/test-round-race.sh` runs six real sessions into the same instant
+      and failed against the old function. Also: the game screen asks once and
+      never again, so a genuine failure left an error on a table that never
+      arrived with nothing to press. It now offers a retry — except for an
+      undecided rule, which will refuse identically forever.
+
+- [x] **B-5** ~~A player's name sat on the cup of the chair behind them.~~ Only
+      your own chair hung its badge downward; everybody else's hung upward over
+      their cup. At five and six seats the chairs flanking yours stand in front
+      of the ones across the table, so their badges landed squarely on the cup
+      behind — Alice's name on Carl's cup, every time a room filled up. "Near"
+      is a half of the table now, not one chair. An empty chair had the mirror
+      fault: anchored at cup height with no cup under it, its invitation floated
+      in the room above the table, and at two players three of them hung in the
+      window. Those lie flat on the timber now. `src/three/layout.test.ts`
+      pins both and fails against the old rule at exactly five and six seats —
+      the sizes nobody assembles by hand while working on something else.
+
 - [x] **B-4** ~~Every bid failed with "Something broke".~~ The Edge Function
       logged `Could not find the function public.apply_bid(...) in the schema
       cache`. PostgREST resolves an RPC from the JSON body by matching argument
@@ -124,14 +153,13 @@ Completed items are marked `[x]` and kept, not deleted.
       `ErrorBoundary` now backstops render-time crashes. Verified by building
       with no env vars and confirming the error screen appears.
 
-- [ ] **T-37** Screens still on the old palette. The table is redesigned; these
-      are not, and they are listed by the bridge block at the foot of
-      `src/styles/tokens.css` — every line in it is a screen still owed the
-      work. In dependency order: `Finish` (the end of a game, reached every
-      time), then the lobby (`RoomScreen`, `RoomTable`, `Seat`, `RoomCode`,
-      `Countdown`), then the way in (`HomeScreen`, `NameScreen`), then the
-      shared parts (`Button`, `ConnectionDot`, `ErrorBoundary`). The block
-      should be empty when this is finished.
+- [x] **T-37** ~~Screens still on the old palette.~~ Done. The bridge block at
+      the foot of `src/styles/tokens.css` is empty and no token resolves to
+      nothing. `Finish`, the lobby (`RoomScreen`, `RoomTable`, `RoomCode`,
+      `Countdown`), the way in (`HomeScreen`, `NameScreen`) and the shared
+      parts (`Button`, `ConnectionDot`, `ErrorBoundary`) are all on the new
+      system. `Seat` was deleted rather than redesigned: the lobby sits at the
+      real table now, so its badges are the table's badges.
 
 ## 🧹 Technical debt
 
