@@ -68,10 +68,9 @@ Completed items are marked `[x]` and kept, not deleted.
       indexed, but nothing deletes yet. Not urgent — joins will reject expired
       rooms — but the table grows without it.
 
-- [ ] **T-20** Animations. Done: the deal (every cup shaken for a beat when the
+- [ ] **T-20** Animations. Done: a die lost or won back (it is lifted off the table, or set down on it, on the back of the verdict — the only thing that ever changes a player's standing, shown happening to the hand it happens to); the deal (every cup shaken for a beat when the
       round number moves) and the reveal (cups lifted on the table itself, the
-      count filling one die at a time). Still owed: a die lost or won, which
-      currently just changes a number on a badge; the Burst interruption; and
+      count filling one die at a time). Still owed: the Burst interruption, and
       the victory.
 - [x] **T-21** ~~Reduced-motion support~~ — the media query zeroes every
       duration globally, and the two sequences that are driven by timers rather

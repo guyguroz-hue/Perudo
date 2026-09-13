@@ -102,3 +102,21 @@ export function sceneSeats(
       }
     })
 }
+
+/**
+ * Which seats pay, and which are paid.
+ *
+ * Pulled out of the screen because it is the part that can be silently wrong:
+ * the renderer is addressed by a seat's place around the ring — counted from
+ * whoever is looking — and the engine's deltas are keyed by player. Getting
+ * that mapping backwards would take a die off the wrong person's hand, at the
+ * one moment the whole table is watching that hand.
+ */
+export function dueDice(
+  seats: readonly SeatPlacement[],
+  deltas: Readonly<Record<string, number>>,
+): { index: number; delta: number }[] {
+  return seats
+    .map((seat) => ({ index: seat.index, delta: deltas[seat.player.id] ?? 0 }))
+    .filter((change) => change.delta !== 0)
+}

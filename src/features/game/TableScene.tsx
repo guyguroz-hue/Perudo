@@ -16,6 +16,7 @@ export function TableScene({
   seats,
   overhead = 0,
   immediate = false,
+  paying = null,
   onRise,
   onReady,
 }: {
@@ -24,6 +25,14 @@ export function TableScene({
   overhead?: number
   /** Arrive without travelling — for a viewer who has asked for less motion. */
   immediate?: boolean
+  /**
+   * Dice changing hands, once a challenge has resolved. Null until then.
+   *
+   * Played once per distinct object: the effect keys on identity, so the caller
+   * has to hand over the same array until the next resolution or the dice fly
+   * off the table again on the next render.
+   */
+  paying?: readonly { index: number; delta: number }[] | null
   /**
    * Called on every frame the eye is moving, with how far up it has got.
    *
@@ -103,6 +112,11 @@ export function TableScene({
       if (frame !== 0) cancelAnimationFrame(frame)
     }
   }, [overhead, immediate, onRise])
+
+  useEffect(() => {
+    if (paying === null) return
+    sceneRef.current?.pay(paying)
+  }, [paying])
 
   return <canvas ref={canvasRef} className="scene" aria-hidden="true" />
 }

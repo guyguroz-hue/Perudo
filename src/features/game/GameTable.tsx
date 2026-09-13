@@ -13,7 +13,7 @@ import { TableScene } from './TableScene'
 import { SHAKE_MS, useDealShake } from './dealing'
 import type { RevealClaim, RevealData } from './reveal'
 import { useRevealStage } from './revealStage'
-import { placeSeats, sceneSeats } from './seating'
+import { dueDice, placeSeats, sceneSeats } from './seating'
 import { usePrefersReducedMotion } from '../../lib/motion'
 import { useSound, useSoundEffect } from '../../lib/useSound'
 import type { TablePlayer, TableView } from './view'
@@ -105,6 +105,7 @@ export function GameTable({
   const wantsOverhead = lifting ? 1 : 0
   const reducedMotion = usePrefersReducedMotion()
 
+
   /*
    * What the table sounds like.
    *
@@ -151,6 +152,25 @@ export function GameTable({
     [seats, view.yourHand, mood, lifting, reveal, view.round.type],
   )
 
+
+  /*
+   * The dice that change hands, once the count has been read out.
+   *
+   * Held as one memo so the renderer plays it once: it becomes a new object
+   * exactly when a new resolution lands, and the same object on every other
+   * render. A fresh array each render would send the dice off the table sixty
+   * times a second.
+   *
+   * Timed to the verdict rather than to the lift. The answer to "how many"
+   * comes first and the dice leave on the back of it; before the result there
+   * is nothing to pay.
+   */
+  const settled = stage === 'result' ? (reveal?.data ?? null) : null
+  const paying = useMemo(
+    () => (settled === null ? null : dueDice(seats, settled.deltas)),
+    [settled, seats],
+  )
+
   return (
     <div
       className={`board${yourTurn ? ' board--yours' : ''}${shaking ? ' board--dealing' : ''}`}
@@ -160,6 +180,7 @@ export function GameTable({
           seats={cups}
           overhead={wantsOverhead}
           immediate={reducedMotion}
+          paying={paying}
           onRise={setEye}
         />
 

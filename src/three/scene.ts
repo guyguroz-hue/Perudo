@@ -113,6 +113,14 @@ export interface TableScene {
    * wherever the eye has got to.
    */
   setOverhead: (overhead: number, immediate?: boolean) => void
+  /**
+   * Play the dice changing hands, once a challenge has been resolved.
+   *
+   * Separate from `setSeats` on purpose: replacing the seat list rebuilds every
+   * cup on the table, which would throw away the lift this is meant to land on
+   * top of. `index` is the seat's place round the ring, as it was given.
+   */
+  pay: (changes: readonly { index: number; delta: number }[]) => void
   /** How far up the eye is right now, eased — what the overlay must project through. */
   readonly overhead: number
   /** Replace who is at the table, and what their cups are doing. */
@@ -194,10 +202,27 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
     readonly counts: boolean
   }
 
+  /**
+   * A die changing hands, and how far through it is.
+   *
+   * Losing one is the only thing that ever happens to a player's standing, and
+   * it is the thing a player must not miss — so it is shown happening to the
+   * hand it happens to, rather than only counted somewhere else. A die that is
+   * lost is taken off the table; one that is won back is set down on it.
+   */
+  interface Payment {
+    readonly die: Group
+    /** 1 for a die arriving, -1 for one leaving. */
+    readonly way: number
+    elapsed: number
+  }
+
   interface Seated {
+    readonly index: number
     readonly cup: Group
     readonly dice: Group
     readonly marks: readonly DieMark[]
+    readonly paying: Payment[]
     /** Unit vector from the middle of the table toward this chair, in the XZ plane. */
     readonly out: Vector3
     state: CupState
@@ -333,11 +358,39 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
     return true
   }
 
+  /** How long a die takes to be taken off the table, or set down on it. */
+  const PAY_SECONDS = 0.7
+
+  /** Advance every die changing hands at this seat. True while any is moving. */
+  function settle(seat: Seated, dt: number): boolean {
+    if (seat.paying.length === 0) return false
+    let moving = false
+
+    for (const pay of seat.paying) {
+      pay.elapsed += dt
+      const k = Math.min(1, pay.elapsed / PAY_SECONDS)
+      // A die leaving is lifted away and ends gently; one arriving falls and
+      // lands, so it runs the same curve backwards.
+      const e = pay.way < 0 ? 1 - Math.pow(1 - k, 2) : Math.pow(k, 2)
+      const t = pay.way < 0 ? e : 1 - e
+
+      pay.die.position.y = DIE_SIZE / 2 + t * 0.55
+      pay.die.rotateOnWorldAxis(UP, dt * 5 * pay.way)
+      pay.die.scale.setScalar(Math.max(0.001, 1 - t))
+      pay.die.visible = k < 1 || pay.way > 0
+      if (k < 1) moving = true
+    }
+
+    if (!moving) seat.paying.length = 0
+    return moving
+  }
+
   function tick(now: number) {
     const dt = Math.min(0.05, (now - last) / 1000)
     last = now
     let busy = rise(dt)
     for (const seat of seated) busy = place(seat, dt) || busy
+    for (const seat of seated) busy = settle(seat, dt) || busy
     renderer.render(scene, camera)
     frame = busy ? requestAnimationFrame(tick) : 0
   }
@@ -414,9 +467,11 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
         group.add(dice)
 
         seated.push({
+          index: seat.index,
           cup,
           dice,
           marks,
+          paying: [],
           out: spot.clone().normalize(),
           state: seat.state ?? 'covered',
           elapsed: 0,
@@ -425,6 +480,33 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
 
       for (const seat of seated) place(seat, 0)
       if (seated.some((seat) => seat.state !== 'covered')) start()
+    },
+
+    pay(changes) {
+      for (const change of changes) {
+        const seat = seated.find((s) => s.index === change.index)
+        if (seat === undefined || change.delta === 0) continue
+
+        for (let n = 0; n < Math.abs(change.delta); n += 1) {
+          if (change.delta < 0) {
+            // Whichever die is last on the ring. Which one leaves is not a
+            // rule — the engine deals in counts and never in particular dice.
+            const die = seat.dice.children[seat.dice.children.length - 1 - n]
+            if (die instanceof Group) seat.paying.push({ die, way: -1, elapsed: 0 })
+          } else {
+            // A die won back is not in the hand that was revealed — the hand
+            // is what was under the cup, and this one comes from the pool. So
+            // it is made here, and set down beside the rest.
+            const made = makeDie()
+            const a = (seat.dice.children.length + n) * 1.7 + seat.index
+            const spread = ringRadius(seat.dice.children.length + 1)
+            made.group.position.set(Math.cos(a) * spread, DIE_SIZE / 2, Math.sin(a) * spread)
+            seat.dice.add(made.group)
+            seat.paying.push({ die: made.group, way: 1, elapsed: 0 })
+          }
+        }
+      }
+      if (seated.some((seat) => seat.paying.length > 0)) start()
     },
 
     setOverhead(next, immediate = false) {

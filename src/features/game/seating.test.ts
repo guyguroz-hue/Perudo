@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { seatPoint } from '../../three/layout'
-import { placeSeats, sceneSeats } from './seating'
+import { dueDice, placeSeats, sceneSeats } from './seating'
 import type { TablePlayer } from './view'
 
 function table(count: number, youAt: number): TablePlayer[] {
@@ -234,5 +234,61 @@ describe('marking the dice a claim is about', () => {
     const alice = seats.find((seat) => seat.id === 'alice')
     expect(alice?.dice).toBeUndefined()
     expect(alice?.counted).toBeUndefined()
+  })
+})
+
+/**
+ * Taking a die off the right hand.
+ *
+ * The renderer is addressed by a seat's place around the ring — counted from
+ * whoever happens to be looking — and the engine's deltas are keyed by player.
+ * Every player sees a different ring, so this mapping is different on every
+ * screen at the table, and getting it backwards would take a die off somebody
+ * else's hand at the one moment everybody is watching that hand.
+ */
+describe('which hand pays', () => {
+  const at = (id: string, seatIndex: number, you = false): TablePlayer => ({
+    id,
+    name: id,
+    seatIndex,
+    diceCount: 5,
+    isYou: you,
+    isEliminated: false,
+    hasTurn: false,
+  })
+
+  const table = [at('alice', 0), at('bob', 1), at('carl', 2), at('dana', 3)]
+
+  it('finds the payer wherever they are sitting relative to you', () => {
+    // Carl loses one. Seen from Alice he is two chairs round; seen from Carl
+    // himself he is the near seat; seen from Dana he is three round.
+    const from = (you: string) =>
+      dueDice(
+        placeSeats(table.map((p) => ({ ...p, isYou: p.id === you }))),
+        { carl: -1 },
+      )
+
+    expect(from('alice')).toEqual([{ index: 2, delta: -1 }])
+    expect(from('carl')).toEqual([{ index: 0, delta: -1 }])
+    expect(from('dana')).toEqual([{ index: 3, delta: -1 }])
+  })
+
+  it('carries a die won back as a gain, not as another loss', () => {
+    // Only Burst Lie does this, and the sign is the whole difference between a
+    // die arriving and a die leaving (GAME_RULES §9.2).
+    expect(dueDice(placeSeats(table), { alice: -1, bob: 1 })).toEqual([
+      { index: 0, delta: -1 },
+      { index: 1, delta: 1 },
+    ])
+  })
+
+  it('says nothing about the seats that did not change', () => {
+    // A correct Bull leaves its caller alone, and a hand that did not change
+    // must not be animated as though it had.
+    expect(dueDice(placeSeats(table), { alice: -1, bob: -1, dana: -1 })).toEqual([
+      { index: 0, delta: -1 },
+      { index: 1, delta: -1 },
+      { index: 3, delta: -1 },
+    ])
   })
 })
