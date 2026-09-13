@@ -84,6 +84,19 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🐛 Bugs
 
+- [x] **B-7** ~~Every player had to press "Next round" for themselves.~~ Reported
+      from a real two-browser game: the table waited on six separate taps. The
+      round after a resolution is dealt by `apply_challenge` itself, so every
+      player was already in it — the button only ever took that client's curtain
+      down, and one player putting their phone in a pocket left everybody else
+      looking at a result. The result now stands on a deadline and the table
+      continues on its own, with the button kept for anyone who has finished
+      reading. Not a host's tap: there is nothing here for a host to decide, and
+      a slow host would be deciding for everybody. `resultHoldMs` scales with how
+      much there is to read — five seconds plus a beat per player whose dice
+      changed, capped at nine — so a one-line verdict and a correct Bull that
+      empties half the table do not get the same window.
+
 - [x] **B-6** ~~Opening the first round could reach a player as a server
       fault.~~ Every client opens the first round, because every client is told
       the game started at the same instant — so the race is not rare, it is how

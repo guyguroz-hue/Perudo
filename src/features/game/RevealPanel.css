@@ -178,6 +178,10 @@
 }
 
 .verdict__next {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
   min-height: 46px;
   width: 100%;
   border: 0;
@@ -197,4 +201,37 @@
 .verdict__next:active {
   scale: 0.985;
   filter: brightness(0.94);
+}
+
+/*
+ * The table continuing on its own, made visible.
+ *
+ * Every player is already in the next round — it was dealt by the resolution
+ * that ended this one — so this is not a wait for anything, it is the length
+ * of the look at the result. Drawn as a drain rather than a spinner because it
+ * ends at a moment that is actually coming, and drawn darker than the button
+ * rather than brighter so the button still reads as a button.
+ *
+ * Under reduced motion it is not rendered at all: an animation forced to
+ * 0.01ms would flash and vanish, which would say the opposite of what it means.
+ * The deadline still runs, and the label still says so.
+ */
+.verdict__timer {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  background: rgb(36 23 4 / 0.16);
+  animation-name: verdict-drain;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  pointer-events: none;
+}
+
+@keyframes verdict-drain {
+  from { scale: 1 1; }
+  to { scale: 0 1; }
+}
+
+.verdict__next-label {
+  position: relative;
 }

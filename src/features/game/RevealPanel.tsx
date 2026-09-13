@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { Die } from '../../components/Die'
+import { usePrefersReducedMotion } from '../../lib/motion'
 import type { RevealClaim, RevealData } from './reveal'
 import { claimOwner, reading } from './reveal'
-import { countedDice } from './revealStage'
+import { countedDice, resultHoldMs } from './revealStage'
 import type { RevealStage } from './revealStage'
 import './RevealPanel.css'
 
@@ -71,6 +73,22 @@ export function RevealPanel({
 
 function Result({ data, onDone }: { data: RevealData; onDone?: () => void }) {
   const changed = data.hands.filter((hand) => (data.deltas[hand.id] ?? 0) !== 0)
+  const reduced = usePrefersReducedMotion()
+  const hold = resultHoldMs(changed.length)
+
+  /*
+   * The table moves on by itself.
+   *
+   * Mounting this is the start of the deadline, because this is the first
+   * frame on which the result can be read — the count that precedes it runs
+   * for as long as there are dice to count, and starting the clock before it
+   * would spend the reading time on the counting.
+   */
+  useEffect(() => {
+    if (onDone === undefined) return
+    const moves = setTimeout(onDone, hold)
+    return () => clearTimeout(moves)
+  }, [onDone, hold])
 
   return (
     <div className="verdict__result" role="status">
@@ -104,8 +122,25 @@ function Result({ data, onDone }: { data: RevealData; onDone?: () => void }) {
       </ul>
 
       {onDone !== undefined && (
-        <button type="button" className="verdict__next" onClick={onDone}>
-          Next round
+        <button
+          type="button"
+          className="verdict__next"
+          onClick={onDone}
+          // The bar says "this is going to happen"; the label has to say it too
+          // for anyone who cannot see the bar drain.
+          aria-label="Next round. The table continues on its own shortly."
+        >
+          {/* Not a spinner. It drains toward a moment that is actually coming,
+              which is what makes waiting for it bearable — and pressing is
+              still faster for anyone who has finished reading. */}
+          {!reduced && (
+            <span
+              className="verdict__timer"
+              style={{ animationDuration: `${hold}ms` }}
+              aria-hidden="true"
+            />
+          )}
+          <span className="verdict__next-label">Next round</span>
         </button>
       )}
     </div>

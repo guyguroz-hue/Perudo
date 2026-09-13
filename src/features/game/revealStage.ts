@@ -36,6 +36,27 @@ const LIFT_MS = 620
 const SETTLE_MS = 340
 const PER_DIE_MS = 150
 
+/**
+ * How long the result stands before the table moves on by itself.
+ *
+ * The next round is dealt by the resolution that ended the last one, so by the
+ * time this panel is on screen every player is already in it — the button only
+ * ever took this client's curtain down. Six people each taking their own curtain
+ * down is six people waiting on each other for no reason, and one of them
+ * putting their phone in a pocket stops the game.
+ *
+ * A deadline rather than a host's tap, for the same reason the lobby counts
+ * down instead of asking the host to press again: there is nothing here for a
+ * host to decide, and anybody who is slow would be deciding for everybody else.
+ *
+ * It scales with what there is to read. "Alice was wrong" is one line; a
+ * correct Bull that takes a die from five people and knocks two of them out is
+ * the longest thing this panel ever says.
+ */
+export function resultHoldMs(changedPlayers: number): number {
+  return Math.min(5000 + changedPlayers * 700, 9000)
+}
+
 export interface Revealing {
   readonly stage: RevealStage
   /** How many counted dice have been shown so far. */

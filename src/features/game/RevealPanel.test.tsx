@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import userEvent from '@testing-library/user-event'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RevealPanel } from './RevealPanel'
@@ -129,5 +130,97 @@ describe('the result', () => {
     expect(changes[0]).toContain('-1')
     expect(changes[0]).toContain('out')
     expect(changes[1]).toContain('+1')
+  })
+})
+
+/**
+ * The table moves on without being asked.
+ *
+ * The round after this one was dealt by the resolution that produced it, so
+ * every player is already in it and the button only ever took this client's
+ * curtain down. Six players each taking their own curtain down means six
+ * people waiting on each other for no reason, and one of them putting their
+ * phone in a pocket stops the game for everybody.
+ */
+describe('the result standing on its own deadline', () => {
+  const held = (over: Partial<RevealData> = {}): RevealData => ({ ...DATA, ...over })
+
+  it('continues by itself once the result has been readable a while', () => {
+    vi.useFakeTimers()
+    const onDone = vi.fn()
+    render(
+      <RevealPanel claim={CLAIM} data={held()} stage="result" counted={3} onDone={onDone} />,
+    )
+
+    // One player lost a die: 5000 + 700.
+    act(() => void vi.advanceTimersByTime(5699))
+    expect(onDone).not.toHaveBeenCalled()
+
+    act(() => void vi.advanceTimersByTime(2))
+    expect(onDone).toHaveBeenCalledTimes(1)
+  })
+
+  it('holds longer when there is more to read', () => {
+    vi.useFakeTimers()
+    const onDone = vi.fn()
+    // A correct Bull: everybody at the table pays, and two of them are out.
+    render(
+      <RevealPanel
+        claim={CLAIM}
+        data={held({
+          hands: [
+            { id: 'a', name: 'Alice', dice: [5] },
+            { id: 'b', name: 'Bob', dice: [5, 5] },
+            { id: 'c', name: 'Carl', dice: [2] },
+            { id: 'd', name: 'Dana', dice: [6, 6] },
+          ],
+          deltas: { a: -1, b: -1, c: -1, d: -1 },
+          eliminated: ['a', 'c'],
+        })}
+        stage="result"
+        counted={3}
+        onDone={onDone}
+      />,
+    )
+
+    // The single-change hold would have fired long before this.
+    act(() => void vi.advanceTimersByTime(5700))
+    expect(onDone).not.toHaveBeenCalled()
+
+    act(() => void vi.advanceTimersByTime(2101))
+    expect(onDone).toHaveBeenCalledTimes(1)
+  })
+
+  it('still lets a player who has finished reading go early', async () => {
+    const onDone = vi.fn()
+    render(
+      <RevealPanel claim={CLAIM} data={held()} stage="result" counted={3} onDone={onDone} />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: /Next round/ }))
+    expect(onDone).toHaveBeenCalledTimes(1)
+  })
+
+  it('starts no deadline before the result is on screen', () => {
+    vi.useFakeTimers()
+    const onDone = vi.fn()
+    // Still counting dice. Starting the clock here would spend the reading
+    // time on the counting, and a long count is exactly when there is most to
+    // read afterwards.
+    render(
+      <RevealPanel claim={CLAIM} data={held()} stage="counting" counted={1} onDone={onDone} />,
+    )
+
+    act(() => void vi.advanceTimersByTime(20000))
+    expect(onDone).not.toHaveBeenCalled()
+  })
+
+  it('does not continue a reveal nobody is waiting on', () => {
+    vi.useFakeTimers()
+    // No handler is the preview, replaying a fixture. Nothing to advance to.
+    expect(() =>
+      render(<RevealPanel claim={CLAIM} data={held()} stage="result" counted={3} />),
+    ).not.toThrow()
+    act(() => void vi.advanceTimersByTime(20000))
   })
 })
