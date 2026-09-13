@@ -2,8 +2,10 @@ import { badgeAnchor } from '../../three/layout'
 import type { BadgeAnchor } from '../../three/layout'
 import type { SceneSeat } from '../../three/scene'
 import { hexForSeat } from './colors'
+import { countsToward } from '../../game'
 import type { Face } from '../../game'
 import type { RevealHand } from './reveal'
+import type { RoundType } from '../../game'
 import type { TablePlayer } from './view'
 
 /**
@@ -66,21 +68,37 @@ export function sceneSeats(
   yourHand: readonly Face[] | null,
   mood: TableMood = 'still',
   hands: readonly RevealHand[] | null = null,
+  /**
+   * The claim on trial, once there is one.
+   *
+   * Which dice count is a rule, not a rendering choice — a one is a wildcard
+   * in a normal round and an ordinary one in a Farewell Round — so it is
+   * decided here, by the same `countsToward` the engine resolves with, and the
+   * renderer is told the answer rather than the question.
+   */
+  claim: { readonly face: Face; readonly roundType: RoundType } | null = null,
 ): SceneSeat[] {
   return seats
     .filter((seat) => !seat.player.isEliminated)
-    .map((seat) => ({
+    .map((seat) => {
+      const shown =
+        hands?.find((hand) => hand.id === seat.player.id)?.dice ??
+        (seat.player.isYou ? (yourHand ?? undefined) : undefined)
+      return {
       id: seat.player.id,
       index: seat.index,
       count: seat.count,
       colour: hexForSeat(seat.player.seatIndex),
-      dice:
-        hands?.find((hand) => hand.id === seat.player.id)?.dice ??
-        (seat.player.isYou ? (yourHand ?? undefined) : undefined),
+      dice: shown,
+      counted:
+        claim === null || shown === undefined
+          ? undefined
+          : shown.map((die) => countsToward(die, claim.face, claim.roundType)),
       // One mood for the whole table. Every cup was dealt at once and every cup
       // is lifted at once, so shaking or lifting them in sequence would say the
       // table is going round when it is not — the server does both in a single
       // write.
       state: mood === 'dealing' ? ('shaking' as const) : mood === 'revealing' ? ('lifted' as const) : ('covered' as const),
-    }))
+      }
+    })
 }

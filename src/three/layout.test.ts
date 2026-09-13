@@ -100,3 +100,86 @@ describe('empty chairs', () => {
     expect(onWood).toBeGreaterThan(atLid)
   })
 })
+
+/**
+ * The eye over the table.
+ *
+ * The reveal raises the camera to look straight down, and the overlay is
+ * placed by projecting through the same one — so anything true of the picture
+ * has to be true of this function, at every point on the way up as well as at
+ * the top.
+ */
+describe('looking straight down', () => {
+  it('sees the table square on, with no near edge and no far edge', () => {
+    /*
+     * The definition of overhead: two points the same distance either side of
+     * the middle land the same distance either side of the middle on screen.
+     * At a seat they do not, and that asymmetry is the whole reason the far
+     * player's dice are specks while yours are legible.
+     *
+     * Not exactly symmetric, and deliberately so — the camera keeps two
+     * centimetres of offset so its look-at is not degenerate, which leans the
+     * view by well under a percent. The claim being made is that it is an
+     * order of magnitude squarer than a seat, not that it is perfect.
+     */
+    const skew = (overhead: number) =>
+      Math.abs(
+        (Number.parseFloat(project(0, 0, 0.8, overhead).top) +
+          Number.parseFloat(project(0, 0, -0.8, overhead).top)) /
+          2 -
+          50,
+      )
+
+    expect(skew(1)).toBeLessThan(1)
+    expect(skew(0)).toBeGreaterThan(skew(1) * 8)
+  })
+
+  it('keeps the whole table inside the frame', () => {
+    // The rim is at radius 1. Nothing on the table may be off the picture at
+    // the one moment the player is being asked to read it.
+    for (let deg = 0; deg < 360; deg += 15) {
+      const a = (deg * Math.PI) / 180
+      const point = project(Math.cos(a), 0, Math.sin(a), 1)
+      expect(Number.parseFloat(point.left)).toBeGreaterThan(0)
+      expect(Number.parseFloat(point.left)).toBeLessThan(100)
+      expect(Number.parseFloat(point.top)).toBeGreaterThan(0)
+      expect(Number.parseFloat(point.top)).toBeLessThan(100)
+    }
+  })
+
+  it('moves every badge off the hand it names', () => {
+    // The reason the badges ride outward at all: at a seat they hang above or
+    // below their cup, and from above there is no above or below.
+    for (const count of SIZES) {
+      for (let index = 0; index < count; index += 1) {
+        const badge = badgeAnchor(index, count, true, 1)
+        const hand = project(
+          seatPoint(index, count).x,
+          0,
+          seatPoint(index, count).z,
+          1,
+        )
+        const apart = Math.hypot(
+          Number.parseFloat(badge.left) - Number.parseFloat(hand.left),
+          Number.parseFloat(badge.top) - Number.parseFloat(hand.top),
+        )
+        expect(apart).toBeGreaterThan(3)
+      }
+    }
+  })
+
+  it('travels without jumping', () => {
+    // Every step of the rise is a frame somebody sees. A discontinuity here is
+    // a badge teleporting across the table mid-move.
+    let previous = badgeAnchor(2, 6, true, 0)
+    for (let t = 0.02; t <= 1.0001; t += 0.02) {
+      const next = badgeAnchor(2, 6, true, t)
+      const step = Math.hypot(
+        Number.parseFloat(next.left) - Number.parseFloat(previous.left),
+        Number.parseFloat(next.top) - Number.parseFloat(previous.top),
+      )
+      expect(step).toBeLessThan(6)
+      previous = next
+    }
+  })
+})

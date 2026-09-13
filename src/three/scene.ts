@@ -13,8 +13,9 @@ import {
 } from 'three'
 import { roomEnvironment } from './environment'
 import { CUP_HEIGHT, makeCup, makeTable } from './objects'
-import { CAMERA, CUP_LIFT, LOOK_AT, SEAT_RADIUS, seatAngle } from './layout'
-import { FACE_UP, DIE_SIZE, makeDie } from './die'
+import { CAMERA, CUP_LIFT, SEAT_RADIUS, placeCamera, seatAngle } from './layout'
+import { FACE_UP, DIE_SIZE, fadeDie, makeDie } from './die'
+import type { Die } from './die'
 import { makeRoom } from './room'
 
 /**
@@ -36,9 +37,25 @@ import { makeRoom } from './room'
  *
  * The interface projects seats through the same one to place names and the bid
  * as ordinary DOM, and two cameras that were meant to be identical are two
- * cameras that will disagree the first time one of them is retuned.
+ * cameras that will disagree the first time one of them is retuned. That was
+ * once a tidiness argument and is now load-bearing: the camera rises to look
+ * straight down during a reveal, and for the second it spends moving, a badge
+ * placed by the old camera is most of a screen away from the cup it names.
  */
-const AIM = new Vector3(LOOK_AT.x, LOOK_AT.y, LOOK_AT.z)
+
+/** How long the eye takes to get from a seat to straight above the table. */
+const RISE_SECONDS = 0.9
+
+/**
+ * Smooth at both ends.
+ *
+ * The eye is a body, not a servo: linear travel between two viewpoints reads
+ * as a machine panning, which is exactly the feeling a table of friends should
+ * not have.
+ */
+function ease(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
 
 /** The axis a die spins about once it has come to rest on the table. */
 const UP = new Vector3(0, 1, 0)
@@ -76,11 +93,28 @@ export interface SceneSeat {
    * uncovered — but the values only arrive when the server has released them.
    */
   readonly dice?: readonly number[]
+  /**
+   * Which of those dice count toward the claim being tested, die for die.
+   *
+   * Sent only during a reveal, and computed where the rules live rather than
+   * here — whether a one counts depends on the round type, and the renderer is
+   * not the place that knows about Farewell Rounds. Absent means "no claim is
+   * on trial", and every die is shown plainly.
+   */
+  readonly counted?: readonly boolean[]
 }
 
 export interface TableScene {
   /** Call when the element resizes. */
   resize: (width: number, height: number) => void
+  /**
+   * Where to look from: 0 is a player's seat, 1 is straight down over the
+   * table. The move is animated, and calling this again redirects it from
+   * wherever the eye has got to.
+   */
+  setOverhead: (overhead: number, immediate?: boolean) => void
+  /** How far up the eye is right now, eased — what the overlay must project through. */
+  readonly overhead: number
   /** Replace who is at the table, and what their cups are doing. */
   setSeats: (seats: readonly SceneSeat[]) => void
   /** Where a seat's cup meets the table, in percentages of the canvas. */
@@ -103,8 +137,15 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
   scene.environment = roomEnvironment(renderer)
 
   const camera = new PerspectiveCamera(CAMERA.fov, 1, 0.1, 20)
-  camera.position.set(0, CAMERA.height, CAMERA.distance)
-  camera.lookAt(AIM)
+  /*
+   * Where the eye is, and where it is going: 0 is a player's seat, 1 is
+   * straight down. Held as a pair so the rise can be interrupted — a reveal
+   * dismissed early sends the camera back from wherever it had got to, rather
+   * than finishing a trip nobody is watching.
+   */
+  let overhead = 0
+  let wantOverhead = 0
+  placeCamera(camera, 0)
 
   scene.add(makeRoom())
   scene.add(makeTable())
@@ -147,9 +188,18 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
    * renderer does to it follows from which of those it is and how long it has
    * been there.
    */
+  interface DieMark {
+    readonly die: Die
+    /** Whether this die counts toward the claim being tested. */
+    readonly counts: boolean
+  }
+
   interface Seated {
     readonly cup: Group
     readonly dice: Group
+    readonly marks: readonly DieMark[]
+    /** Unit vector from the middle of the table toward this chair, in the XZ plane. */
+    readonly out: Vector3
     state: CupState
     /** Seconds spent in the current state. */
     elapsed: number
@@ -166,6 +216,23 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
 
   /** How long the cup takes to come off the dice. */
   const LIFT_SECONDS = 0.55
+
+  /**
+   * A lifted cup, taken off the table.
+   *
+   * A cup lifted straight up clears its dice for somebody sitting at the table
+   * and covers them completely for somebody looking down: at ninety degrees the
+   * hand and the thing hovering over it occupy the same spot on screen, and the
+   * reveal reveals a cup.
+   *
+   * So as the eye rises the cup is drawn away and set down out of the picture —
+   * out toward its own player's edge, shrinking as it goes. Six cups, six hands,
+   * six names and a bid do not fit on one disc at once, and of those the cup is
+   * the only one carrying nothing: it is an empty vessel whose whole job, being
+   * lifted, is already done. What it was saying — whose hand this is — the name
+   * at the rim says better.
+   */
+  const SLIDE_OUT = 0.22
 
   function place(seat: Seated, dt: number) {
     seat.elapsed += dt
@@ -189,14 +256,45 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
       const k = Math.min(1, seat.elapsed / LIFT_SECONDS)
       // Ease out: a cup lifted by hand leaves quickly and arrives gently.
       const e = 1 - Math.pow(1 - k, 3)
+      const up = ease(overhead)
       // A hand's height, not a crane's. Lifted further the cup leaves the
       // frame, and a cup you cannot see has not been lifted — it has vanished.
-      cup.position.set(0, e * CUP_LIFT, e * 0.05)
-      cup.rotation.set(-e * 0.3, 0, e * 0.1)
-      cup.scale.setScalar(1)
+      // From overhead the height buys nothing and the slide is everything.
+      cup.position.set(
+        seat.out.x * e * up * SLIDE_OUT,
+        e * CUP_LIFT * (1 - up * 0.55),
+        e * 0.05 + seat.out.z * e * up * SLIDE_OUT,
+      )
+      cup.rotation.set(-e * 0.3 * (1 - up), 0, e * 0.1 * (1 - up))
+      // Gone by the time the eye is all the way up, and back the moment it
+      // starts down again — the same gesture in reverse, not a second one.
+      cup.scale.setScalar(Math.max(0.001, 1 - up))
+      cup.visible = up < 0.995
       // The dice appear the moment the rim clears them, not when the cup stops.
       seat.dice.visible = e > 0.12
-      return k < 1
+      /*
+       * Bigger, once there is room to be bigger.
+       *
+       * At a seat a hand has to fit under a cup. Overhead the cup has gone and
+       * the space it was using is the hand's — and the whole reason for going
+       * up there was that a die at this distance was a speck. Nowhere near
+       * enough to reach the next chair along: five dice spread about a tenth of
+       * the table's radius, and neighbouring chairs are most of a radius apart.
+       */
+      seat.dice.scale.setScalar(1 + up * 0.55)
+      /*
+       * And drawn in off the rim, which now belongs to the names.
+       *
+       * Seated, a hand sits where its chair is and the rim beyond it is empty
+       * wood. Overhead the names have moved out there — it is the only place
+       * left that is not a hand — so the hand gives up the ground and takes
+       * some of the unused middle instead. Without this the two arrive at the
+       * same band of table and a name lands on the dice it names, which is the
+       * problem the whole move was made to solve.
+       */
+      seat.dice.position.set(-seat.out.x * up * 0.14, 0, -seat.out.z * up * 0.14)
+      // Still moving while the eye is, because the slide is a function of both.
+      return k < 1 || overhead !== wantOverhead
     }
 
     cup.position.set(0, 0, 0)
@@ -205,10 +303,40 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
     return false
   }
 
+  /** Move the eye toward where it has been asked to be. Returns true while moving. */
+  function rise(dt: number): boolean {
+    if (overhead === wantOverhead) return false
+    const step = dt / RISE_SECONDS
+    overhead =
+      wantOverhead > overhead
+        ? Math.min(wantOverhead, overhead + step)
+        : Math.max(wantOverhead, overhead - step)
+    // Eased on the way in and out rather than linearly, so the table does not
+    // start and stop like a lift. The stored value stays linear because it is
+    // also what the interface projects through, and two easings would disagree.
+    const up = ease(overhead)
+    placeCamera(camera, up)
+
+    /*
+     * The count is marked as the eye arrives, not before.
+     *
+     * From a seat the dice are specks and dimming most of them would only make
+     * the table look broken. Overhead they are objects, and taking the ones
+     * that do not count back into the shadows turns "six hands of five" into
+     * the one number the round is actually about.
+     */
+    for (const seat of seated) {
+      for (const mark of seat.marks) {
+        if (!mark.counts) fadeDie(mark.die, up)
+      }
+    }
+    return true
+  }
+
   function tick(now: number) {
     const dt = Math.min(0.05, (now - last) / 1000)
     last = now
-    let busy = false
+    let busy = rise(dt)
     for (const seat of seated) busy = place(seat, dt) || busy
     renderer.render(scene, camera)
     frame = busy ? requestAnimationFrame(tick) : 0
@@ -242,7 +370,8 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
          * the empty chair every time somebody went out — and the cup under a
          * name was then somebody else's.
          */
-        group.position.copy(seatPosition(seat.index, seat.count))
+        const spot = seatPosition(seat.index, seat.count)
+        group.position.copy(spot)
         cups.add(group)
 
         const cup = makeCup(seat.colour)
@@ -254,8 +383,10 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
         const dice = new Group()
         dice.visible = false
         const faces = seat.dice ?? []
+        const marks: DieMark[] = []
         faces.forEach((face, i) => {
-          const die = makeDie()
+          const made = makeDie()
+          const die = made.group
           // Laid out on a small ring, so five dice under one cup do not stack.
           const a = (i / Math.max(1, faces.length)) * Math.PI * 2 + seat.index
           die.position.set(
@@ -278,14 +409,36 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
           die.rotation.set(rx, ry, rz)
           die.rotateOnWorldAxis(UP, a * 0.7)
           dice.add(die)
+          marks.push({ die: made, counts: seat.counted?.[i] ?? true })
         })
         group.add(dice)
 
-        seated.push({ cup, dice, state: seat.state ?? 'covered', elapsed: 0 })
+        seated.push({
+          cup,
+          dice,
+          marks,
+          out: spot.clone().normalize(),
+          state: seat.state ?? 'covered',
+          elapsed: 0,
+        })
       })
 
       for (const seat of seated) place(seat, 0)
       if (seated.some((seat) => seat.state !== 'covered')) start()
+    },
+
+    setOverhead(next, immediate = false) {
+      const clamped = Math.min(1, Math.max(0, next))
+      if (clamped === wantOverhead) return
+      wantOverhead = clamped
+      // Somebody who has asked for less motion still needs to see the count.
+      // They get the view without the trip to it.
+      if (immediate) overhead = clamped
+      start()
+    },
+
+    get overhead() {
+      return ease(overhead)
     },
 
     project(index, seats, height = 0) {

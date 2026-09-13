@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Die } from '../../components/Die'
 import { SoundToggle } from '../../components/SoundToggle'
 import type { ActiveBid, ProposedBid } from '../../game'
@@ -14,6 +14,7 @@ import { SHAKE_MS, useDealShake } from './dealing'
 import type { RevealClaim, RevealData } from './reveal'
 import { useRevealStage } from './revealStage'
 import { placeSeats, sceneSeats } from './seating'
+import { usePrefersReducedMotion } from '../../lib/motion'
 import { useSound, useSoundEffect } from '../../lib/useSound'
 import type { TablePlayer, TableView } from './view'
 import { turnHolder, wouldBurst, you } from './view'
@@ -90,6 +91,21 @@ export function GameTable({
   const mood = lifting ? 'revealing' : shaking ? 'dealing' : 'still'
 
   /*
+   * The eye goes up for the reveal.
+   *
+   * A seat's view is the right one for playing and the wrong one for the one
+   * moment the game is arithmetic: six hands lying flat, seen at thirty-five
+   * degrees, are six huddles of foreshortened specks, and the player is asked
+   * to take the count on trust. Straight down, every die is a die.
+   *
+   * It goes up with the cups rather than with the answer, so the move and the
+   * lift are one gesture, and it comes back down the moment the reveal closes.
+   */
+  const [eye, setEye] = useState(0)
+  const wantsOverhead = lifting ? 1 : 0
+  const reducedMotion = usePrefersReducedMotion()
+
+  /*
    * What the table sounds like.
    *
    * Sound follows the picture rather than the event that caused it: the cups
@@ -114,10 +130,25 @@ export function GameTable({
    * happened to span an unrelated render restarted from the beginning. Seats
    * only actually change when somebody goes out.
    */
+  // Deliberately not a function of where the eye is: this is who is sitting
+  // where, which does not change while the camera moves. The badges place
+  // themselves from `eye`; the scene must keep the table it already built.
   const seats = useMemo(() => placeSeats(view.players, lifting), [view.players, lifting])
   const cups = useMemo(
-    () => sceneSeats(seats, view.yourHand, mood, lifting ? (reveal?.data?.hands ?? null) : null),
-    [seats, view.yourHand, mood, lifting, reveal],
+    () =>
+      sceneSeats(
+        seats,
+        view.yourHand,
+        mood,
+        lifting ? (reveal?.data?.hands ?? null) : null,
+        // The claim is known from the first frame of the reveal — it was public
+        // before anybody challenged — so the dice can be marked the moment they
+        // are on show, without waiting for the server's answer.
+        lifting && reveal !== null
+          ? { face: reveal.claim.face, roundType: reveal.data?.roundType ?? view.round.type }
+          : null,
+      ),
+    [seats, view.yourHand, mood, lifting, reveal, view.round.type],
   )
 
   return (
@@ -125,7 +156,12 @@ export function GameTable({
       className={`board${yourTurn ? ' board--yours' : ''}${shaking ? ' board--dealing' : ''}`}
     >
       <div className="board__stage" style={{ aspectRatio: STAGE_ASPECT }}>
-        <TableScene seats={cups} />
+        <TableScene
+          seats={cups}
+          overhead={wantsOverhead}
+          immediate={reducedMotion}
+          onRise={setEye}
+        />
 
         {/* Over the table's far corner, the way a table number is. It is a
             standing fact about the game, not a thing anybody acts on. */}
@@ -151,7 +187,13 @@ export function GameTable({
             moving the evidence at the moment of judgement would be an odd thing
             to do — the panel below carries it again because that is where the
             count happens, not because it left the table. */}
-        <div className="board__centre" style={{ ...centreAnchor(), minWidth: `${inlayWidth()}%` }}>
+        <div
+          className="board__centre"
+          style={{ ...centreAnchor(eye), minWidth: `${inlayWidth(eye)}%` }}
+          // Overhead the middle of the table is where the dice are, so the bid
+          // gets out of their way rather than sitting on the evidence.
+          data-overhead={eye > 0.5 ? 'true' : undefined}
+        >
           <CurrentBid
             bid={bid}
             bullCallerName={
@@ -162,7 +204,12 @@ export function GameTable({
 
         <ul className="board__seats">
           {seats.map((placement) => (
-            <PlayerSeat key={placement.player.id} placement={placement} />
+            <PlayerSeat
+              key={placement.player.id}
+              placement={placement}
+              lifted={lifting}
+              overhead={eye}
+            />
           ))}
         </ul>
 

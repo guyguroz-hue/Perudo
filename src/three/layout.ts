@@ -73,13 +73,79 @@ export const BADGE_GAP = '10px'
  */
 export const BADGE_MARGIN = 21
 
+/**
+ * How far out a badge rides when the eye is straight overhead.
+ *
+ * Just inside the table's rim, which is at 1. Beyond the cups, which have slid
+ * out of their dice's way, and well beyond the dice themselves.
+ */
+export const BADGE_RIM = 0.95
+
 /** The brass ring inlaid in the middle, which frames the bid. */
 export const INLAY_RADIUS = 0.34
 
+/**
+ * Where the eye goes to read the table.
+ *
+ * Straight down, high enough that every cup's dice are inside the frame. A
+ * seat's view is the right one for playing — it is a table in front of you —
+ * and the wrong one for the one moment the game is about arithmetic: six hands
+ * lying flat, seen at thirty-five degrees, are six huddles of foreshortened
+ * specks, and the player is asked to take the count on trust.
+ *
+ * The height is not chosen by eye. The dice sit on a ring of SEAT_RADIUS plus
+ * their own spread, and the stage is taller than it is wide, so it is the
+ * horizontal field that has to contain them: at this fov and aspect the
+ * half-angle across is atan(tan(fov/2) * STAGE_ASPECT), and the height below
+ * puts the outermost die comfortably inside it.
+ */
+export const OVERHEAD = {
+  /*
+   * Measured against what has to be inside the frame, not chosen by eye.
+   *
+   * The stage is taller than it is wide, so the horizontal field is the tight
+   * one: at this fov and aspect its half-angle has tan = tan(fov/2) * aspect
+   * ≈ 0.327, so a height of 3.3 reaches about 1.08 either side of the middle.
+   * The table's rim is at 1, and the badges ride just inside it, which is the
+   * outermost thing that must not be cut.
+   */
+  height: 3.3,
+  /*
+   * Not zero.
+   *
+   * A camera directly above its target, looking down, has no way to decide
+   * which way is up — the look-at is degenerate and three.js resolves it to an
+   * arbitrary roll. Two centimetres of offset is invisible at this height and
+   * costs nothing, and it keeps the near edge of the table at the bottom of
+   * the frame where the player is sitting.
+   */
+  distance: 0.02,
+} as const
+
 const camera = new PerspectiveCamera(CAMERA.fov, STAGE_ASPECT, 0.1, 20)
-camera.position.set(0, CAMERA.height, CAMERA.distance)
-camera.lookAt(new Vector3(LOOK_AT.x, LOOK_AT.y, LOOK_AT.z))
-camera.updateMatrixWorld()
+
+/**
+ * Put a camera somewhere between a seat and straight overhead.
+ *
+ * `overhead` runs 0 (a player's eye, leaning in) to 1 (looking down). Both the
+ * renderer and this module's projection call it, because a badge placed by one
+ * camera over a table drawn by another is a badge in the wrong place — and
+ * during the rise they would be wrong by most of the screen.
+ */
+export function placeCamera(target: PerspectiveCamera, overhead: number): void {
+  const t = Math.min(1, Math.max(0, overhead))
+  target.position.set(
+    0,
+    CAMERA.height + (OVERHEAD.height - CAMERA.height) * t,
+    CAMERA.distance + (OVERHEAD.distance - CAMERA.distance) * t,
+  )
+  // The aim comes down to the timber as the eye goes up: from overhead there is
+  // no "above the table" left to look at, only the table.
+  target.lookAt(new Vector3(LOOK_AT.x, LOOK_AT.y * (1 - t), LOOK_AT.z))
+  target.updateMatrixWorld()
+}
+
+placeCamera(camera, 0)
 camera.updateProjectionMatrix()
 
 export interface Anchor {
@@ -87,8 +153,15 @@ export interface Anchor {
   readonly top: string
 }
 
-/** Project a point on or above the tabletop to percentages of the scene. */
-export function project(x: number, y: number, z: number): Anchor {
+/**
+ * Project a point on or above the tabletop to percentages of the scene.
+ *
+ * `overhead` is where the eye is, and it has to be passed rather than read
+ * from somewhere: the camera rises during a reveal, and anything placed on the
+ * screen while it moves is placed for the camera of that frame.
+ */
+export function project(x: number, y: number, z: number, overhead = 0): Anchor {
+  placeCamera(camera, overhead)
   const ndc = new Vector3(x, y, z).project(camera)
   return {
     left: `${(ndc.x * 0.5 + 0.5) * 100}%`,
@@ -131,8 +204,24 @@ export interface BadgeAnchor extends Anchor {
   readonly translate: string
 }
 
-export function badgeAnchor(index: number, count: number, lifted = false): BadgeAnchor {
-  const { x, z } = seatPoint(index, count)
+export function badgeAnchor(
+  index: number,
+  count: number,
+  lifted = false,
+  overhead = 0,
+): BadgeAnchor {
+  /*
+   * Out to the rim as the eye rises.
+   *
+   * Seen from a seat a badge hangs clear of its cup, above or below it. Seen
+   * from directly above there is no above or below — the table is a disc and
+   * everything on it competes for the same pixels, so a badge left on its
+   * chair's own spot lands squarely on the hand it is naming, at the one
+   * moment the hand is the thing worth looking at. It slides outward instead,
+   * past the cup, onto the rim where nothing else is.
+   */
+  const reach = SEAT_RADIUS + (BADGE_RIM - SEAT_RADIUS) * overhead
+  const { x, z } = seatPoint(index, count, reach)
   /*
    * Near is a half of the table, not one chair.
    *
@@ -146,7 +235,7 @@ export function badgeAnchor(index: number, count: number, lifted = false): Badge
   const near = z > 0.001
   // A lifted cup climbs into the badge that was floating over it, so the badge
   // moves up with it and the gap between them stays the gap it was.
-  const anchor = project(x, near ? 0 : CUP_LID + (lifted ? CUP_LIFT : 0), z)
+  const anchor = project(x, near ? 0 : CUP_LID + (lifted ? CUP_LIFT : 0), z, overhead)
 
   /*
    * Which way the badge runs.
@@ -160,12 +249,30 @@ export function badgeAnchor(index: number, count: number, lifted = false): Badge
   const side = Math.abs(x) < 0.08 ? 'centre' : x < 0 ? 'left' : 'right'
   const across = side === 'centre' ? '-50%' : side === 'left' ? '-88%' : '-12%'
 
+  /*
+   * The frame margin relaxes as the eye rises.
+   *
+   * It exists because a seat at the side of the table projects almost to the
+   * edge at a seated camera, and a name pushed off the frame is not a name.
+   * From above the anchor is already well inside the picture, and holding it
+   * twenty-one percent in would drag every badge back over the dice — undoing
+   * the outward slide it was given in the line above.
+   */
+  const margin = BADGE_MARGIN * (1 - overhead) + 8 * overhead
+
   return {
-    left: `${clamp(BADGE_MARGIN, Number.parseFloat(anchor.left), 100 - BADGE_MARGIN)}%`,
+    left: `${clamp(margin, Number.parseFloat(anchor.left), 100 - margin)}%`,
     top: anchor.top,
-    translate: near
-      ? `${across} ${BADGE_GAP}`
-      : `${across} calc(-100% - ${BADGE_GAP})`,
+    // Overhead the badge sits on its anchor rather than hanging off it: the
+    // anchor is already out at the rim, and hanging it further would take it
+    // off the frame. The changeover is a single frame in the middle of a move
+    // where everything else is travelling too.
+    translate:
+      overhead > 0.5
+        ? '-50% -50%'
+        : near
+          ? `${across} ${BADGE_GAP}`
+          : `${across} calc(-100% - ${BADGE_GAP})`,
   }
 }
 
@@ -202,13 +309,13 @@ function clamp(low: number, value: number, high: number): number {
  * rather than being painted on it, and centred in that band rather than on the
  * table, because the table's middle is behind the far player's cup.
  */
-export function centreAnchor(): Anchor {
-  return project(0, 0.12, 0)
+export function centreAnchor(overhead = 0): Anchor {
+  return project(0, 0.12, 0, overhead)
 }
 
 /** How far across the scene the inlay reaches, as a percentage. */
-export function inlayWidth(): number {
-  const right = project(INLAY_RADIUS, 0, 0)
-  const left = project(-INLAY_RADIUS, 0, 0)
+export function inlayWidth(overhead = 0): number {
+  const right = project(INLAY_RADIUS, 0, 0, overhead)
+  const left = project(-INLAY_RADIUS, 0, 0, overhead)
   return Number.parseFloat(right.left) - Number.parseFloat(left.left)
 }

@@ -16,3 +16,19 @@
   text-transform: uppercase;
   color: var(--ink-faint);
 }
+
+/*
+ * A name, seen from above.
+ *
+ * During a reveal the eye goes straight over the table and every hand is on
+ * show. The blank dice beside a name stood in for a hand nobody could see, so
+ * up there they are six extra objects arguing with the real ones. The badge
+ * shrinks to what is still needed: who this is.
+ */
+.badge--aerial .badge__dice {
+  display: none;
+}
+
+.badge--aerial {
+  gap: 4px;
+}

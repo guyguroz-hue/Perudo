@@ -168,3 +168,71 @@ describe('who sits where', () => {
     expect(cups.filter((cup) => cup.dice !== undefined)).toHaveLength(1)
   })
 })
+
+/**
+ * Which dice count is a rule, not a rendering choice.
+ *
+ * The reveal marks the dice that count toward the claim, and a one is a
+ * wildcard in a normal round and an ordinary one in a Farewell Round. Deciding
+ * that in the renderer would be a second copy of a rule the engine already
+ * owns, and the copy would be the one that got it wrong.
+ */
+describe('marking the dice a claim is about', () => {
+  const players: TablePlayer[] = [
+    {
+      id: 'you',
+      name: 'You',
+      seatIndex: 0,
+      diceCount: 5,
+      isYou: true,
+      isEliminated: false,
+      hasTurn: true,
+    },
+  ]
+
+  it('counts the face and the wildcard in a normal round', () => {
+    const [seat] = sceneSeats(placeSeats(players), [5, 1, 3, 5, 6], 'revealing', null, {
+      face: 5,
+      roundType: 'normal',
+    })
+    expect(seat.counted).toEqual([true, true, false, true, false])
+  })
+
+  it('stops counting the wildcard in a Farewell Round', () => {
+    // GAME_RULES §10: the face is fixed for the round and ones are just ones.
+    const [seat] = sceneSeats(placeSeats(players), [5, 1, 3, 5, 6], 'revealing', null, {
+      face: 5,
+      roundType: 'farewell',
+    })
+    expect(seat.counted).toEqual([true, false, false, true, false])
+  })
+
+  it('marks nothing when no claim is on trial', () => {
+    // Ordinary play. Your own hand is on screen and none of it is evidence
+    // yet, so dimming four dice of it would be the table lying about a count.
+    const [seat] = sceneSeats(placeSeats(players), [5, 1, 3, 5, 6], 'still')
+    expect(seat.counted).toBeUndefined()
+  })
+
+  it('marks nothing for a hand it cannot see', () => {
+    const others: TablePlayer[] = [
+      ...players,
+      {
+        id: 'alice',
+        name: 'Alice',
+        seatIndex: 1,
+        diceCount: 5,
+        isYou: false,
+        isEliminated: false,
+        hasTurn: false,
+      },
+    ]
+    const seats = sceneSeats(placeSeats(others), [5, 1, 3, 5, 6], 'revealing', null, {
+      face: 5,
+      roundType: 'normal',
+    })
+    const alice = seats.find((seat) => seat.id === 'alice')
+    expect(alice?.dice).toBeUndefined()
+    expect(alice?.counted).toBeUndefined()
+  })
+})

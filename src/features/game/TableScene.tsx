@@ -14,9 +14,26 @@ import './TableScene.css'
  */
 export function TableScene({
   seats,
+  overhead = 0,
+  immediate = false,
+  onRise,
   onReady,
 }: {
   seats: readonly SceneSeat[]
+  /** Where to look from: 0 is a player's seat, 1 is straight down. */
+  overhead?: number
+  /** Arrive without travelling — for a viewer who has asked for less motion. */
+  immediate?: boolean
+  /**
+   * Called on every frame the eye is moving, with how far up it has got.
+   *
+   * The overlay is placed by projecting through the same camera, so while it
+   * travels the overlay has to be told — once per frame, not once per state
+   * change. It is a callback rather than shared state because React must not
+   * be in this loop: re-rendering the seat list per frame hands the renderer a
+   * new table sixty times a second, and it rebuilds every cup each time.
+   */
+  onRise?: (overhead: number) => void
   /** Handed the scene so the screen can project seats to DOM positions. */
   onReady?: (scene: Scene) => void
 }) {
@@ -65,6 +82,27 @@ export function TableScene({
     scene.setSeats(seats)
     scene.render()
   }, [seats])
+
+  useEffect(() => {
+    const scene = sceneRef.current
+    if (scene === null) return
+    scene.setOverhead(overhead, immediate)
+
+    if (onRise === undefined) return
+    // Follow the eye rather than the request: the move is eased and can be
+    // redirected part-way, so the only honest source is where it actually is.
+    let frame = 0
+    let settled = false
+    const watch = () => {
+      onRise(scene.overhead)
+      settled = Math.abs(scene.overhead - overhead) < 0.001
+      frame = settled ? 0 : requestAnimationFrame(watch)
+    }
+    watch()
+    return () => {
+      if (frame !== 0) cancelAnimationFrame(frame)
+    }
+  }, [overhead, immediate, onRise])
 
   return <canvas ref={canvasRef} className="scene" aria-hidden="true" />
 }

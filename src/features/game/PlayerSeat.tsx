@@ -4,6 +4,7 @@ import { Die } from '../../components/Die'
 // whatever order this list happens to be in, so it never changes when somebody
 // is eliminated and the list shortens.
 import { toneForSeat } from './colors'
+import { badgeAnchor } from '../../three/layout'
 import type { SeatPlacement } from './seating'
 import '../../components/TableBadge.css'
 import './PlayerSeat.css'
@@ -20,16 +21,49 @@ import './PlayerSeat.css'
  * The dice beside the name are a count, in the player's colour. They are blanks
  * because the values were never sent to this browser.
  */
-export function PlayerSeat({ placement }: { placement: SeatPlacement }) {
-  const { player, badge } = placement
+export function PlayerSeat({
+  placement,
+  lifted = false,
+  overhead = 0,
+}: {
+  placement: SeatPlacement
+  /** True while the cups are off the table, which moves the badges up with them. */
+  lifted?: boolean
+  /**
+   * Where the eye is this frame, 0 at a seat and 1 straight overhead.
+   *
+   * Placed here rather than baked into the placement on purpose. The camera
+   * rises during a reveal, so a badge's position changes sixty times a second
+   * while the placement itself — who is sitting where — does not, and handing
+   * the renderer a freshly computed seat list at that rate makes it rebuild
+   * every cup on the table each frame.
+   */
+  overhead?: number
+}) {
+  const { player, index, count } = placement
   const tone = toneForSeat(player.seatIndex)
-  const style = { ...badge, '--seat-tone': tone } as CSSProperties
+  const style = {
+    ...badgeAnchor(index, count, lifted, overhead),
+    '--seat-tone': tone,
+  } as CSSProperties
+  /*
+   * Overhead, the dice are on the table.
+   *
+   * The blanks beside a name are a stand-in for a hand nobody can see. Once
+   * the eye is above the table every die is there to be looked at, so the
+   * stand-in is not just redundant, it is six extra objects competing with the
+   * thing it was standing in for.
+   */
+  const aerial = overhead > 0.5
 
   // You are not a face across the table from yourself. Your seat says what the
   // table is waiting for; your dice are in your hand below.
   if (player.isYou) {
     return (
-      <li className={`badge badge--you${player.hasTurn ? ' badge--turn' : ''}`} style={style}>
+      <li
+        className={`badge badge--you${player.hasTurn ? ' badge--turn' : ''}${aerial ? ' badge--aerial' : ''}`}
+        style={style}
+      >
         <span className="badge__status">
           {player.isEliminated ? 'Out' : player.hasTurn ? 'Your turn' : 'You'}
         </span>
@@ -43,6 +77,7 @@ export function PlayerSeat({ placement }: { placement: SeatPlacement }) {
         'badge',
         player.hasTurn && !player.isEliminated ? 'badge--turn' : '',
         player.isEliminated ? 'badge--out' : '',
+        aerial ? 'badge--aerial' : '',
       ]
         .filter(Boolean)
         .join(' ')}

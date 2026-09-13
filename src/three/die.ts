@@ -127,10 +127,23 @@ function faceTexture(face: number): CanvasTexture {
  */
 const FACE_ORDER = [3, 4, 1, 6, 5, 2]
 
-export function makeDie(): Group {
+/**
+ * A die's six faces, so they can be dimmed.
+ *
+ * Handed back with the die rather than dug out of the mesh later: `material`
+ * on a multi-material mesh is an array of `Material`, and narrowing it back to
+ * the physical material it was created as is a cast that would silently stop
+ * being true the day the die is built from something else.
+ */
+export interface Die {
+  readonly group: Group
+  readonly faces: readonly MeshPhysicalMaterial[]
+}
+
+export function makeDie(): Die {
   const group = new Group()
 
-  const materials: Material[] = FACE_ORDER.map(
+  const materials: MeshPhysicalMaterial[] = FACE_ORDER.map(
     (face) =>
       new MeshPhysicalMaterial({
         map: faceTexture(face),
@@ -142,13 +155,31 @@ export function makeDie(): Group {
       }),
   )
 
-  const mesh = new Mesh(dieGeometry(), materials)
+  const mesh = new Mesh(dieGeometry(), materials as Material[])
   mesh.scale.setScalar(DIE_SIZE)
   mesh.castShadow = true
   mesh.receiveShadow = true
   group.add(mesh)
 
-  return group
+  return { group, faces: materials }
+}
+
+/** Bone, and bone pushed back into the shadows. */
+const LIT = new Color('#ffffff')
+const DIMMED = new Color('#4f4a43')
+
+/**
+ * How far a die that does not count has faded, 0 to 1.
+ *
+ * Dimming the rest rather than lighting the ones that count. A bid is a claim
+ * about a number, and the number is what the player is being asked to accept:
+ * six hands of five dice is thirty objects, and counting the fives among thirty
+ * identical objects on a phone is the arithmetic the reveal exists to spare
+ * them. Take the others down and the count is not read, it is seen.
+ */
+export function fadeDie(die: Die, amount: number): void {
+  const t = Math.min(1, Math.max(0, amount))
+  for (const face of die.faces) face.color.copy(LIT).lerp(DIMMED, t)
 }
 
 /**
