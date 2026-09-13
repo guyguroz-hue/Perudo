@@ -119,17 +119,52 @@ describe('the result', () => {
     expect(screen.getByText('exactly')).toBeTruthy()
   })
 
-  it('names who paid and who was paid', () => {
+  /*
+   * What it cost, in words.
+   *
+   * How many dice somebody holds is the whole state of the game for them, and
+   * this is the only thing that ever changes it. It used to be a row of chips
+   * — "Alice −1" — which is the data rather than the sentence.
+   */
+  it('says who lost a die and who won one back', () => {
+    const said = (over: Partial<RevealData>) =>
+      [...show({ ...DATA, ...over }).container.querySelectorAll('.verdict__change')].map(
+        (n) => n.textContent,
+      )
+
+    expect(said({ deltas: { alice: -1 } })).toEqual(['Alice loses a die'])
+    expect(said({ deltas: { alice: -1, bob: 1 } })).toEqual([
+      'Alice loses a die',
+      'Bob wins a die back',
+    ])
+  })
+
+  it('groups a table that all paid at once into one sentence', () => {
+    // A correct Bull takes a die from everybody except the caller. At six
+    // players that was five chips saying the same thing, which is a wall.
+    const { container } = show({
+      ...DATA,
+      hands: [
+        { id: 'alice', name: 'Alice', dice: [5] },
+        { id: 'bob', name: 'Bob', dice: [5] },
+        { id: 'carl', name: 'Carl', dice: [5] },
+      ],
+      deltas: { alice: -1, bob: -1, carl: -1 },
+    })
+    const changes = [...container.querySelectorAll('.verdict__change')].map((n) => n.textContent)
+    expect(changes).toEqual(['Alice, Bob and Carl each lose a die'])
+  })
+
+  it('says somebody is out rather than saying they lost a die', () => {
+    // Going out is not a loss of degree. A player reduced to nothing is not
+    // told "Alice loses a die" with the ending left as an annotation.
     const { container } = show({
       ...DATA,
       deltas: { alice: -1, bob: 1 },
       eliminated: ['alice'],
     })
     const changes = [...container.querySelectorAll('.verdict__change')].map((n) => n.textContent)
-    expect(changes).toHaveLength(2)
-    expect(changes[0]).toContain('-1')
-    expect(changes[0]).toContain('out')
-    expect(changes[1]).toContain('+1')
+    expect(changes).toEqual(['Bob wins a die back', 'Alice is out'])
   })
 })
 

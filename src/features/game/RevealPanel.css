@@ -137,44 +137,40 @@
   color: var(--ink-dim);
 }
 
-/* Who paid, and who was paid. Read down the column, not across a sentence. */
+/* What it cost. One line per kind of thing that happened, so a correct Bull
+   taking a die from five people is one sentence rather than five chips. */
 .verdict__changes {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-1) var(--space-2);
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
   margin: 0;
   padding: 0;
   list-style: none;
+  text-align: center;
 }
 
 .verdict__change {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 3px 9px;
-  border-radius: var(--radius-full);
-  background: rgb(255 255 255 / 0.06);
   font-size: var(--text-sm);
   color: var(--ink-dim);
 }
 
-.verdict__delta {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
+.verdict__change--loss {
   color: var(--lie);
 }
 
-.verdict__change--gain .verdict__delta {
+.verdict__change--gain {
   color: var(--win);
 }
 
-.verdict__out {
-  font-size: var(--text-2xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--ink-faint);
+/* Going out is not a loss of degree, it is the end of the game for somebody.
+   Said in the display face, at the weight the table would say it. */
+.verdict__change--out {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: var(--track-display);
+  color: var(--ink);
 }
 
 .verdict__next {

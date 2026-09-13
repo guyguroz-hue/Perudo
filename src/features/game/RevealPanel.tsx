@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Die } from '../../components/Die'
 import { usePrefersReducedMotion } from '../../lib/motion'
 import type { RevealClaim, RevealData } from './reveal'
-import { claimOwner, reading } from './reveal'
+import { claimOwner, consequences, reading } from './reveal'
 import { countedDice, resultHoldMs } from './revealStage'
 import type { RevealStage } from './revealStage'
 import './RevealPanel.css'
@@ -102,23 +102,16 @@ function Result({ data, onDone }: { data: RevealData; onDone?: () => void }) {
         {data.actualCount}
       </p>
 
+      {/* What it cost, said rather than tabulated. How many dice somebody holds
+          is the whole state of the game for them, and this is the only thing
+          that ever changes it — so it is a sentence, not an annotation to
+          decode while a timer runs down. */}
       <ul className="verdict__changes">
-        {changed.map((hand) => {
-          const delta = data.deltas[hand.id] ?? 0
-          const out = data.eliminated.includes(hand.id)
-          return (
-            <li
-              key={hand.id}
-              className={`verdict__change${delta > 0 ? ' verdict__change--gain' : ''}`}
-            >
-              <span>{hand.name}</span>
-              <span className="verdict__delta">
-                {delta > 0 ? `+${delta}` : delta}
-                {out && <span className="verdict__out"> out</span>}
-              </span>
-            </li>
-          )
-        })}
+        {consequences(data).map((said) => (
+          <li key={said.kind} className={`verdict__change verdict__change--${said.kind}`}>
+            {said.text}
+          </li>
+        ))}
       </ul>
 
       {onDone !== undefined && (

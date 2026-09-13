@@ -293,6 +293,17 @@ function TableDock({
   return (
     <>
       <section className="board__hand" aria-label="Your dice">
+        {/*
+          * Said out loud, not just to a screen reader.
+          *
+          * Directly under this row is the face picker, which is also a row of
+          * dice — and the one below it is a claim about the whole table while
+          * this one is the only thing on screen nobody else can see. Two rows
+          * of dice an inch apart, one secret and one a control, and nothing
+          * saying which was which.
+          */}
+        <h2 className="board__mine">Your dice</h2>
+        <div className="board__hand-row">
           {view.yourHand === null ? (
             <p className="board__nohand">
               {self?.isEliminated === true ? 'You are out. Watching.' : 'Waiting for dice'}
@@ -300,7 +311,8 @@ function TableDock({
           ) : (
             view.yourHand.map((face, i) => <Die key={i} face={face} size={38} />)
           )}
-        </section>
+        </div>
+      </section>
 
       {canAct && self !== null && (
         <div className="board__console">
