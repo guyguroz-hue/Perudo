@@ -98,10 +98,42 @@ function ensure(): AudioContext | null {
   }
 
   context = new Ctor()
+  watchVisibility()
   master = context.createGain()
   master.gain.value = EFFECT_LEVEL
   master.connect(context.destination)
   return context
+}
+
+/**
+ * Stop when nobody is looking.
+ *
+ * Declaring the session as playback is what stops the ring/silent switch
+ * muting the game — and the same declaration tells iOS this is media, which is
+ * allowed to keep going once the browser is in the background. So a player who
+ * switches apps gets a phone humming a table they are not sitting at, from a
+ * tab they forgot was open, with no way to stop it short of finding the tab.
+ *
+ * A game is not a podcast. It is over when you look away, and it is exactly
+ * where you left it when you look back.
+ */
+let watching = false
+
+function watchVisibility(): void {
+  if (watching || typeof document === 'undefined') return
+  watching = true
+  document.addEventListener('visibilitychange', () => {
+    const ctx = context
+    if (ctx === null) return
+    if (document.hidden) {
+      music?.pause()
+      void ctx.suspend()
+    } else if (wanted) {
+      void ctx.resume().then(() => {
+        if (music !== null) void music.play().catch(() => {})
+      })
+    }
+  })
 }
 
 /**

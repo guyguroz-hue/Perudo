@@ -6,8 +6,12 @@
   max-width: 22rem;
 }
 
+/* The game in three marks, standing on one surface: a cup is taller than a die
+   and they share a bottom edge rather than a middle, the way objects on a table
+   do. */
 .home__dice {
   display: flex;
+  align-items: flex-end;
   justify-content: center;
   gap: var(--space-2);
 }
@@ -134,4 +138,17 @@
 
 .home__learn:hover {
   color: var(--ink);
+}
+
+/* The two ways to play without anybody else. Side by side, and quiet: most
+   people opening this came for the code field. */
+.home__alone {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.home__alone > .home__learn {
+  flex: 1;
+  margin-top: 0;
 }

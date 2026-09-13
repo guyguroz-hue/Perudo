@@ -6,6 +6,7 @@ import { HomeScreen } from './features/rooms/HomeScreen'
 import { JoinScreen } from './features/rooms/JoinScreen'
 import { RoomScreen } from './features/rooms/RoomScreen'
 import { PreviewScreen } from './features/game/PreviewScreen'
+import { SoloScreen } from './features/tutorial/SoloScreen'
 import { TutorialScreen } from './features/tutorial/TutorialScreen'
 import { Button } from './components/Button'
 import { Die } from './components/Die'
@@ -50,6 +51,10 @@ function Gate() {
    * commit to the product before finding out what it is.
    */
   if (path === '/learn') return <TutorialScreen />
+
+  // The same table without the tutoring. Also reaches nothing, so it is
+  // answered here for the same reason.
+  if (path === '/solo') return <SoloScreen />
 
   switch (state.status) {
     case 'connecting':

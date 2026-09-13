@@ -89,6 +89,25 @@ for (const width of WIDTHS) {
     await check(page, `table / ${scenario} / sound`, '.board__sound button')
   }
 
+  /*
+   * The two tables with no room behind them. Their controls sit over the same
+   * scene the real game does, pulled up into the same band of floor, so they
+   * are subject to exactly the fault this script exists to catch.
+   */
+  await page.goto(URL.replace('/preview', '/solo'), { waitUntil: 'networkidle' })
+  await page.waitForTimeout(1200)
+  await check(page, 'practice / bid', '.builder__submit')
+  // Lie and Bull do not exist until there is a claim to doubt, so one is made.
+  await page.click('.builder__submit')
+  await page.waitForTimeout(500)
+  await check(page, 'practice / lie', '.challenge__lie')
+  await check(page, 'practice / bull', '.challenge__bull')
+
+  await page.goto(URL.replace('/preview', '/learn'), { waitUntil: 'networkidle' })
+  await page.waitForTimeout(1200)
+  await check(page, 'tutorial / next', '.coach__next')
+  await check(page, 'tutorial / bid', '.builder__submit')
+
   await page.close()
 }
 

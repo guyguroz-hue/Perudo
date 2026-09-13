@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import type { Face, ProposedBid } from '../../game'
 import { GameTable } from '../game/GameTable'
 import { claimFor } from '../game/reveal'
-import type { RevealData } from '../game/reveal'
-import type { TableView } from '../game/view'
-import { botToAct, decide } from './bots'
 import { LESSON } from './lesson'
 import type { Step } from './lesson'
-import { bid, bull, challenge, deal, faceWord, fairRoll, seat, seatOf } from './table'
-import type { Roll, TableState } from './table'
+import { faceWord, fairRoll } from './table'
+import type { Roll } from './table'
+import { useBotTable } from './useBotTable'
 import './TutorialScreen.css'
 
 /**
@@ -38,61 +36,27 @@ const SCRIPTED: Record<string, Face[]> = {
 const scriptedRoll: Roll = (playerId, count) =>
   (SCRIPTED[playerId] ?? fairRoll(playerId, count)).slice(0, count)
 
-function freshTable(): TableState {
-  return {
-    seats: [
-      seat('you', 'You', 0, true),
-      seat('ada', 'Ada', 1),
-      seat('bo', 'Bo', 2),
-      seat('cy', 'Cy', 3),
-    ],
-    round: { type: 'normal', lockedFace: null, bid: null },
-    roundNumber: 0,
-    turnId: 'you',
-    farewellQueue: [],
-    lastEvent: null,
-    winnerId: null,
-    over: false,
-  }
-}
-
 export function TutorialScreen() {
   const navigate = useNavigate()
-  const table = useRef<TableState>(freshTable())
-  /*
-   * The table is mutated in place — it is a game, not a value — so renders are
-   * driven by a counter rather than by replacing it.
-   *
-   * The counter itself has to be read, not just written: depending on the
-   * setter is depending on nothing, because React keeps that stable for the
-   * life of the component. Written that way the view below was computed once,
-   * before the first deal, and the player's own hand never appeared.
-   */
-  const [tick, bump] = useState(0)
-  const redraw = useCallback(() => bump((n) => n + 1), [])
-
   const [stepIndex, setStepIndex] = useState(0)
   const [teaching, setTeaching] = useState(true)
-  const [reveal, setReveal] = useState<RevealData | null>(null)
-  const [nudge, setNudge] = useState<string | null>(null)
-
   const step: Step | undefined = teaching ? LESSON[stepIndex] : undefined
-
+  /*
+   * The step, readable from a callback without making that callback depend on
+   * it.
+   *
+   * `allow` runs inside the table's own move handler, which the hook memoises —
+   * so it must not change identity every time the card does, or every move
+   * would rebuild the table's handlers. Written in an effect rather than
+   * during render: a ref assigned while rendering is a render with a side
+   * effect, and the callbacks that read it all fire well after this lands.
+   */
+  const stepRef = useRef(step)
   useEffect(() => {
-    deal(table.current, scriptedRoll)
-    redraw()
-  }, [redraw])
-
-  // A wrong move during the lesson is a chance to say the rule again, not an
-  // error. It is cleared as soon as anything else happens.
-  useEffect(() => {
-    if (nudge === null) return
-    const clear = setTimeout(() => setNudge(null), 3200)
-    return () => clearTimeout(clear)
-  }, [nudge])
+    stepRef.current = step
+  }, [step])
 
   const next = useCallback(() => {
-    setNudge(null)
     setStepIndex((i) => {
       if (i + 1 >= LESSON.length) {
         setTeaching(false)
@@ -103,27 +67,66 @@ export function TutorialScreen() {
   }, [])
 
   /*
-   * The bots take their turns.
+   * The lesson holds the player to the move the card is asking for.
    *
-   * Paused while a card is up that the player has to read or act on: a table
-   * moving under an explanation is a table nobody reads the explanation of.
-   * They are also slowed right down — a bot could answer instantly, and a
-   * game where three opponents move between blinks teaches nothing about a
-   * game played at the speed of people talking.
+   * Checked before the move reaches the table rather than after, or the table
+   * has already moved on by the time anybody objects. A wrong move is a chance
+   * to say the rule again, not an error.
    */
+  const allow = useCallback((kind: 'bid' | 'lie' | 'bull', proposed?: ProposedBid) => {
+    const want = stepRef.current?.advance
+    if (want === undefined || want.kind === 'read' || want.kind === 'watch') return null
+    if (want.kind === 'burst') return null
+    if (want.kind !== kind) {
+      return kind === 'bid'
+        ? 'Not this time — the card above says what to do.'
+        : 'Try what the card asks for first.'
+    }
+    if (want.kind === 'bid' && proposed !== undefined) {
+      if (proposed.quantity !== want.quantity || proposed.face !== want.face) {
+        // Name the bid being asked for. "The face beside it" is no help to
+        // somebody who does not yet know which control the face is.
+        return (
+          `Not yet — make it ${want.quantity} ${faceWord(want.face, want.quantity)}. ` +
+          `Use − and + for the number, and the row of dice for the face.`
+        )
+      }
+    }
+    return null
+  }, [])
+
+  const onPlayerMove = useCallback((kind: 'bid' | 'lie' | 'bull') => {
+    if (stepRef.current?.advance.kind === kind) next()
+  }, [next])
+
+  const onBackToPlayer = useCallback(() => {
+    if (stepRef.current?.advance.kind === 'watch') next()
+  }, [next])
+
+  const names = useMemo(() => ['You', 'Ada', 'Bo', 'Cy'], [])
+  const game = useBotTable({
+    names,
+    firstRoll: scriptedRoll,
+    allow,
+    onPlayerMove,
+    onBackToPlayer,
+  })
+
   /*
-   * A step that asks for a challenge needs something to challenge.
+   * The bots are held while a card is up that the player has to read or act on:
+   * a table moving under an explanation is a table nobody reads the
+   * explanation of.
    *
-   * The bots are paused while a card is up, but a bot may have ended the round
-   * a moment earlier — and then the card says "call Lie" over a table with no
-   * claim on it, the button refuses, and the lesson is stuck with no way
-   * forward. When that happens the table is allowed to keep playing until
-   * there is a claim to doubt.
+   * The exception is a card asking for a challenge when there is nothing on the
+   * table to challenge — a bot may have just ended the round — where the card
+   * would sit over a refusing button with no way forward. Then the table plays
+   * on until there is a claim to doubt.
    */
-  const needsClaim =
-    (step?.advance.kind === 'lie' || step?.advance.kind === 'bull') &&
-    table.current.round.bid === null
-  const waiting = step !== undefined && step.advance.kind !== 'watch' && !needsClaim
+  const kind = step?.advance.kind
+  const needsClaim = (kind === 'lie' || kind === 'bull') && game.state.round.bid === null
+  useEffect(() => {
+    game.setPaused(step !== undefined && kind !== 'watch' && !needsClaim)
+  }, [game, step, kind, needsClaim])
 
   /*
    * The scripted cut-in.
@@ -137,139 +140,26 @@ export function TutorialScreen() {
     const want = step?.advance
     if (want === undefined || want.kind !== 'burst') return
     const cut = setTimeout(() => {
-      const done = bid(table.current, want.actor, want.quantity, want.face)
-      // If the script has drifted past what the rules allow, say so here rather
-      // than stranding the player on a card that never resolves.
-      if (!done.ok) setNudge(done.why)
-      redraw()
+      game.cutIn(want.actor, want.quantity, want.face)
       next()
     }, 1700)
     return () => clearTimeout(cut)
-  }, [step, redraw, next])
-  useEffect(() => {
-    if (waiting || reveal !== null) return
-    const state = table.current
-    if (state.over) return
-    const bot = botToAct(state)
-    if (bot === null) return
+  }, [step, game, next])
 
-    const act = setTimeout(() => {
-      const move = decide(state, bot.id)
-      if (move.kind === 'bid') bid(state, bot.id, move.quantity, move.face)
-      else if (move.kind === 'bull') bull(state, bot.id)
-      else {
-        const done = challenge(state, bot.id)
-        if (done.ok) setReveal(done.reveal)
-      }
-      redraw()
-      // The step that asks the player to watch ends when the table comes back
-      // round to them.
-      if (step?.advance.kind === 'watch' && state.turnId === 'you') next()
-    }, 1400)
-    return () => clearTimeout(act)
-    // `tick` is load-bearing: it is what makes this run again after each move.
-    // Without it one bot acts, the table is redrawn, and nothing re-triggers —
-    // the round stops dead with two players still to speak.
-  }, [waiting, reveal, redraw, step, next, stepIndex, tick, needsClaim])
-
-  const view: TableView = useMemo(() => {
-    const state = table.current
-    return {
-      round: state.round,
-      roundNumber: Math.max(1, state.roundNumber),
-      players: state.seats.map((s) => ({
-        id: s.id,
-        name: s.name,
-        seatIndex: s.seatIndex,
-        diceCount: s.diceCount,
-        isYou: s.isYou,
-        isEliminated: s.diceCount === 0,
-        hasTurn: state.turnId === s.id,
-      })),
-      yourHand: seatOf(state, 'you').diceCount > 0 ? seatOf(state, 'you').dice : null,
-      lastEvent: state.lastEvent,
-    }
-    // Rebuilt on every redraw, which is the point: the table is mutable.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [tick])
-
-  /** A move the player made. During the lesson, only the asked-for one lands. */
-  const attempt = useCallback(
-    (kind: 'bid' | 'lie' | 'bull', proposed?: ProposedBid) => {
-      const state = table.current
-      const want = step?.advance
-
-      if (want !== undefined && want.kind !== 'read' && want.kind !== 'watch') {
-        if (want.kind !== kind) {
-          setNudge(
-            kind === 'bid'
-              ? 'Not this time — the card above says what to do.'
-              : `Try what the card asks for first.`,
-          )
-          return
-        }
-        if (want.kind === 'bid' && proposed !== undefined) {
-          if (proposed.quantity !== want.quantity || proposed.face !== want.face) {
-            // Name the bid being asked for. "The face beside it" is no help to
-            // somebody who does not yet know which control the face is.
-            setNudge(
-              `Not yet — make it ${want.quantity} ${faceWord(want.face, want.quantity)}. ` +
-                `Use − and + for the number, and the row of dice for the face.`,
-            )
-            return
-          }
-        }
-      }
-
-      if (kind === 'lie') {
-        const done = challenge(state, 'you')
-        if (!done.ok) {
-          setNudge(done.why)
-          return
-        }
-        setReveal(done.reveal)
-      } else {
-        const done =
-          kind === 'bid' && proposed !== undefined
-            ? bid(state, 'you', proposed.quantity, proposed.face)
-            : bull(state, 'you')
-        if (!done.ok) {
-          setNudge(done.why)
-          return
-        }
-      }
-      redraw()
-      if (want !== undefined && want.kind === kind) next()
-    },
-    [step, next, redraw],
-  )
-
-  const closeReveal = useCallback(() => {
-    setReveal(null)
-    const state = table.current
-    if (!state.over) {
-      deal(state, fairRoll)
-      redraw()
-    } else {
-      redraw()
-    }
-  }, [redraw])
-
-  const state = table.current
-  const won = state.over && state.winnerId === 'you'
+  const won = game.state.over && game.state.winnerId === 'you'
 
   return (
     <div className="learn">
       <GameTable
-        view={view}
+        view={game.view}
         reveal={
-          reveal === null
+          game.reveal === null
             ? null
-            : { claim: claimFor(reveal), data: reveal, onDone: closeReveal }
+            : { claim: claimFor(game.reveal), data: game.reveal, onDone: game.dismissReveal }
         }
-        onBid={(proposed) => attempt('bid', proposed)}
-        onLie={() => attempt('lie')}
-        onBull={() => attempt('bull')}
+        onBid={game.place}
+        onLie={game.doubt}
+        onBull={game.callBull}
       />
 
       {step !== undefined && (
@@ -279,7 +169,7 @@ export function TutorialScreen() {
           </p>
           <h2 className="coach__title">{step.title}</h2>
           <p className="coach__body">{step.body}</p>
-          {nudge !== null && <p className="coach__nudge">{nudge}</p>}
+          {game.refused !== null && <p className="coach__nudge">{game.refused}</p>}
           {step.advance.kind === 'read' && (
             <button type="button" className="coach__next" onClick={next}>
               {stepIndex + 1 === LESSON.length ? 'Play' : 'Next'}
@@ -288,7 +178,7 @@ export function TutorialScreen() {
         </aside>
       )}
 
-      {state.over && (
+      {game.state.over && (
         <aside className="coach coach--done" role="status">
           <h2 className="coach__title">{won ? 'You won' : 'That is a game'}</h2>
           <p className="coach__body">
@@ -301,11 +191,8 @@ export function TutorialScreen() {
               type="button"
               className="coach__next"
               onClick={() => {
-                table.current = freshTable()
-                deal(table.current, fairRoll)
-                setReveal(null)
                 setTeaching(false)
-                redraw()
+                game.restart()
               }}
             >
               Again
@@ -317,7 +204,7 @@ export function TutorialScreen() {
         </aside>
       )}
 
-      {!teaching && !state.over && (
+      {!teaching && !game.state.over && (
         <button type="button" className="learn__leave" onClick={() => navigate('/')}>
           Leave the practice table
         </button>

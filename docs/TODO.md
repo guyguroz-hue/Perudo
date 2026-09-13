@@ -59,6 +59,24 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## ✨ Polish
 
+- [x] **T-39** ~~No way to play without four friends awake.~~ `/solo` is the
+      tutorial's table without the tutoring: same rules, same bots, nobody
+      talking over it. Reaches nothing, so like `/learn` it sits before the
+      sign-in gate.
+
+      The bots are fair by construction rather than by discipline. `decide`
+      takes a `BotView` — its own dice, the claim on the table, how many dice
+      are in play — and everybody else's faces are absent from the type, so a
+      bot cannot read them however it is written. That is the guarantee the
+      real game gets from the server, arrived at the only way it can be in one
+      tab. A test deals the other seats two completely different tables, leaves
+      the bot's own hand and the public state identical, and demands the same
+      decision.
+
+      They also take two to three and a half seconds to answer, varied — a bot
+      decides in under a millisecond, and a table where three opponents move
+      between blinks is not a fast game, it is a game that already happened.
+
 - [x] **T-38** ~~Nobody can learn this game from the app.~~ `/learn` is a whole
       game against three bots, in the tab, reaching no network and no database
       — so it sits *before* the sign-in gate: the one person who most needs it

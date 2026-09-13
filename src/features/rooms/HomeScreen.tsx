@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/Button'
+import { Cup } from '../../components/Cup'
 import { Die } from '../../components/Die'
 import { useAuth } from '../auth/useAuth'
 import { createRoom, fetchMyRoom, joinRoom } from './api'
@@ -67,9 +68,12 @@ export function HomeScreen({ name }: { name: string }) {
   return (
     <div className="home">
       <div className="home__dice" aria-hidden="true">
+        {/* The game in three marks: the wildcard, a number, and one nobody
+            can see. The third was a blank die, which reads as a missing image
+            rather than as a hidden one — a cup says it without explaining. */}
         <Die face={1} size={36} />
         <Die face={5} size={36} />
-        <Die hidden size={36} />
+        <Cup tone="var(--p6)" size={34} />
       </div>
       <h1 className="home__title">Perudo</h1>
       <p className="home__greeting">Playing as {name}</p>
@@ -123,9 +127,16 @@ export function HomeScreen({ name }: { name: string }) {
           code by a friend and want to be at the table, not in a lesson. The
           one who needs it is the one who has just been invited to a game they
           have never heard of, and they will read the whole screen. */}
-      <button type="button" className="home__learn" onClick={() => navigate('/learn')}>
-        Never played? Learn in two minutes
-      </button>
+      <div className="home__alone">
+        <button type="button" className="home__learn" onClick={() => navigate('/learn')}>
+          Never played? Learn in two minutes
+        </button>
+        {/* Nobody around, or a hand to warm up on. The same table and the same
+            bots as the tutorial, with nobody talking over it. */}
+        <button type="button" className="home__learn" onClick={() => navigate('/solo')}>
+          Play against bots
+        </button>
+      </div>
     </div>
   )
 }

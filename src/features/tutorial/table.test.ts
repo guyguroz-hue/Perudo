@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { checkBid } from '../../game'
 import type { Face } from '../../game'
-import { botToAct, decide } from './bots'
+import { botToAct, decide, seenBy } from './bots'
 import {
   active,
   bid,
@@ -49,7 +49,7 @@ function playOut(state: TableState, guard: (t: TableState) => void): number {
   while (!state.over && moves < 4000) {
     moves += 1
     const actor = seatOf(state, state.turnId)
-    const move = decide(state, actor.id)
+    const move = decide(seenBy(state, actor.id))
 
     if (move.kind === 'bid') {
       // The claim about to be made must be one the real game would accept.
@@ -258,7 +258,7 @@ describe('the scripted Burst', () => {
     const state = scripted()
     expect(bid(state, 'you', 3, 4 as Face).ok).toBe(true)
     for (const id of ['ada', 'bo', 'cy']) {
-      const move = decide(state, id)
+      const move = decide(seenBy(state, id))
       if (move.kind !== 'bid') break
       expect(bid(state, id, move.quantity, move.face).ok).toBe(true)
     }
@@ -294,5 +294,60 @@ describe('the scripted Burst', () => {
     expect(done.reveal.deltas.bo).toBe(-1)
     expect(done.reveal.deltas.you).toBeUndefined()
     expect(seatOf(state, 'you').diceCount).toBe(5)
+  })
+})
+
+/**
+ * A bot cannot see your dice.
+ *
+ * Not "does not" — cannot. A bot is handed `BotView`: its own dice, the claim
+ * on the table, and how many dice are in play. Everybody else's faces are not
+ * withheld by discipline, they are absent from the type, so a bot cannot read
+ * them however it is written. That is the same guarantee the real game gets
+ * from the server, arrived at the only way it can be arrived at in one tab.
+ */
+describe('what a bot is allowed to know', () => {
+  function withHands(hands: Record<string, Face[]>): TableState {
+    const state: TableState = {
+      seats: [seat('you', 'You', 0, true), seat('ada', 'Ada', 1), seat('bo', 'Bo', 2)],
+      round: { type: 'normal', lockedFace: null, bid: null },
+      roundNumber: 1,
+      turnId: 'you',
+      farewellQueue: [],
+      lastEvent: null,
+      winnerId: null,
+      over: false,
+    }
+    deal(state, (id, n) => hands[id].slice(0, n))
+    return state
+  }
+
+  it('is handed its own dice and nothing else hidden', () => {
+    const state = withHands({
+      you: [6, 6, 6, 6, 6],
+      ada: [2, 2, 3, 3, 4],
+      bo: [5, 5, 5, 5, 5],
+    })
+    const view = seenBy(state, 'ada')
+    expect(view.own).toEqual([2, 2, 3, 3, 4])
+    // The whole view, enumerated: there is nowhere else for a hand to hide.
+    expect(Object.keys(view).sort()).toEqual(['diceOnTable', 'own', 'round'])
+    expect(JSON.stringify(view)).not.toContain('6,6,6')
+  })
+
+  it('decides the same move whatever anybody else is holding', () => {
+    /*
+     * The test that would catch a bot reading the table: deal the other seats
+     * two completely different sets of dice, leave the bot's own hand and the
+     * public state identical, and demand the same decision. A bot peeking at
+     * a table of sixes against a table of twos could not possibly agree with
+     * itself here.
+     */
+    const first = withHands({ you: [6, 6, 6, 6, 6], ada: [2, 2, 3, 3, 4], bo: [6, 6, 6, 6, 6] })
+    const second = withHands({ you: [2, 3, 2, 3, 2], ada: [2, 2, 3, 3, 4], bo: [3, 2, 3, 2, 3] })
+    bid(first, 'you', 3, 5 as Face)
+    bid(second, 'you', 3, 5 as Face)
+
+    expect(decide(seenBy(first, 'ada'))).toEqual(decide(seenBy(second, 'ada')))
   })
 })

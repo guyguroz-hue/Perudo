@@ -141,3 +141,22 @@
   font-size: var(--text-sm);
   cursor: pointer;
 }
+
+/* A move the table would not take. Said quietly, where the coach's card would
+   be if there were one — this screen has no coach to put it in. */
+.learn__refused {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  z-index: 20;
+  width: min(100% - var(--space-4) * 2, 24rem);
+  transform: translateX(-50%);
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  background: var(--panel-solid);
+  box-shadow: var(--shadow-overlay);
+  font-size: var(--text-sm);
+  color: var(--ink-dim);
+  text-align: center;
+}

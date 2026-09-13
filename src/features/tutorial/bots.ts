@@ -1,5 +1,5 @@
 import { countsToward, legalFacesAt, quantityBounds } from '../../game'
-import type { Face, PlayerId } from '../../game'
+import type { Face, PlayerId, RoundState } from '../../game'
 import type { SeatState, TableState } from './table'
 import { active, onTable } from './table'
 
@@ -14,10 +14,36 @@ import { active, onTable } from './table'
  * I can see in my own hand — and they say so out loud when asked.
  *
  * They also never Burst. Burst means anybody may act at any moment, which is
- * the hardest thing about this game to follow, and three bots exercising it
- * while somebody is learning the word "bid" is noise. The tutorial demonstrates
- * a Burst deliberately, once, with the player watching for it.
+ * the hardest thing about this game to follow, and three opponents exercising
+ * it freely make a table nobody can read. The tutorial demonstrates a Burst
+ * deliberately, once, with the player watching for it.
+ *
+ * And they cannot cheat, because they are not given the means to. A bot is
+ * handed its own dice and the public state — the claim on the table, how many
+ * dice are in play — and nothing else. That is the difference between a bot
+ * that does not look at your hand and a bot that cannot: the first is a promise
+ * about today's code, the second is a fact about its type.
  */
+
+/**
+ * Everything a bot is allowed to know.
+ *
+ * Exactly what a person in that seat can see. `own` is the only hidden
+ * information in it, and it is the bot's own.
+ */
+export interface BotView {
+  readonly round: RoundState
+  /** Every die in play, which is public — counts are, faces are not. */
+  readonly diceOnTable: number
+  readonly own: readonly Face[]
+}
+
+/** What one seat may see. The only place a bot's view is assembled. */
+export function seenBy(table: TableState, botId: PlayerId): BotView {
+  const bot = table.seats.find((s) => s.id === botId)
+  if (bot === undefined) throw new Error(`no bot ${botId}`)
+  return { round: table.round, diceOnTable: onTable(table), own: bot.dice }
+}
 
 /** A bot's move, and why — the "why" is shown while teaching. */
 export type BotMove =
@@ -39,9 +65,9 @@ export function expected(unseen: number, wildcardsCount: boolean): number {
   return unseen * (wildcardsCount ? 2 / 6 : 1 / 6)
 }
 
-/** What this bot can see: its own dice counting toward a face. */
-function inHand(bot: SeatState, face: Face, wildcardsCount: boolean): number {
-  return bot.dice.filter((die) => countsToward(die, face, wildcardsCount ? 'normal' : 'farewell'))
+/** How many of this bot's own dice answer to a face. */
+function inHand(view: BotView, face: Face, wildcardsCount: boolean): number {
+  return view.own.filter((die) => countsToward(die, face, wildcardsCount ? 'normal' : 'farewell'))
     .length
 }
 
@@ -51,30 +77,27 @@ function inHand(bot: SeatState, face: Face, wildcardsCount: boolean): number {
  * Order matters and mirrors how a person plays: look at what is claimed, ask
  * whether it is believable, and only then think about raising it.
  */
-export function decide(table: TableState, botId: PlayerId): BotMove {
-  const bot = table.seats.find((s) => s.id === botId)
-  if (bot === undefined) throw new Error(`no bot ${botId}`)
-
-  const wild = table.round.type === 'normal'
-  const total = onTable(table)
-  const claim = table.round.bid
+export function decide(view: BotView): BotMove {
+  const wild = view.round.type === 'normal'
+  const total = view.diceOnTable
+  const unseen = total - view.own.length
+  const claim = view.round.bid
 
   if (claim === null) {
     // Opening. Bid what is in front of it, which is always defensible and is
     // the habit a beginner should copy.
-    const face = pickFace(bot, wild)
-    const mine = inHand(bot, face, wild)
-    const quantity = Math.max(1, mine + Math.round(expected(total - bot.diceCount, wild) * 0.6))
+    const face = pickFace(view, wild)
+    const mine = inHand(view, face, wild)
+    const quantity = Math.max(1, mine + Math.round(expected(unseen, wild) * 0.6))
     return {
       kind: 'bid',
       quantity,
       face,
-      because: `I hold ${mine} of those, and there are ${total - bot.diceCount} dice I cannot see.`,
+      because: `I hold ${mine} of those, and there are ${unseen} dice I cannot see.`,
     }
   }
 
-  const unseen = total - bot.diceCount
-  const mine = inHand(bot, claim.face, wild)
+  const mine = inHand(view, claim.face, wild)
   // What the claim needs from everybody else, against what is likely to be there.
   const needed = claim.quantity - mine
   const likely = expected(unseen, wild)
@@ -97,7 +120,7 @@ export function decide(table: TableState, botId: PlayerId): BotMove {
     return { kind: 'bull', because: `That is almost exactly what I would expect, and I hold ${mine}.` }
   }
 
-  const raise = nextBid(table, bot, wild)
+  const raise = nextBid(view, wild)
   if (raise === null) {
     return { kind: 'lie', because: 'There is nothing left I am willing to claim.' }
   }
@@ -112,8 +135,7 @@ export function decide(table: TableState, botId: PlayerId): BotMove {
  * to learn, done slowly.
  */
 function nextBid(
-  table: TableState,
-  bot: SeatState,
+  view: BotView,
   wild: boolean,
 ): { quantity: number; face: Face; because: string } | null {
   /*
@@ -130,30 +152,29 @@ function nextBid(
    * a beginner think they misheard, one card after being told the quantity may
    * never fall — so the table finds something else to say if it can.
    */
-  return search(table, bot, wild, false) ?? search(table, bot, wild, true)
+  return search(view, wild, false) ?? search(view, wild, true)
 }
 
 function search(
-  table: TableState,
-  bot: SeatState,
+  view: BotView,
   wild: boolean,
   allowPerudo: boolean,
 ): { quantity: number; face: Face; because: string } | null {
-  const total = onTable(table)
-  const bounds = quantityBounds(table.round, total)
+  const total = view.diceOnTable
+  const bounds = quantityBounds(view.round, total)
 
   for (let quantity = bounds.min; quantity <= bounds.max; quantity += 1) {
-    const faces = legalFacesAt(table.round, quantity).filter(
+    const faces = legalFacesAt(view.round, quantity).filter(
       (face) => allowPerudo || face !== 1,
     )
     // Best face first: the one this bot actually holds the most of.
     const ranked = [...faces].sort(
-      (a, b) => inHand(bot, b, wild) - inHand(bot, a, wild) || a - b,
+      (a, b) => inHand(view, b, wild) - inHand(view, a, wild) || a - b,
     )
     for (const face of ranked) {
-      const mine = inHand(bot, face, wild)
+      const mine = inHand(view, face, wild)
       const needed = quantity - mine
-      if (needed <= expected(total - bot.diceCount, wild) + 0.9) {
+      if (needed <= expected(total - view.own.length, wild) + 0.9) {
         return {
           quantity,
           face,
@@ -166,10 +187,10 @@ function search(
 }
 
 /** The face this bot holds most of, for an opening bid. Never Perudo (§7). */
-function pickFace(bot: SeatState, wild: boolean): Face {
+function pickFace(view: BotView, wild: boolean): Face {
   const faces: Face[] = [2, 3, 4, 5, 6]
   return faces.reduce((best, face) =>
-    inHand(bot, face, wild) > inHand(bot, best, wild) ? face : best,
+    inHand(view, face, wild) > inHand(view, best, wild) ? face : best,
   )
 }
 
