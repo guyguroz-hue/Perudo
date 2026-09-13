@@ -328,3 +328,62 @@ describe('who may act at all', () => {
     await expect(placeBid(store, { id: 'bob' }, 'g1', 4, 6)).rejects.toThrow(/not running/)
   })
 })
+
+/**
+ * A Bull is a bid, not a challenge.
+ *
+ * GAME_RULES §8.1 is explicit: "Bull is a declaration in the bidding chain —
+ * *not* an immediate challenge." It re-reads the claim on the table from "at
+ * least seven fives" to "exactly seven fives", hands the turn on, and the round
+ * carries on. Nobody's cup comes off, nobody loses a die, nothing is revealed.
+ *
+ * The two moves sit side by side on the same bar and both are one press, so
+ * the way this breaks is that Bull quietly becomes a second Lie — which would
+ * end a round every time somebody used the strongest bid in the game.
+ */
+describe('calling Bull', () => {
+  it('resolves nothing, reveals nothing, and takes nobody’s die', async () => {
+    const store = new Fake()
+    await callBull(store, { id: 'bob' }, 'g1')
+
+    // The only write is the Bull itself. A challenge is what reveals hands and
+    // moves dice, and none was applied.
+    expect(store.challenges).toHaveLength(0)
+    expect(store.bulls).toHaveLength(1)
+    // And no round was opened, which is what ending one would have done.
+    expect(store.opened).toHaveLength(0)
+  })
+
+  it('hands the turn on so the round carries on', async () => {
+    const store = new Fake()
+    await callBull(store, { id: 'bob' }, 'g1')
+    // Play continues clockwise from whoever acted, exactly as a bid does.
+    expect(store.bulls[0]).toMatchObject({ player: 'bob', nextTurn: 'carl' })
+  })
+
+  it('leaves a bid that can still be raised over', async () => {
+    // §8.2: any later valid bid completely supersedes the Bull. The table is
+    // not frozen by one, and the player after it is not forced to challenge.
+    const store = new Fake({ round: { bull_player_id: 'bob', turn_player_id: 'carl' } })
+    await placeBid(store, { id: 'carl' }, 'g1', 5, 5)
+
+    expect(store.bids).toHaveLength(1)
+    expect(store.bids[0]).toMatchObject({ quantity: 5, face: 5, player: 'carl' })
+    expect(store.challenges).toHaveLength(0)
+  })
+
+  it('can be doubted like any other bid', async () => {
+    // A Bull takes the claim over (§8.3), so it is the Bull caller who may not
+    // challenge it — and the original bidder who now may.
+    const store = new Fake({ round: { bull_player_id: 'bob', turn_player_id: 'carl' } })
+    const result = await challenge(store, { id: 'alice' }, 'g1')
+
+    expect(result.bullCallerName).toBe('bob')
+    expect(store.challenges).toHaveLength(1)
+  })
+
+  it('refuses the Bull caller doubting their own Bull', async () => {
+    const store = new Fake({ round: { bull_player_id: 'bob', turn_player_id: 'carl' } })
+    await expect(challenge(store, { id: 'bob' }, 'g1')).rejects.toThrow(/yours/i)
+  })
+})

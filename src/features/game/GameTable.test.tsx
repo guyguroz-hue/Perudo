@@ -143,6 +143,56 @@ describe('a Bull on the table', () => {
     expect(container.querySelector('.bid--bulled')).toBeNull()
   })
 
+  /*
+   * A Bull is a bid, not a challenge (GAME_RULES §8.1).
+   *
+   * The two sit side by side on the same bar and both are one press, which is
+   * the whole reason to pin this: if Bull ever became a second Lie it would end
+   * a round every time somebody used the strongest bid in the game, and the
+   * table would look the same right up until the cups came off.
+   */
+  it('does not lift a single cup — the round carries on', async () => {
+    const { container, onBull, onLie } = show(BASE)
+    await userEvent.click(screen.getByRole('button', { name: /^Bull/ }))
+
+    expect(onBull).toHaveBeenCalledTimes(1)
+    expect(onLie).not.toHaveBeenCalled()
+    // No verdict panel, and the table is still a table you can act on.
+    expect(container.querySelector('.verdict')).toBeNull()
+    expect(screen.getByRole('button', { name: /^Lie/ })).toBeTruthy()
+  })
+
+  it('leaves a Bulled bid open to be raised over', () => {
+    // §8.2: any later valid bid completely supersedes the Bull, so the player
+    // after one is not cornered into challenging.
+    show({ ...BASE, round: normalRound(bid(4, 5, 'alice', 'carl')) })
+    expect(screen.getByRole('button', { name: /^Bid/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'One more' })).toBeTruthy()
+  })
+
+  /*
+   * Lie doubts whatever is on the table, and a Bull changed what that is.
+   *
+   * Against an ordinary bid, doubting wins when the count is short. Against a
+   * Bulled one it wins on eight as readily as on six, because the claim is now
+   * "exactly seven" (§8.1). The button went on reading "at least" — which is
+   * not a wording slip: it described a claim that was no longer there, so a
+   * player deciding whether to doubt was shown the wrong bet, on a screen that
+   * disagreed with the bid printed directly above it.
+   */
+  it('tells you what you would be doubting, once a Bull has changed it', () => {
+    show({ ...BASE, round: normalRound(bid(4, 5, 'alice', 'carl')) })
+    const lie = screen.getByRole('button', { name: /^Lie/ })
+    expect(within(lie).getByText('exactly')).toBeTruthy()
+    expect(lie.getAttribute('aria-label')).toContain('not exactly 4')
+
+    cleanup()
+    show(BASE)
+    const plain = screen.getByRole('button', { name: /^Lie/ })
+    expect(within(plain).getByText('at least')).toBeTruthy()
+    expect(plain.getAttribute('aria-label')).toContain('fewer than 4')
+  })
+
   // A second Bull is refused by the server (R-010), so it is not offered. A
   // control that can only come back as an error is a bad way to learn a rule.
   it('spends the Bull button once the bid has been Bulled', () => {

@@ -43,6 +43,22 @@ export function ChallengeActions({
    */
   const bulled = bid.bull !== null
 
+  /*
+   * What Lie is actually doubting.
+   *
+   * A Bull re-reads the claim on the table from "at least seven" to "exactly
+   * seven" (GAME_RULES §8.1), and Lie doubts whatever is on the table — so
+   * against a Bulled bid it wins on eight as readily as on six. This button
+   * went on saying "at least", which is not a wording problem: it described a
+   * claim that was no longer there, and a player weighing whether to doubt was
+   * being shown the wrong bet. The bid above it already read "exactly", so the
+   * screen disagreed with itself.
+   */
+  const reading = bulled ? 'exactly' : 'at least'
+  const doubting = bulled
+    ? `I say it is not exactly ${bid.quantity}`
+    : `I say there are fewer than ${bid.quantity}`
+
   return (
     <div className="challenge">
       <button
@@ -50,7 +66,7 @@ export function ChallengeActions({
         className="challenge__lie"
         disabled={busy}
         onClick={onLie}
-        aria-label={`${burst ? 'Burst Lie' : 'Lie'}: I say there are fewer than ${bid.quantity}${
+        aria-label={`${burst ? 'Burst Lie' : 'Lie'}: ${doubting}${
           canWinADie ? ', and win a die if I am right' : ''
         }`}
       >
@@ -60,7 +76,7 @@ export function ChallengeActions({
           {canWinADie && <b className="challenge__prize" aria-hidden="true">+1</b>}
         </span>
         <span className="challenge__claim">
-          <span className="challenge__reading">at least</span>
+          <span className="challenge__reading">{reading}</span>
           <span className="challenge__count">{bid.quantity}</span>
           <Die face={bid.face} size={18} />
         </span>

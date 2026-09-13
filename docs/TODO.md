@@ -83,6 +83,27 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🐛 Bugs
 
+- [x] **B-8** ~~Lie described the wrong bet once a bid had been Bulled.~~ Found
+      while verifying, at Guy's request, that pressing Bull does not reveal (it
+      does not — see below). A Bull re-reads the claim on the table from "at
+      least seven" to "exactly seven" (GAME_RULES §8.1), so doubting it wins on
+      eight as readily as on six. The Lie button went on reading "at least",
+      and its label went on saying "I say there are fewer than seven". Not a
+      wording slip: it described a claim that was no longer there, so a player
+      weighing whether to doubt was shown the wrong bet — on a screen that
+      disagreed with the bid printed directly above it. It follows the bid's
+      current reading now, and a test covers both readings.
+
+      The verification itself: a Bull resolves nothing at any layer. `callBull`
+      only writes the Bull marker and hands the turn on; `apply_bull` leaves the
+      round at `status = 'bidding'` and never calls `reveal_round`; the client's
+      `bull` goes through the ordinary action path, which has no reveal in it.
+      Play carries on, a later bid supersedes the Bull (§8.2), and anybody but
+      the Bull caller may doubt it. Six tests at the action layer and three on
+      the screen now pin it, because Bull and Lie sit side by side on the same
+      bar and are both one press — if Bull ever became a second Lie it would end
+      a round every time somebody used the strongest bid in the game.
+
 - [x] **B-7** ~~Every player had to press "Next round" for themselves.~~ Reported
       from a real two-browser game: the table waited on six separate taps. The
       round after a resolution is dealt by `apply_challenge` itself, so every
