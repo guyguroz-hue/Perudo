@@ -20,6 +20,18 @@
 /* -----------------------------------------------------------------------------
  * Above the table
  * ---------------------------------------------------------------------------*/
+/* The invite and the sound switch share a line: both are about the room rather
+   than about the game, and neither is tall. */
+.lobby__invite {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lobby__invite > .code {
+  min-width: 0;
+}
+
 .lobby__head {
   display: flex;
   flex-direction: column;

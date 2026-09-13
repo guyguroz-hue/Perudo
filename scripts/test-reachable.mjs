@@ -72,6 +72,7 @@ for (const width of WIDTHS) {
     await check(page, `lobby / ${scenario} / leave`, '.lobby__leave')
     await check(page, `lobby / ${scenario} / room code`, '.code__value')
     await check(page, `lobby / ${scenario} / invite`, '.code__share')
+    await check(page, `lobby / ${scenario} / sound`, '.lobby__invite .sound')
   }
   // The host's one control inside the table itself, which the rest of that
   // table deliberately refuses presses for.

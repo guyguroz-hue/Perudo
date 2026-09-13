@@ -1,10 +1,12 @@
 import { Button } from '../../components/Button'
+import { SoundToggle } from '../../components/SoundToggle'
 import { ConnectionDot } from '../../components/ConnectionDot'
 import { RoomCode } from './RoomCode'
 import { RoomTable } from './RoomTable'
 import { MIN_PLAYERS, SEAT_COUNT } from './types'
 import type { RoomStatus, Seat } from './types'
 import type { Connection } from './useRoom'
+import { useSound } from '../../lib/useSound'
 import type { ReactNode } from 'react'
 import './RoomScreen.css'
 
@@ -57,10 +59,25 @@ export function LobbyView({
   const inLobby = status === 'lobby'
   const short = MIN_PLAYERS - seats.length
 
+  /*
+   * The room has a sound too.
+   *
+   * It did not, and that was most of "the sound does not work": the only place
+   * with music or a switch to turn it off was the table, so a player waiting
+   * for a fourth friend sat in silence, with nothing to press and no reason to
+   * think anything was meant to be playing. A browser will not start audio
+   * before a gesture either, so the tap that opens a room is the earliest one
+   * there is — waiting for the game to start throws it away.
+   */
+  const sound = useSound()
+
   return (
     <div className="lobby">
       <div className="lobby__head">
-        {inLobby && <RoomCode code={code} />}
+        <div className="lobby__invite">
+          {inLobby && <RoomCode code={code} />}
+          <SoundToggle on={sound.on} onToggle={sound.toggle} />
+        </div>
 
         <div className="lobby__status">
           {inLobby ? (

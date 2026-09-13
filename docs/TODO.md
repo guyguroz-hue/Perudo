@@ -83,6 +83,38 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🐛 Bugs
 
+- [x] **B-10** ~~No sound at all.~~ Four separate causes, found by measuring the
+      audio graph rather than by listening.
+
+      1. **iOS silences it.** Web Audio on iOS is governed by the ring/silent
+         switch — with the switch flicked to silent, which is how a great many
+         phones live all day, the whole graph plays to nobody at full volume,
+         with no error and no clue: the context is "running" and the meters
+         move. `navigator.audioSession.type = 'playback'` (Safari 16.4+) is what
+         separates "this game has a soundtrack" from "your phone just buzzed".
+         Guy's own screenshot shows the phone in silent mode, so this is almost
+         certainly the one he hit.
+      2. **The lobby had none.** Sound existed only on the table, so a player
+         waiting for a fourth friend sat in silence with nothing to press. The
+         room has music and the switch now, and the tap that opens a room is the
+         earliest gesture there is — a browser will not start audio before one.
+      3. **Everything was too quiet**, and the balance was wrong: the bed does
+         not run through the master gain, so its level is absolute, and at 0.3
+         it peaked as loudly as a cup of dice. Measured at the destination, a
+         lift now peaks 0.381 against the bed's 0.117 — 3.3× — where the two
+         used to be level.
+      4. **The music probe relied on a decode failure.** `/audio/table.mp3`
+         does not exist, and a single-page host answers it with the app's own
+         HTML and a 200, so the element was handed a page to play. The bed
+         started only from the resulting `error`. The bed starts immediately now
+         and a real track is asked about separately, with a request whose
+         content type has to actually be audio.
+
+      Measuring this needed a tap that captures every sample on the audio
+      thread: polling from the main thread misses the transients entirely while
+      a software renderer has the page at six frames a second, and reported a
+      lift as level with the music when it was three times louder.
+
 - [x] **B-9** ~~The host could not start a game.~~ Reported from a real room:
       the Start button was on screen, enabled and correctly wired, and pressing
       it did nothing. It was covered. Both the lobby and the table pull their

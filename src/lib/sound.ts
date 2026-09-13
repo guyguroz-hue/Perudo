@@ -45,9 +45,23 @@ let musicTried = false
 let ambient: Ambient | null = null
 let wanted = true
 
-/** How loud each layer sits under the other. Music is a room, not a track. */
-const EFFECT_LEVEL = 0.5
-const MUSIC_LEVEL = 0.18
+/**
+ * How loud each layer sits under the other. Music is a room, not a track.
+ *
+ * Set for a phone speaker held at arm's length in a room with people talking
+ * over it, which is the only place this game is ever played. Measured at the
+ * destination rather than guessed: at the old levels the loudest thing in the
+ * game — a cup of dice being shaken — peaked around −24 dBFS, which on a phone
+ * is not quiet, it is off.
+ */
+const EFFECT_LEVEL = 0.85
+/*
+ * The bed does not go through the master gain — it is its own layer — so this
+ * is an absolute level, and it was set as though it went through one. At 0.3 it
+ * peaked as loudly as a cup of dice being shaken, which is the wrong way round:
+ * a room you can hear over the game is not a room, it is a track.
+ */
+const MUSIC_LEVEL = 0.16
 
 function ensure(): AudioContext | null {
   if (typeof window === 'undefined' || !wanted) return null
@@ -60,6 +74,28 @@ function ensure(): AudioContext | null {
 
   const Ctor = window.AudioContext ?? (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
   if (Ctor === undefined) return null
+
+  /*
+   * Tell iOS this is media, not a notification.
+   *
+   * Web Audio on iOS is governed by the ring/silent switch: with the switch
+   * flicked to silent — which is how a great many phones live all day — the
+   * whole graph plays to nobody, at full volume, with no error and no clue.
+   * The context is "running", the meters move, and the room is silent.
+   *
+   * Declaring the session as playback is what separates "this game has a
+   * soundtrack" from "your phone just buzzed", and it is the difference
+   * between a player hearing the dice and a player deciding the sound is
+   * broken. Safari 16.4 and later; absent everywhere else, and harmless there.
+   */
+  const session = (navigator as { audioSession?: { type: string } }).audioSession
+  if (session !== undefined) {
+    try {
+      session.type = 'playback'
+    } catch {
+      // A browser that has the property but refuses the value. Nothing to do.
+    }
+  }
 
   context = new Ctor()
   master = context.createGain()
@@ -97,7 +133,7 @@ function rattle(at: number, seconds: number, count: number) {
     band.Q.value = 3 + Math.random() * 5
 
     const gain = ctx.createGain()
-    const peak = 0.16 + Math.random() * 0.22
+    const peak = 0.34 + Math.random() * 0.28
     gain.gain.setValueAtTime(0.0001, when)
     gain.gain.exponentialRampToValueAtTime(peak, when + 0.004)
     gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.045 + Math.random() * 0.04)
@@ -117,7 +153,7 @@ function chime(at: number, hz: number) {
 
   const gain = ctx.createGain()
   gain.gain.setValueAtTime(0.0001, at)
-  gain.gain.exponentialRampToValueAtTime(0.2, at + 0.012)
+  gain.gain.exponentialRampToValueAtTime(0.36, at + 0.012)
   gain.gain.exponentialRampToValueAtTime(0.0001, at + 1.5)
 
   for (const [partial, level] of [
@@ -151,7 +187,7 @@ function knock(at: number, pitch: number) {
 
   const gain = ctx.createGain()
   gain.gain.setValueAtTime(0.0001, at)
-  gain.gain.exponentialRampToValueAtTime(0.22, at + 0.006)
+  gain.gain.exponentialRampToValueAtTime(0.42, at + 0.006)
   gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.18)
 
   osc.connect(gain)
@@ -242,16 +278,43 @@ export function startMusic() {
   musicGain.connect(ctx.destination)
   const out = musicGain
 
+  /*
+   * The bed starts now, and a real track takes over if there is one.
+   *
+   * It used to be the other way round: build the element, and start the bed
+   * from its `error`. That made "is there a track?" the same question as "did a
+   * media element fail to decode", and the answer arrives late or not at all.
+   * On this project it is worse than late — there is no file, and a single-page
+   * host answers `/audio/table.mp3` with the app's own HTML and a 200, so the
+   * element is handed a page to play rather than a missing file. The music then
+   * depends on a decode failure of the right shape.
+   *
+   * So: sound first, always, and the file is asked about separately.
+   */
+  ambient = startAmbient(ctx, out)
+  void adoptTrack(ctx, out)
+}
+
+/**
+ * Swap the generated bed for a real track, if the project has been given one.
+ *
+ * Asked with a request rather than by handing the file to a media element and
+ * waiting to see what happens, because the answer has to be "is this audio",
+ * not "did something go wrong". A single-page host returns the app's own HTML
+ * for any path it does not recognise, with a 200 on it.
+ */
+async function adoptTrack(ctx: AudioContext, out: GainNode): Promise<void> {
+  try {
+    const head = await fetch(MUSIC_URL, { method: 'HEAD' })
+    if (!head.ok) return
+    if (!(head.headers.get('content-type') ?? '').startsWith('audio/')) return
+  } catch {
+    return // Offline, or blocked. The bed is already playing.
+  }
+
   const element = new Audio(MUSIC_URL)
   element.loop = true
   element.preload = 'auto'
-
-  // A missing file is the normal case, not a fault, so it is never reported —
-  // the bed simply starts instead.
-  element.addEventListener('error', () => {
-    music = null
-    if (ambient === null) ambient = startAmbient(ctx, out)
-  })
 
   element.addEventListener(
     'canplay',
@@ -269,6 +332,5 @@ export function startMusic() {
     ctx.createMediaElementSource(element).connect(out)
   } catch {
     // Some browsers refuse a source for a file they could not open at all.
-    ambient = startAmbient(ctx, out)
   }
 }
