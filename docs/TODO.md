@@ -83,6 +83,27 @@ Completed items are marked `[x]` and kept, not deleted.
 
 ## 🐛 Bugs
 
+- [x] **B-9** ~~The host could not start a game.~~ Reported from a real room:
+      the Start button was on screen, enabled and correctly wired, and pressing
+      it did nothing. It was covered. Both the lobby and the table pull their
+      controls up into the band of empty floor at the foot of the scene — the
+      lobby by 15.6% of the stage, which is most of the Start button — and a
+      positioned box paints above static content, so the stage lay invisibly
+      across it and swallowed every press. Introduced with the lobby redesign:
+      the table's overlay has carried `pointer-events: none` from the start and
+      the lobby's never did, and the negative margin is what made it matter.
+      The canvas is now marked non-interactive too, which it always was — it is
+      `aria-hidden` for the same reason — so this cannot come back through the
+      scene on either screen.
+
+      **Every test this project had was blind to it.** The unit tests run in
+      jsdom, which has no layout: it reports a button as visible and enabled
+      while a neighbour lies across it. `scripts/test-reachable.mjs`
+      (`npm run test:reach`) asks the only question that matters, in a real
+      browser at 360, 390 and 430 wide: if a person puts their finger in the
+      middle of this control, does the control get it? It names what is in the
+      way, and it fails against the bug on nine controls.
+
 - [x] **B-8** ~~Lie described the wrong bet once a bid had been Bulled.~~ Found
       while verifying, at Guy's request, that pressing Bull does not reveal (it
       does not — see below). A Bull re-reads the claim on the table from "at

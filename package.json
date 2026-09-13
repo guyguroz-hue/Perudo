@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:db": "scripts/test-db.sh",
     "sql:pending": "scripts/pending-sql.sh",
-    "bundle:function": "node scripts/bundle-function.mjs"
+    "bundle:function": "node scripts/bundle-function.mjs",
+    "test:reach": "node scripts/test-reachable.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

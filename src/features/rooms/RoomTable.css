@@ -28,15 +28,44 @@
    * of the stage, and 12% is reclaimed, so the nearest badge keeps its air.
    */
   margin-bottom: calc(min(100vw, 34rem) * -0.156);
+  /*
+   * And nothing in it takes a press.
+   *
+   * That negative margin is why this line exists. The stage's box now reaches
+   * down past the table into the controls below it, and a positioned box paints
+   * above static content — so the stage lay invisibly across the Start button
+   * and swallowed every press. The host tapped, nothing happened, and there was
+   * nothing on screen to suggest why.
+   *
+   * A lobby table is a picture: the cups are scenery and the names are labels.
+   * The one thing in here anybody can touch is the host's menu on another
+   * player's badge, and it puts this back for itself.
+   */
+  pointer-events: none;
   container-type: inline-size;
 }
 
+/*
+ * The labels on the table, and nothing else.
+ *
+ * `pointer-events: none` is load-bearing, not tidiness. This list is stretched
+ * over the whole stage, and the stage reaches past its own bottom edge into the
+ * controls below it — it is pulled up there on purpose, to take back the band
+ * of empty floor in front of the table. Positioned content paints above static
+ * content, so without this the list lies invisibly across the Start button and
+ * swallows every press: the host taps, nothing happens, and there is nothing on
+ * screen to suggest why. The game's own overlay has carried this rule from the
+ * start; this one did not, and the negative margin is what made it matter.
+ *
+ * The host's menu on another player's badge puts it back for itself.
+ */
 .lobby-table__seats {
   position: absolute;
   inset: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+  pointer-events: none;
 }
 
 /* -----------------------------------------------------------------------------

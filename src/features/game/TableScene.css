@@ -4,6 +4,19 @@
   display: block;
   width: 100%;
   height: 100%;
+  /*
+   * The table is scenery, never a control.
+   *
+   * It is `aria-hidden` for the same reason: everything a player can touch is
+   * ordinary DOM drawn over it. Saying so here matters because this canvas is
+   * positioned, and both screens deliberately pull their controls up into the
+   * band of empty floor at the foot of the scene — positioned content paints
+   * above static content, so without this the canvas lies invisibly across
+   * those controls and swallows presses. In the lobby it swallowed every press
+   * of Start game: the host taps, nothing happens, and nothing on screen
+   * suggests why.
+   */
+  pointer-events: none;
 }
 
 /*
