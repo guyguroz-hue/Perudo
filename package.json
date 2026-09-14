@@ -13,7 +13,9 @@
     "test:db": "scripts/test-db.sh",
     "sql:pending": "scripts/pending-sql.sh",
     "bundle:function": "node scripts/bundle-function.mjs",
-    "test:reach": "node scripts/test-reachable.mjs"
+    "test:reach": "node scripts/test-reachable.mjs",
+    "test:recover": "node scripts/test-context-loss.mjs",
+    "look": "node scripts/look.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

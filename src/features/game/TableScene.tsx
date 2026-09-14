@@ -79,7 +79,35 @@ export function TableScene({
     resize()
     onReady?.(scene)
 
+    /*
+     * Coming back from a lost GPU context.
+     *
+     * Phones take contexts away — under memory pressure, on a driver reset,
+     * after a tab has been in the background long enough — and hand them back
+     * a moment later. three.js already asks for the context back and rebuilds
+     * its own objects when it arrives.
+     *
+     * What it cannot do is redraw, because this scene has no render loop to
+     * redraw from: it renders when something changes and stands still the rest
+     * of the time, which is the whole reason a table of six motionless cups
+     * costs nothing. So the restored context came back to a canvas that nobody
+     * was going to paint, and the table stayed black until the next round
+     * happened to change a seat — on a phone, backgrounding mid-round and
+     * coming back to a black table is indistinguishable from a crash.
+     */
+    const lost = (event: Event) => {
+      // Without this the context is gone for good: the browser only attempts a
+      // restore if the page says it wants one. three.js asks as well, and two
+      // listeners asking is not a problem — one of them not asking is.
+      event.preventDefault()
+    }
+    const restored = () => scene.restore()
+    canvas.addEventListener('webglcontextlost', lost)
+    canvas.addEventListener('webglcontextrestored', restored)
+
     return () => {
+      canvas.removeEventListener('webglcontextlost', lost)
+      canvas.removeEventListener('webglcontextrestored', restored)
       observer.disconnect()
       scene.dispose()
       sceneRef.current = null

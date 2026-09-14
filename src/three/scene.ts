@@ -132,6 +132,17 @@ export interface TableScene {
   /** Where a seat's cup meets the table, in percentages of the canvas. */
   project: (index: number, seats: number, height?: number) => { left: string; top: string }
   render: () => void
+  /**
+   * Rebuild what the GPU threw away, and draw again.
+   *
+   * A browser may take a WebGL context back at any moment — a phone under
+   * memory pressure, a driver reset, a tab backgrounded for long enough — and
+   * hand it back later. three.js restores its own objects, but not the
+   * environment: that is a render target this scene generated once, and a
+   * generated target does not survive, so every polished surface comes back
+   * reflecting nothing.
+   */
+  restore: () => void
   dispose: () => void
 }
 
@@ -566,6 +577,14 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
     },
 
     render() {
+      renderer.render(scene, camera)
+    },
+
+    restore() {
+      // The old one belonged to a context that no longer exists; disposing it
+      // is bookkeeping on this side, not a GPU call that could fail.
+      scene.environment?.dispose()
+      scene.environment = roomEnvironment(renderer)
       renderer.render(scene, camera)
     },
 
