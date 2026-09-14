@@ -4,6 +4,7 @@ import {
   Color,
   DirectionalLight,
   Group,
+  Mesh,
   PerspectiveCamera,
   PointLight,
   SRGBColorSpace,
@@ -12,7 +13,7 @@ import {
   WebGLRenderer,
 } from 'three'
 import { roomEnvironment } from './environment'
-import { CUP_HEIGHT, makeCup, makeInlay, makeTable } from './objects'
+import { CUP_HEIGHT, makeCup, makeInlay, makeTable, makeTurnRing } from './objects'
 import { CAMERA, CUP_LIFT, HAND_DRAW_IN, SEAT_RADIUS, placeCamera, seatAngle } from './layout'
 import { FACE_UP, DIE_SIZE, fadeDie, makeDie } from './die'
 import type { Die } from './die'
@@ -84,6 +85,14 @@ export interface SceneSeat {
   readonly count: number
   /** What the cup is doing. */
   readonly state?: CupState
+  /**
+   * Holds the normal turn.
+   *
+   * The table has always known this and only the badges ever said it, which
+   * put the one fact a waiting player is looking for outside the picture they
+   * are looking at. A Burst does not move it (GAME_RULES §9.1).
+   */
+  readonly turn?: boolean
   /**
    * The faces under this cup.
    *
@@ -242,6 +251,8 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
   interface Seated {
     readonly index: number
     readonly cup: Group
+    /** The light on the timber in front of this chair, shown on its turn. */
+    readonly turn: Mesh
     readonly dice: Group
     readonly marks: readonly DieMark[]
     readonly paying: Payment[]
@@ -478,6 +489,13 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
         const cup = makeCup(seat.colour)
         group.add(cup)
 
+        // The light in front of whoever is to play. Added to every seat and
+        // shown on one, because the turn moves on every move and rebuilding a
+        // cup that often would throw away whatever it was in the middle of.
+        const turn = makeTurnRing()
+        turn.visible = seat.turn === true
+        group.add(turn)
+
         // The dice live under the cup from the moment the round is dealt. They
         // are not created when they are revealed — a cup has to have something
         // to be lifted off.
@@ -517,6 +535,7 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
         seated.push({
           index: seat.index,
           cup,
+          turn,
           dice,
           marks,
           paying: [],

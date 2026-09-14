@@ -89,6 +89,7 @@ export function sceneSeats(
       index: seat.index,
       count: seat.count,
       colour: cupHexForSeat(seat.player.seatIndex),
+      turn: seat.player.hasTurn,
       dice: shown,
       counted:
         claim === null || shown === undefined

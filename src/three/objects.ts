@@ -1,5 +1,4 @@
 import {
-  AdditiveBlending,
   CanvasTexture,
   CircleGeometry,
   Color,
@@ -12,6 +11,7 @@ import {
   MeshStandardMaterial,
   PlaneGeometry,
   RingGeometry,
+  SRGBColorSpace,
   Vector2,
 } from 'three'
 import { CROWN_PATH } from './crown'
@@ -134,22 +134,36 @@ export function makeTable(): Group {
 export function makeInlay(): Group {
   const group = new Group()
 
-  const bloom = new Mesh(
-    new CircleGeometry(INLAY_RADIUS * 1.1, 96),
+  /*
+   * The inlaid surface: a shade darker and a shade cooler than the timber.
+   *
+   * This began as a glow added to the wood, which could not work, and it took
+   * a while to see why. Adding light to cherry under an amber lamp cannot
+   * produce a cool colour — the red channel is already near the top, so
+   * whatever goes in comes back peach, and every attempt to correct for that
+   * by writing the gradient bluer just made a paler peach.
+   *
+   * The reference's centre is not a glow on a tabletop at all. It is a piece
+   * inlaid *into* one, with its own darker surface and a lit edge. Rendered as
+   * what it is, the cool arrives for nothing — and the bid stops being read
+   * off bright orange, which it had been all along.
+   */
+  const surface = new Mesh(
+    new CircleGeometry(INLAY_RADIUS * 1.12, 96),
     new MeshBasicMaterial({
-      map: bloomFalloff(),
+      map: inlaySurface(),
       transparent: true,
-      // Added to the wood rather than painted over it, so the grain still runs
-      // through it and it reads as light lying on the table.
-      blending: AdditiveBlending,
+      // Outside the tone curve. ACES rolls a saturated colour at strength off
+      // toward white, which is the right treatment of a highlight and the
+      // wrong one for the only cool thing in a room lit entirely in amber.
+      toneMapped: false,
       depthWrite: false,
-      opacity: 0.8,
     }),
   )
-  bloom.rotation.x = -Math.PI / 2
-  bloom.position.y = 0.0016
-  bloom.renderOrder = 1
-  group.add(bloom)
+  surface.rotation.x = -Math.PI / 2
+  surface.position.y = 0.0016
+  surface.renderOrder = 1
+  group.add(surface)
 
   /*
    * The brass line itself, lit from within.
@@ -178,48 +192,124 @@ export function makeInlay(): Group {
 }
 
 /**
- * A soft ring of light, drawn once.
+ * The inlay's surface, drawn once.
  *
- * The falloff is the whole job: a hard-edged annulus reads as a decal and a
- * flat disc reads as a stain, so the alpha rises into the ring and dies away
- * on both sides of it.
+ * Dark and cool in the middle, a violet rim just inside where the brass line
+ * sits, and nothing at all at the outer edge — so there is no boundary between
+ * the inlay and the timber, which is what a piece set into a tabletop and
+ * levelled flush with it actually looks like. A hard edge here would read as a
+ * decal; a flat disc would read as a stain.
  */
-let bloomMap: CanvasTexture | null = null
+let inlayMap: CanvasTexture | null = null
 
-function bloomFalloff(): CanvasTexture {
-  if (bloomMap !== null) return bloomMap
+function inlaySurface(): CanvasTexture {
+  if (inlayMap !== null) return inlayMap
 
   const size = 256
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
   const ctx = canvas.getContext('2d')
-  if (ctx === null) throw new Error('no 2d context for the inlay bloom')
+  if (ctx === null) throw new Error('no 2d context for the inlay')
 
   const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
-  /*
-   * Cool, and much cooler than it looks here.
-   *
-   * This is added to cherry under a warm lamp, so whatever goes in loses its
-   * blue on the way: a balanced violet came out of the renderer as an orange
-   * halo — the red channel was already near the top and only the blue had
-   * anywhere to go. Written blue-heavy and nearly free of red, it lands on the
-   * timber as the cool violet it was meant to be.
-   *
-   * Narrow, too. A wide falloff is a stain on the tabletop; the ring has to be
-   * a line of light with the wood still legible on both sides of it, and the
-   * bid sits inside it and has to stay readable.
-   */
-  gradient.addColorStop(0, 'rgba(24, 52, 140, 0.03)')
-  gradient.addColorStop(0.7, 'rgba(34, 68, 175, 0.06)')
-  gradient.addColorStop(0.88, 'rgba(104, 150, 255, 0.34)')
-  gradient.addColorStop(0.95, 'rgba(56, 92, 205, 0.07)')
-  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+  gradient.addColorStop(0, 'rgba(26, 20, 46, 0.6)')
+  gradient.addColorStop(0.62, 'rgba(34, 28, 62, 0.56)')
+  gradient.addColorStop(0.8, 'rgba(92, 88, 186, 0.48)')
+  gradient.addColorStop(0.888, 'rgba(158, 158, 255, 0.54)')
+  gradient.addColorStop(0.93, 'rgba(92, 88, 190, 0.16)')
+  gradient.addColorStop(1, 'rgba(40, 34, 80, 0)')
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, size, size)
 
-  bloomMap = new CanvasTexture(canvas)
-  return bloomMap
+  inlayMap = new CanvasTexture(canvas)
+  /*
+   * Declared sRGB, which none of the generated overlays were.
+   *
+   * A canvas holds sRGB values, and a texture that does not say so is read as
+   * linear: every colour comes out pale and washed, which on anything
+   * saturated is most of the way to grey. It is the kind of mistake that looks
+   * like a design decision — the mark is *there*, it is simply the wrong
+   * colour, and no amount of adjusting the gradient fixes it.
+   */
+  inlayMap.colorSpace = SRGBColorSpace
+  return inlayMap
+}
+
+/**
+ * The light a cup stands in when it is that player's turn.
+ *
+ * The product has had a rule about this colour since before the table was
+ * drawn — electric blue is the turn and appears nowhere else, which is what
+ * makes it impossible to miss — and the table was the one place not keeping
+ * it. Whose turn it was lived entirely in the badges, around the edge of the
+ * picture, while the thing a waiting player is looking at is the cups.
+ *
+ * A ring on the timber rather than a tint on the cup, for the same reason the
+ * inlay is a ring: the cup is the player's colour and has to stay it. This is
+ * light falling on the table in front of them.
+ *
+ * Built for every seat and shown on one, so the scene can move it without
+ * rebuilding a cup — the turn moves on every single move, and a cup rebuilt
+ * that often would throw away whatever animation was running on it.
+ */
+export function makeTurnRing(): Mesh {
+  const ring = new Mesh(
+    new CircleGeometry(CUP_FOOT * 2.1, 64),
+    new MeshBasicMaterial({
+      map: turnFalloff(),
+      transparent: true,
+      /*
+       * Painted, not added — the opposite of what physics says, and the only
+       * thing that works here.
+       *
+       * Added, this is blue light falling on cherry under a warm lamp, and
+       * that is honestly what it looks like: a grey smudge. The colour is the
+       * whole point of this mark, so it is laid over the wood instead, and the
+       * soft edges on both sides are what keep it light rather than a sticker.
+       */
+      toneMapped: false,
+      depthWrite: false,
+    }),
+  )
+  ring.rotation.x = -Math.PI / 2
+  ring.position.y = 0.0022
+  ring.renderOrder = 2
+  ring.visible = false
+  return ring
+}
+
+/**
+ * A ring of blue with soft edges on both sides.
+ *
+ * Transparent in the middle, because the cup is standing there: lighting the
+ * timber underneath would put the halo through the object rather than round it.
+ */
+let turnMap: CanvasTexture | null = null
+
+function turnFalloff(): CanvasTexture {
+  if (turnMap !== null) return turnMap
+
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (ctx === null) throw new Error('no 2d context for the turn ring')
+
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+  gradient.addColorStop(0, 'rgba(40, 96, 220, 0)')
+  gradient.addColorStop(0.46, 'rgba(40, 104, 230, 0.1)')
+  gradient.addColorStop(0.58, 'rgba(96, 170, 255, 0.92)')
+  gradient.addColorStop(0.66, 'rgba(52, 128, 250, 0.5)')
+  gradient.addColorStop(0.82, 'rgba(36, 96, 220, 0.12)')
+  gradient.addColorStop(1, 'rgba(30, 80, 200, 0)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, size, size)
+
+  turnMap = new CanvasTexture(canvas)
+  turnMap.colorSpace = SRGBColorSpace
+  return turnMap
 }
 
 /**
