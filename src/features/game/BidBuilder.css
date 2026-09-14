@@ -18,16 +18,17 @@
 }
 
 /*
- * Side by side once there is room for both, which on a phone held upright
- * there is not. Stacked, the rack sits above the bid it is feeding, which is
- * the same reading order — the wide arrangement is the portrait one turned.
+ * Always stacked, and that is a decision rather than a fallback.
+ *
+ * There was a rule here putting the rack and the bid side by side past 33rem,
+ * which could not fire: the board is capped at 30rem on any display, so the
+ * widest this console is ever asked to be is 480px and the two slabs need
+ * something over 600 between them. The reference this is drawn from is a
+ * desktop picture; the game is played on a phone held upright, and a column
+ * that stays phone-shaped on a laptop is the honest way to render a phone
+ * game. Stacked, the rack sits above the bid it feeds, which is the reading
+ * order either way.
  */
-@container (min-width: 33rem) {
-  .builder {
-    grid-template-columns: auto 1fr;
-    align-items: start;
-  }
-}
 
 .builder__deck,
 .builder__bid {
@@ -49,14 +50,6 @@
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 5px;
-}
-
-@container (min-width: 33rem) {
-  .builder__deck {
-    /* A column of the same cells would be a tower; the rack stays a rack and
-       simply stops stretching. */
-    grid-template-columns: repeat(3, 50px);
-  }
 }
 
 .builder__face {

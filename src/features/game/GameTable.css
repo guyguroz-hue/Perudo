@@ -156,10 +156,6 @@
   flex-direction: column;
   gap: var(--space-2);
   margin-top: -6%;
-  /* A container, so the console asks how much room it has rather than how wide
-     the window is. The board is capped at 34rem however large the display, so
-     the two are not the same question. */
-  container-type: inline-size;
 }
 
 /*

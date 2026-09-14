@@ -96,7 +96,13 @@ function apart(a, b) {
   ) / 255
 }
 
-const server = await createServer({ server: { port: PORT }, logLevel: 'error' })
+// strictPort, so a port already in use fails here and says so. Without it Vite
+// quietly moves to the next one and the probe below reads whatever is on the
+// port it was told to use — which is either nothing, or another project.
+const server = await createServer({
+  server: { port: PORT, strictPort: true },
+  logLevel: 'error',
+})
 await server.listen()
 
 const browser = await chromium.launch({

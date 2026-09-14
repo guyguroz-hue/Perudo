@@ -274,12 +274,25 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
     setReveal({ pending: true, data: null })
     setBusy(true)
     setError(null)
-    // Which round this challenge is resolving, read before the await: by the
-    // time it returns the table has moved on to the next one.
+    /*
+     * Claim the round now, not when the answer arrives.
+     *
+     * Read before the await for the obvious reason — by the time it returns
+     * the table has moved on to the next round — but claimed before it too,
+     * which is less obvious and is the whole point. The server writes the
+     * resolution before it replies, so Realtime can deliver the round change
+     * and drive a refresh while this request is still in flight: that refresh
+     * would find the claim unmade, rebuild the same reveal from the log and
+     * set it, and then the reply would set a second identical one on top and
+     * restart a sequence already playing.
+     *
+     * Cleared in the catch, so a challenge that is refused leaves nothing
+     * claimed and a later resolution of that round still plays normally.
+     */
     const resolving = seenRound.current
+    showing.current = resolving
     try {
       const data = await api.challenge(gameId)
-      showing.current = resolving
       setReveal({ pending: false, data })
       await refresh()
     } catch (caught) {

@@ -15,7 +15,7 @@ import {
   Vector2,
 } from 'three'
 import { CROWN_PATH } from './crown'
-import { INLAY_RADIUS } from './layout'
+import { CUP_FOOT, INLAY_RADIUS } from './layout'
 import { woodTexture } from './textures'
 
 /**
@@ -345,9 +345,16 @@ export function makeCup(colour: string): Group {
   mark.rotation.x = -0.17
   group.add(mark)
 
-  // The dark ring it stands on, which is what stops a cup floating.
+  /*
+   * The dark ring it stands on, which is what stops a cup floating.
+   *
+   * Its radius comes from layout, not from here. The badges hung below the
+   * near cups are placed to clear this exact circle, and a coaster widened in
+   * this file while that number stayed where it was would put a name back on
+   * top of a cup with nothing to connect the two.
+   */
   const coaster = new Mesh(
-    new CircleGeometry(CUP_BASE + 0.038, 64),
+    new CircleGeometry(CUP_FOOT, 64),
     new MeshStandardMaterial({ color: new Color('#0c0705'), roughness: 0.62 }),
   )
   coaster.rotation.x = -Math.PI / 2
@@ -364,7 +371,7 @@ export function makeCup(colour: string): Group {
    * and it catches the lamp from every seat because it is a ring.
    */
   const trim = new Mesh(
-    new RingGeometry(CUP_BASE + 0.032, CUP_BASE + 0.038, 64),
+    new RingGeometry(CUP_FOOT - 0.006, CUP_FOOT, 64),
     new MeshStandardMaterial({
       color: new Color('#b08637'),
       roughness: 0.3,
