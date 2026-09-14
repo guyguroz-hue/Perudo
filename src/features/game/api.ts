@@ -12,16 +12,72 @@ import type { RevealData } from './reveal'
  * the only thing it can do.
  */
 
+/**
+ * How long a move may take before the table gives up on it.
+ *
+ * There was no limit at all, and on a phone that is not an edge case — a
+ * request made as the signal goes hangs until the socket is reclaimed, which
+ * can be minutes or never. Every one of these calls is awaited by something
+ * that has already taken the controls away: a bid leaves `busy` set, so the
+ * whole console stays disabled, and a challenge leaves the reveal holding its
+ * breath with the cups up and no dock underneath. Both are a frozen game with
+ * nothing on screen admitting it.
+ *
+ * Generous on purpose. A challenge is the slowest thing the server does — it
+ * counts the table, resolves, writes the round and deals the next one — and a
+ * limit that fires on a slow-but-working connection would take a game away
+ * from somebody who was about to get an answer. Twelve seconds is far beyond
+ * anything the function does and far short of a player deciding the app is
+ * broken.
+ */
+const PATIENCE_MS = 12_000
+
 async function act<T>(body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke('game', { body })
+  const giveUp = new AbortController()
+  // An explicit controller rather than AbortSignal.timeout, so the timer can be
+  // cleared the moment the answer lands: a pending timeout per move would keep
+  // a phone's timer queue awake for no reason, and this is a game people leave
+  // open.
+  const timer = setTimeout(() => giveUp.abort(), PATIENCE_MS)
+
+  let data: unknown
+  let error: unknown
+  try {
+    ;({ data, error } = await supabase.functions.invoke('game', { body, signal: giveUp.signal }))
+  } catch (thrown) {
+    // An abort surfaces as a returned error in some versions of the client and
+    // as a throw in others, so both roads lead here.
+    if (giveUp.signal.aborted) throw gaveUp()
+    throw toGameError(thrown)
+  } finally {
+    clearTimeout(timer)
+  }
 
   // A non-2xx response arrives as an error whose body holds the refusal. Left
   // unread, every rule the server enforces would reach the player as "Edge
   // Function returned a non-2xx status code".
-  if (error !== null) {
+  if (error !== null && error !== undefined) {
+    if (giveUp.signal.aborted) throw gaveUp()
     throw toGameError(await refusalFrom(error))
   }
   return data as T
+}
+
+/**
+ * The timeout firing, said as a refusal.
+ *
+ * Not stale. Stale means the table moved and looking again is the answer;
+ * here nothing is known to have happened at all — the request may have been
+ * applied, or never arrived. Either way the player's next move refetches, and
+ * the server checks the move again, so guessing which it was would buy
+ * nothing and could show them a table that never existed.
+ */
+function gaveUp(): GameActionError {
+  return new GameActionError(
+    'TIMED_OUT',
+    'The table did not answer. Check your connection and try again.',
+    false,
+  )
 }
 
 async function refusalFrom(error: unknown): Promise<unknown> {

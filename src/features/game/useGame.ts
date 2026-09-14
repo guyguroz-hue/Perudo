@@ -87,6 +87,19 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
   // press the button finds out a challenge was resolved.
   const seenRound = useRef<string | null>(null)
   const started = useRef(false)
+  /*
+   * The round whose reveal is already playing on this screen.
+   *
+   * Only the challenger ever has one before the refetch does: they were handed
+   * the whole resolution as the answer to their own request. Without this the
+   * refresh that follows saw the round had changed, decided somebody else must
+   * have resolved it, rebuilt the same reveal from the log and set it — a new
+   * object with identical contents, which restarts the sequence that is
+   * already half-played. The cups stay up and the count starts again from
+   * nothing, which reads as the table stuttering at the one moment it has the
+   * player's whole attention.
+   */
+  const showing = useRef<string | null>(null)
 
   const refresh = useCallback(async () => {
     if (gameId === null || youId === null) return
@@ -123,10 +136,13 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
       // Somebody else's challenge. The reveal is rebuilt from what the round
       // made public, so every player sees the cups come off, not just the one
       // who doubted.
-      if (resolvedElsewhere) {
+      if (resolvedElsewhere && showing.current !== previous) {
         const past = await fetchReveal(previous)
         if (generation.current !== mine) return
-        if (past !== null) setReveal({ pending: false, data: past })
+        if (past !== null) {
+          showing.current = previous
+          setReveal({ pending: false, data: past })
+        }
       }
     } catch (caught) {
       if (generation.current !== mine) return
@@ -179,15 +195,39 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
     }
   }, [gameId, youId, refresh])
 
-  // A phone suspends a background tab and silently drops the socket, so coming
-  // back to the app is its own kind of reconnection.
+  /*
+   * Coming back.
+   *
+   * A phone suspends a background tab and silently drops the socket, so
+   * returning to the app is its own kind of reconnection — and so is the radio
+   * coming back after a lift or a tunnel. The lobby has watched all three since
+   * it was written; the table watched only the first, which meant the one
+   * screen where being out of date actually costs you something was the one
+   * that said nothing about it. A player who lost signal mid-round saw a live
+   * dot and a table several bids behind until they happened to switch apps.
+   */
   useEffect(() => {
     if (gameId === null) return
+
     function onVisible() {
       if (document.visibilityState === 'visible') void refresh()
     }
+    function onOnline() {
+      setConnection('reconnecting')
+      void refresh()
+    }
+    function onOffline() {
+      setConnection('offline')
+    }
+
     document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+    }
   }, [gameId, refresh])
 
   /**
@@ -234,14 +274,19 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
     setReveal({ pending: true, data: null })
     setBusy(true)
     setError(null)
+    // Which round this challenge is resolving, read before the await: by the
+    // time it returns the table has moved on to the next one.
+    const resolving = seenRound.current
     try {
       const data = await api.challenge(gameId)
+      showing.current = resolving
       setReveal({ pending: false, data })
       await refresh()
     } catch (caught) {
       // No resolution, so no reveal. Put the table back rather than leaving the
       // cups held over a challenge that never happened.
       setReveal(null)
+      showing.current = null
       const failure = toGameError(caught)
       setError({ message: failure.message, stale: failure.stale })
       if (failure.stale) await refresh()
