@@ -3,6 +3,39 @@
  * cup. The badge itself — the avatar, the name, the turn light — is shared with
  * the lobby and lives in components/TableBadge.css.
  */
+
+/*
+ * Kept in the picture.
+ *
+ * The camera says where a chair projects to, as a percentage; it cannot say
+ * whether the badge hanging off that point fits, because that depends on the
+ * badge's height in pixels and on how tall the stage was actually laid out.
+ * Both of those are known here and nowhere else, so the clamp is here.
+ *
+ * A near chair hangs its badge below the anchor, off the front edge of the
+ * table, so what it can run into is the bottom of the frame — and under the
+ * frame is the player's own dice, which is the one place a name must never
+ * land. A far chair holds its badge above its cup, so what it can run into is
+ * the top. Each gets the bound that can bind and neither gets the other, which
+ * is why the reserves are different numbers: a far badge is an avatar over a
+ * name over a row of dice, and a near one is usually a single pill.
+ *
+ * This is what stops the layout from breaking on a short phone, where the stage
+ * gives up height to keep the controls on screen and there is suddenly much
+ * less frame either side of the anchor than the numbers were chosen against.
+ */
+.board__seats .badge {
+  --badge-below: 46px;
+  --badge-above: 88px;
+}
+
+.board__seats .badge--near {
+  top: min(var(--seat-top), calc(100% - var(--badge-below)));
+}
+
+.board__seats .badge--far {
+  top: max(var(--seat-top), var(--badge-above));
+}
 /* How many dice are under that cup, in their colour. */
 .badge__dice {
   display: flex;
@@ -95,4 +128,53 @@
   padding: 0;
   background: none;
   box-shadow: none;
+}
+
+/*
+ * A small table.
+ *
+ * A badge is a piece of DOM at a fixed size and the table behind it is not: on
+ * a phone short enough that the stage has to give up width to fit the controls,
+ * six of them at full size stop being labels on a picture and become the
+ * picture. The stage declares itself a container precisely so the things laid
+ * over it can be sized as a share of the table, and this is that — the badge
+ * steps down once the timber is under about four-fifths of a phone's width.
+ *
+ * Only the furniture shrinks. The name keeps its own size as far as it can,
+ * because a name is the one thing on the badge that has to be read.
+ */
+@container (max-width: 330px) {
+  /* A smaller badge needs less room past its anchor, and saying so here keeps
+     the reserve and the thing it is reserving for in one place. */
+  .board__seats .badge {
+    --badge-below: 38px;
+    --badge-above: 70px;
+  }
+
+  .badge {
+    gap: 3px;
+  }
+
+  .badge__avatar {
+    width: 26px;
+    height: 26px;
+    font-size: var(--text-xs);
+  }
+
+  .badge__name {
+    max-width: 6rem;
+    font-size: var(--text-xs);
+  }
+
+  .badge__tag {
+    padding: 2px 6px;
+  }
+
+  .badge__dice {
+    gap: 1px;
+  }
+
+  .badge__dice .die {
+    --die-size: 8px !important;
+  }
 }

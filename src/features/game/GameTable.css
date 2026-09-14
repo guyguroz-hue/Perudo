@@ -13,6 +13,19 @@
   width: 100%;
   max-width: 30rem;
   margin: 0 auto;
+  /*
+   * Takes the screen, and gives way from the top.
+   *
+   * A web app does not get the whole display: iOS Safari keeps a URL bar along
+   * the bottom of it, and `100vh` is the height the page *would* have once that
+   * bar retracts — which it does only after the player scrolls, which is
+   * exactly what they should never have to do here. So the board claims what is
+   * actually visible and hands any shortfall to the stage, which is the one
+   * thing on this screen that can be smaller without anything becoming
+   * unreachable. The controls below it never shrink.
+   */
+  flex: 1;
+  min-height: 0;
 }
 
 /* -----------------------------------------------------------------------------
@@ -39,8 +52,22 @@
    * the room the player is sitting in — which is the whole reason it is there.
    * Pulled out of the page's own gutter rather than given one.
    */
-  width: min(100vw, 34rem);
-  margin-inline: calc((100% - min(100vw, 34rem)) / 2);
+  /*
+   * As wide as the screen, unless the screen is too short to hold it.
+   *
+   * The height it wants is its width over the camera's aspect ratio, and that
+   * is what it gets whenever there is room. When there is not — a small phone
+   * with a browser bar eating the bottom — flex shrinks the height instead,
+   * and `aspect-ratio` with an auto width takes the width down with it rather
+   * than squashing the picture. A table that is narrower than the display beats
+   * a table with its controls under the address bar.
+   */
+  flex: 0 1 auto;
+  align-self: center;
+  width: auto;
+  height: calc(min(100vw, 34rem) / var(--stage-aspect));
+  max-width: min(100vw, 34rem);
+  min-height: 0;
   /* A container, so the cups can be sized as a share of the table. Inline size
      only: the height comes from the camera's aspect ratio, and asking for both
      would make the box depend on itself. */
@@ -139,10 +166,17 @@
   font-weight: 600;
 }
 
+/* The sound toggle, and the connection beside it when there is anything wrong
+   with it. Laid over the timber rather than given a row of its own, because a
+   row that is empty whenever the game is healthy is a row this screen cannot
+   afford. */
 .board__sound {
   position: absolute;
   top: var(--space-2);
   right: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .board__centre {
@@ -196,52 +230,44 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  margin-top: -6%;
-}
-
-/*
- * What you know, beside what you can say.
- *
- * The two halves of the dock, and the split is the point of it. Your own dice
- * and the rack of faces used to be two rows of dice an inch apart, one secret
- * and one a control; a heading over each was not nearly enough, and a player
- * reaching for "I want to bid sixes" was as likely to reach into their own
- * hand. Apart, and shaped differently — a column against a grid — they stop
- * being the same kind of thing.
- *
- * The hand takes only the width it needs. The bid takes the rest, because
- * everything in it is a target and a target wants room.
- */
-.board__console {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: start;
-  gap: var(--space-2);
-}
-
-/* Nobody to bid against: the hand is the whole dock and may as well be read
-   across, which is also the shape it has everywhere else in the product. */
-.board__console--watching {
-  grid-template-columns: 1fr;
+  /*
+   * Right at the foot of the scene, not pulled up into it.
+   *
+   * It used to overlap the stage by a slice, which worked while the picture was
+   * tall enough to have a band of empty floor below the near cup. The shorter
+   * picture does not: the near player's badge hangs off the front edge of the
+   * table and landed underneath the slab, with the player's own dice showing
+   * through their own name. The canvas already fades out over its last seventh,
+   * so the controls still sit under the table rather than on a rectangle that
+   * stops above them — the fade was doing that work, not the overlap.
+   */
+  /* Never shrinks. Everything in here is a target, and a target that has been
+     squeezed to fit is a target that has stopped working. */
+  flex: none;
 }
 
 /*
  * Your own dice.
  *
  * The only information on this screen nobody else has, and the thing every bid
- * is weighed against — so it sits beside the controls, and a player's eye
- * travels hand → bid → act without leaving the bottom of the display.
+ * is weighed against, so it sits directly under the table and directly above
+ * the controls: a player's eye travels table → hand → bid → act without ever
+ * leaving the bottom of the display.
  *
- * On felt rather than on slate. Everything to the right of it is a moulded
- * panel with buttons set into it; this is a surface with objects lying on it,
- * and being a different material is most of what stops it being mistaken for
- * another row of things to press.
+ * Directly below it is the rack of faces, which is also a row of dice — one
+ * secret, one a control, and for a long time nothing but a heading told them
+ * apart. A player reaching for "I want to bid sixes" was as likely to reach
+ * into their own hand. Rearranging them did not fix it, and neither did
+ * separating them: what fixes it is that they are made of different things.
+ * This is timber, the same timber the cups are standing on a few centimetres
+ * above, with objects lying on it. Everything below is moulded slate with
+ * buttons set into it. Nothing about this slab suggests pressing it.
  */
 .board__hand {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: var(--space-2);
+  gap: 6px;
+  padding: 7px var(--space-2);
   border-radius: var(--radius-lg);
   /* The timber, in shadow. These dice are lying on the table in front of you,
      and giving the slab the table's own colour says so — it is the one panel
@@ -255,35 +281,21 @@
     var(--shadow-control);
 }
 
-/*
- * A column, because a rack is a grid.
- *
- * Five dice read across is the shape the face picker has, and the shape a hand
- * had — which is exactly the confusion. Down the side they are unmistakably
- * the player's own, and they wrap back into a second column at a table size
- * that never happens rather than running off the bottom of the screen.
- */
+/* Read across, which is the shape a hand has everywhere else in the product and
+   the shape five dice on a table in front of you actually have. It wraps rather
+   than running off the side at a dice count no rule produces. */
 .board__hand-row {
   display: flex;
-  flex-direction: column;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  max-height: 15rem;
 }
 
-/*
- * Read across when the hand has the whole width.
- *
- * A column is what keeps it from looking like the rack, and it only has to do
- * that while the two are side by side. With every control in the game between
- * them there is nothing to be confused with, and a row is the shape a hand has
- * everywhere else in the product.
- */
-.board__dock > .board__hand .board__hand-row {
-  flex-direction: row;
-  max-height: none;
+/* Sized from here rather than from the call, so the rule at the foot of this
+   file can take them down a size on a phone with no room for them. */
+.board__die {
+  --die-size: 34px;
 }
 
 /* Quiet, but there. It is a caption on the one secret on the screen, not a
@@ -292,6 +304,7 @@
   margin: 0;
   font-size: var(--text-2xs);
   font-weight: 600;
+  line-height: 1.2;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   text-align: center;
@@ -307,3 +320,70 @@
 }
 
 
+
+/*
+ * A short screen.
+ *
+ * Not a small phone — a phone held in a browser. The page is given what is
+ * left after the address bar, and on anything older or smaller than a current
+ * iPhone that is under six hundred points. Rather than let the table shrink
+ * away to nothing, the controls give up a few pixels each first: the dice in
+ * the hand go down a size, the faces and the buttons come in to the smallest
+ * a thumb still lands on reliably, and the table keeps the difference.
+ *
+ * `!important` on the die, and only there. Its size is a custom property set
+ * inline by the component, and an inline property cannot be beaten by an
+ * ordinary rule — the alternative is a second size prop threaded through every
+ * caller, which is a worse thing to own than one annotated exception.
+ */
+/*
+ * A small table.
+ *
+ * On a phone short enough that the stage gives up width to fit the controls,
+ * the top-left corner of the picture is being asked to hold the round number,
+ * the dice count and the last two moves, with the far players' badges arriving
+ * just underneath — four things in a corner that is now two-thirds the size it
+ * was, and they end up on top of each other.
+ *
+ * The round number is the one that can move. It is a standing fact nobody acts
+ * on, the floor at the foot of the picture is empty at every table size, and
+ * putting it there leaves the corner to the moves, which are the thing a player
+ * actually reads. Above the controls rather than in them: it still belongs to
+ * the table.
+ */
+@container (max-width: 330px) {
+  .board__strip {
+    top: auto;
+    bottom: var(--space-2);
+    left: var(--space-3);
+  }
+}
+
+@media (max-height: 640px) {
+  .board__die {
+    --die-size: 28px !important;
+  }
+
+  .board__hand,
+  .builder {
+    padding: 5px 6px;
+  }
+
+  .builder__face {
+    min-height: 42px;
+  }
+
+  .builder__step {
+    width: 34px;
+    height: 34px;
+  }
+
+  .builder__submit {
+    min-height: 42px;
+  }
+
+  .challenge__lie,
+  .challenge__bull {
+    min-height: 50px;
+  }
+}

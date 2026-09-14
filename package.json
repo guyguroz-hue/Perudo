@@ -15,7 +15,8 @@
     "bundle:function": "node scripts/bundle-function.mjs",
     "test:reach": "node scripts/test-reachable.mjs",
     "test:recover": "node scripts/test-context-loss.mjs",
-    "look": "node scripts/look.mjs"
+    "look": "node scripts/look.mjs",
+    "test:fit": "node scripts/test-fit.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

@@ -31,7 +31,24 @@ import { PerspectiveCamera, Vector3 } from 'three'
  * this close draws the near one half again the size of the far one — which
  * stops being perspective and starts being a different cup.
  */
-export const CAMERA = { height: 2.28, distance: 2.55, fov: 40 } as const
+/*
+ * A longer lens again, because the stage got shorter.
+ *
+ * The field of view is vertical, so the horizontal one is this and the stage's
+ * aspect together. Widening the stage to fit the controls on a phone widened
+ * that field by the same proportion, and the table went from running off both
+ * sides of the frame to sitting in the middle of it with floor visible all the
+ * way round — a table in a void, which is the one thing the room behind it
+ * exists to prevent.
+ *
+ * Narrowed by exactly the factor the stage widened by, so the horizontal field
+ * is the number it always was: the table is the same size across the frame as
+ * before, and the only thing the change costs is some of the room above it and
+ * some of the floor below, which is what a shorter picture ought to show. It
+ * is also kinder to six identical cups, which is the reason this lens was long
+ * in the first place.
+ */
+export const CAMERA = { height: 2.28, distance: 2.55, fov: 34.2 } as const
 
 /**
  * What the camera is pointed at.
@@ -49,8 +66,21 @@ export const LOOK_AT = { x: 0, y: 0.16, z: 0.02 } as const
  * Fixed, because the projection depends on it: a camera with one aspect ratio
  * and an overlay computed for another would drift apart at the edges, which is
  * exactly where the player badges are.
+ *
+ * It used to be a third taller than it is wide, and that was chosen against a
+ * window with no browser in it. A web app does not get the screen: iOS Safari
+ * keeps a URL bar along the bottom, and the table plus the controls under it
+ * came to more than what is left — so the one thing a player has to reach, the
+ * row with Lie and Bull in it, was drawn underneath the address bar. Shorter,
+ * the whole game fits on the phone it is being played on, which is worth more
+ * than the extra band of room above the table.
+ *
+ * Nothing is squashed by the change. The field of view is vertical, so the
+ * vertical extent of the scene is exactly what it was and the horizontal field
+ * simply widens — more of the timber runs off the sides, which is the framing
+ * this camera wanted anyway.
  */
-export const STAGE_ASPECT = 1 / 1.3
+export const STAGE_ASPECT = 1 / 1.1
 
 /** Where the cups stand, as a fraction of the table's radius. */
 export const SEAT_RADIUS = 0.72
@@ -143,11 +173,17 @@ export const OVERHEAD = {
    *
    * The stage is taller than it is wide, so the horizontal field is the tight
    * one: at this fov and aspect its half-angle has tan = tan(fov/2) * aspect
-   * ≈ 0.28, so a height of 3.9 reaches about 1.09 either side of the middle.
-   * The table's rim is at 1, and the badges ride just inside it, which is the
-   * outermost thing that must not be cut.
+   * ≈ 0.280, so a height of 3.9 reaches about 1.09 either side of the middle.
+   * The table's rim is at 1, and the badges ride just inside it at BADGE_RIM,
+   * which is the outermost thing that must not be cut.
    *
-   * It rises whenever the lens narrows, because both views are the same lens.
+   * It rises whenever the lens narrows and falls whenever the stage widens,
+   * because both views are the same lens and it is the horizontal field that
+   * has to contain the table. The two moved together when the stage was
+   * shortened to fit a phone — the lens was narrowed by exactly the factor the
+   * stage widened by — so the product is unchanged and so is this. Change
+   * either alone and this has to move; the test that says the whole table stays
+   * in the picture is what catches it when it is forgotten.
    */
   height: 3.9,
   /*
@@ -242,6 +278,18 @@ export function seatPoint(index: number, count: number, radius = SEAT_RADIUS) {
 export interface BadgeAnchor extends Anchor {
   /** Which way the badge hangs off its anchor point. */
   readonly translate: string
+  /**
+   * Which half of the table this chair is in.
+   *
+   * Returned rather than kept to itself because it decides which way a badge
+   * reaches past its anchor — down off the front edge of the table for a near
+   * chair, up clear of the cup for a far one — and therefore which edge of the
+   * frame it can be pushed off. Keeping it inside the frame takes a badge's
+   * height in pixels, which is a fact about the DOM rather than about the
+   * camera, so that clamp lives in the stylesheet. This is what tells the
+   * stylesheet which of the two bounds to apply.
+   */
+  readonly near: boolean
 }
 
 export function badgeAnchor(
@@ -346,6 +394,7 @@ export function badgeAnchor(
   return {
     left: `${clamp(margin, Number.parseFloat(anchor.left), 100 - margin)}%`,
     top: anchor.top,
+    near,
     /*
      * Rounded, and signed by hand.
      *
@@ -378,6 +427,11 @@ export function emptySeatAnchor(index: number, count: number): BadgeAnchor {
   return {
     left: `${clamp(BADGE_MARGIN, Number.parseFloat(anchor.left), 100 - BADGE_MARGIN)}%`,
     top: anchor.top,
+    /* It lies flat on the timber and straddles its anchor, so it reaches half
+       its own height either way rather than a whole one — and the ring of wood
+       it lies in is well inside the frame at every table size. Neither bound
+       can bind, and saying "near" would claim a hang it does not have. */
+    near: false,
     translate: '-50% -50%',
   }
 }

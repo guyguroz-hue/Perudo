@@ -26,7 +26,9 @@
  *
  * They stay the height of a comfortable thumb and no more. An earlier pair of
  * tall tiles took a third of the display between them to say two words, which
- * is a third of the display not showing the table.
+ * is a third of the display not showing the table — and on a phone, where the
+ * browser's own address bar takes the bottom of the page, it was a third of the
+ * display that pushed these two under it.
  */
 .challenge__lie,
 .challenge__bull {
@@ -34,8 +36,11 @@
   justify-items: center;
   align-content: center;
   gap: 1px;
-  min-height: 74px;
-  padding: var(--space-2) 6px;
+  /* Well over the 44px a thumb needs, and every pixel past that is a pixel the
+     table does not get. Three short lines fit in it because the mark is small
+     and the two lines of type are small; nothing here wants to be big. */
+  min-height: 56px;
+  padding: 5px;
   border: 0;
   border-radius: var(--radius);
   text-align: center;
@@ -72,8 +77,8 @@
 }
 
 .challenge__icon {
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.45));
 }
 
@@ -82,16 +87,20 @@
   align-items: center;
   gap: 4px;
   font-family: var(--font-display);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: 700;
   letter-spacing: var(--track-display);
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
 .challenge__claim {
   display: flex;
   align-items: center;
   gap: 4px;
+  /* One line, and only as tall as the line. The default leading is set for
+     paragraphs, and three of them stacked in a button is most of a row of
+     table. */
+  line-height: 1.25;
   /* The reading and the number are one phrase. Broken across lines it stops
      being one, which is the only thing this row is for. */
   white-space: nowrap;

@@ -72,6 +72,31 @@ button {
   flex-direction: column;
 }
 
+/*
+ * The table screens get the window, exactly.
+ *
+ * `min-height` is a floor, and a floor is all most screens need: a column of
+ * text and buttons may honestly run past the fold. The table may not. Every
+ * control on it is pressed under time pressure, and a control below the fold is
+ * a control that is not there — which is what a player found, with Lie and Bull
+ * drawn underneath Safari's address bar.
+ *
+ * A floor cannot do that job, and neither can `flex: 1` further down: a column
+ * flex container with no definite height sizes to its content, so a table that
+ * wanted more height simply took it and everything above grew to match. One
+ * definite height here is what lets the shortfall travel back down the chain to
+ * the stage, which is the one box on the screen that can be smaller without
+ * anything becoming unreachable.
+ *
+ * `dvh`, not `vh`. `vh` is the height the page would have once the browser's
+ * address bar retracts — which happens after the player scrolls, which is the
+ * thing this exists to make unnecessary.
+ */
+#root:has(.game),
+#root:has(.learn) {
+  height: 100dvh;
+}
+
 /* Available to a screen reader, absent from the layout. Used where a visual
    composition carries meaning that no single element's text does — the bid
    preview reads as a number, a times sign and a picture of a die. */

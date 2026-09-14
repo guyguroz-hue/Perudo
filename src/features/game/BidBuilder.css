@@ -14,7 +14,7 @@
  */
 .builder {
   display: grid;
-  gap: var(--space-2);
+  gap: 7px;
   min-width: 0;
   padding: var(--space-2);
   border-radius: var(--radius-lg);
@@ -30,35 +30,29 @@
  * ---------------------------------------------------------------------------*/
 /* Dice, never the words "one, two, three": the rack, a hand and the reveal all
    speak the same visual language, so choosing a face is picking up a die. */
-/* Three across and two down. Six in a row is the shape a hand has, and it is
-   also 40px a cell once this panel is sharing its width — under the 44 a thumb
-   needs, which is the other half of why the rack changed shape. */
+/*
+ * Six across, one row.
+ *
+ * The slab has the whole width of the screen, so a sixth of it clears the 44px
+ * a thumb needs with room to spare, and one row is the shape a set of faces
+ * wants. It read as a hand while it sat an inch under the player's own dice;
+ * what fixed that is the material above it, not the shape of this.
+ */
 .builder__deck {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
-}
-
-/*
- * The rack with a slab to itself, at the foot of the screen.
- *
- * It has the whole width there, so six across fits with room over the 44px a
- * thumb needs — and a single row is the shape it wants, as long as nothing
- * that looks like a hand is anywhere near it. Which is the arrangement's whole
- * argument: everything you can press sits between this and your own dice.
- */
-.builder--rack .builder__deck {
   grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
 }
 
 .builder__face {
   display: grid;
   place-items: center;
   /* Tall enough for a thumb and no taller. Square cells looked right on paper
-     and came out as six large empty tiles once the rack had a column to
-     itself — a target has a size, and past it the extra is just panel. */
-  min-height: 52px;
-  padding: 3px 0;
+     and came out as six large empty tiles once the rack had the width — a
+     target has a size, and past it the extra is just panel, and panel is the
+     thing this screen has none of to spare. */
+  min-height: 46px;
+  padding: 2px 0;
   border: 0;
   border-radius: var(--radius);
   background: linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02));
@@ -96,12 +90,17 @@
 /* -----------------------------------------------------------------------------
  * How many, and saying it
  * ---------------------------------------------------------------------------*/
+/* The twin of `.board__mine` over the hand, and deliberately identical to it:
+   two captions in the same voice are read as a pair, and the pair is what says
+   these are two different kinds of thing. */
 .builder__label {
-  margin: 0 0 -2px 2px;
+  margin: 0;
   font-size: var(--text-2xs);
   font-weight: 600;
+  line-height: 1.2;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
+  text-align: center;
   color: var(--ink-faint);
 }
 
@@ -144,8 +143,8 @@
    and a circle under a thumb is unmistakable. */
 .builder__step {
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border: 0;
   border-radius: 50%;
   background: radial-gradient(75% 75% at 50% 28%, #2e3446, #171b28);
@@ -202,7 +201,7 @@
    than a colour of its own — the two colours in the product both mean
    "challenge". */
 .builder__submit {
-  min-height: 48px;
+  min-height: 46px;
   padding-inline: var(--space-3);
   border: 0;
   border-radius: var(--radius);

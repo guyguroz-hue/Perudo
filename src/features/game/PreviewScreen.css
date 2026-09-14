@@ -59,3 +59,18 @@
   font-size: var(--text-sm);
   text-align: center;
 }
+
+/*
+ * A real game screen's worth of height.
+ *
+ * The table shrinks to the height it is given, so previewing it in a column
+ * that grows to fit shows a layout nobody is ever served. This is the height
+ * the app shell actually hands it: the window, less its own gutter, which is
+ * the one number `.app` and this have to agree on.
+ */
+.preview__fit {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 2 * clamp(var(--space-2), 2.2vh, var(--space-5)));
+  min-height: 0;
+}

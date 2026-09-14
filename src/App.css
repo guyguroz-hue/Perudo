@@ -3,7 +3,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-5) var(--space-4);
+  /*
+   * The gutter gives way before the game does.
+   *
+   * Twenty-four points top and bottom is right on a screen with room to spare
+   * and is forty-eight points of nothing on a phone whose browser has already
+   * taken the bottom of the page for its address bar. Tied to the height of the
+   * viewport rather than to a breakpoint, so it eases off exactly as far as it
+   * has to and no further.
+   */
+  padding: clamp(var(--space-2), 2.2vh, var(--space-5)) var(--space-4);
 }
 
 .app__status {
@@ -34,4 +43,32 @@
 .app__rolling {
   display: flex;
   gap: var(--space-2);
+}
+
+/*
+ * A screen that has to fit.
+ *
+ * Most screens in the product are a column of text and buttons that may
+ * honestly scroll. The table is not one of them: every control on it is
+ * something a player presses under time pressure, and a control below the fold
+ * is a control that is not there. So the game gets the full height of the
+ * viewport to lay itself out in, and shrinks to it.
+ */
+.app:has(> .game),
+.app:has(> .learn) {
+  align-items: stretch;
+  /*
+   * And no taller.
+   *
+   * `flex: 1` alone only sets a floor: a flex item's automatic minimum size is
+   * its content, so a table that wanted more height simply took it and the page
+   * grew under it — which is the whole fault, one level up. Zeroed, the shell
+   * is exactly the window and the shortfall is pushed down to the stage, which
+   * is the one thing here that can be smaller without breaking.
+   *
+   * Only on these two screens. Every other screen in the product is a column
+   * that may honestly run past the fold, and clamping those would be swapping
+   * one bug for another.
+   */
+  min-height: 0;
 }

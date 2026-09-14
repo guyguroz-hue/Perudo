@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { ConnectionDot } from '../../components/ConnectionDot'
 import { GameTable } from './GameTable'
 import { Finish } from './Finish'
 import { PERUDO } from '../../game'
@@ -67,10 +66,6 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
 
   return (
     <div className="game">
-      <div className="game__bar">
-        <ConnectionDot connection={game.connection} />
-      </div>
-
       {opening !== null && (
         <div className="game__blocked" role="alert">
           <p>{opening.message}</p>
@@ -108,6 +103,7 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
         ))}
 
       <GameTable
+        connection={game.connection}
         view={game.view}
         busy={game.busy}
         /*

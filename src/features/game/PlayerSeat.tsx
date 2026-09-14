@@ -42,8 +42,19 @@ export function PlayerSeat({
 }) {
   const { player, index, count } = placement
   const tone = toneForSeat(player.seatIndex)
+  /*
+   * The projection places the badge; the stylesheet keeps it in the picture.
+   *
+   * `top` is handed over as a custom property rather than set directly, because
+   * the badge has to be held off the edge of the frame by its own height — a
+   * number of pixels the camera has no idea about and CSS knows exactly. The
+   * `badge--near` class says which edge: a near chair hangs its badge below the
+   * anchor, a far one holds it above.
+   */
+  const { top, near, ...anchor } = badgeAnchor(index, count, lifted, overhead)
   const style = {
-    ...badgeAnchor(index, count, lifted, overhead),
+    ...anchor,
+    '--seat-top': top,
     '--seat-tone': tone,
   } as CSSProperties
   /*
@@ -61,7 +72,7 @@ export function PlayerSeat({
   if (player.isYou) {
     return (
       <li
-        className={`badge badge--you${player.hasTurn ? ' badge--turn' : ''}${aerial ? ' badge--aerial' : ''}`}
+        className={`badge badge--you ${near ? 'badge--near' : 'badge--far'}${player.hasTurn ? ' badge--turn' : ''}${aerial ? ' badge--aerial' : ''}`}
         style={style}
       >
         <span className="badge__status">
@@ -75,6 +86,7 @@ export function PlayerSeat({
     <li
       className={[
         'badge',
+        near ? 'badge--near' : 'badge--far',
         player.hasTurn && !player.isEliminated ? 'badge--turn' : '',
         player.isEliminated ? 'badge--out' : '',
         aerial ? 'badge--aerial' : '',

@@ -42,7 +42,17 @@ const OUT = process.env.LOOK_OUT ?? '/tmp'
  * a shadow and tells you nothing about the object.
  */
 const REGIONS = {
-  // Bare timber on the near left, where no cup stands at any table size.
+  /*
+   * Bare timber on the near left, where no cup stands at any table size.
+   *
+   * It is now genuinely bare. Under the taller stage this box also caught the
+   * table's left edge and the floor beyond it, so `spread` for the wood was
+   * mostly the drop from timber to near-black — a large number that said
+   * nothing about the timber. The reframed picture runs the table off both
+   * sides, so the same box is all wood, and the small spread it reports is the
+   * honest one: the range the surface itself has under the lamp. Judge this row
+   * by `mid` and `bright`, not by `spread`.
+   */
   wood: [0.06, 0.55, 0.34, 0.84],
   // The near player's cup, which is at the bottom middle whoever is playing.
   cup: [0.42, 0.66, 0.58, 0.8],

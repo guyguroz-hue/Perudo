@@ -16,28 +16,42 @@ import './Die.css'
  */
 export function Die({
   face,
-  size = 44,
+  size,
   hidden = false,
   tone,
   label,
+  className,
 }: {
   face?: Face
+  /**
+   * How big, in pixels.
+   *
+   * Left off where the size belongs to the layout rather than to the call:
+   * `--die-size` then comes from the stylesheet, and a die in the player's
+   * hand can be given one size on a tall phone and a smaller one on a short
+   * phone by a media query. An inline custom property cannot be beaten by an
+   * ordinary rule, so a die that hard-codes its size cannot be made to respond
+   * to anything.
+   */
   size?: number
   /** A die in somebody else's cup: drawn as a blank, never as a value. */
   hidden?: boolean
   /** Player colour, for the blanks that stand in for a player's dice count. */
   tone?: string
   label?: string
+  /** For the one caller that sizes its dice from the stylesheet. */
+  className?: string
 }) {
   const style = {
-    '--die-size': `${size}px`,
+    ...(size === undefined ? {} : { '--die-size': `${size}px` }),
     ...(tone === undefined ? {} : { '--die-tone': tone }),
   } as CSSProperties
+  const classes = (base: string) => (className === undefined ? base : `${base} ${className}`)
 
   if (hidden || face === undefined) {
     return (
       <span
-        className="die die--hidden"
+        className={classes('die die--hidden')}
         style={style}
         role="img"
         aria-label={label ?? 'Hidden die'}
@@ -47,14 +61,14 @@ export function Die({
 
   if (face === 1) {
     return (
-      <span className="die die--joker" style={style} role="img" aria-label={label ?? 'Joker'}>
+      <span className={classes('die die--joker')} style={style} role="img" aria-label={label ?? 'Joker'}>
         <JokerFace className="die__joker" />
       </span>
     )
   }
 
   return (
-    <span className="die" style={style} role="img" aria-label={label ?? `Die showing ${face}`}>
+    <span className={classes('die')} style={style} role="img" aria-label={label ?? `Die showing ${face}`}>
       {PIPS[face].map((position) => (
         <span key={position} className={`die__pip die__pip--${position}`} />
       ))}

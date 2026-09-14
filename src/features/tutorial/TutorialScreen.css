@@ -12,6 +12,9 @@
   flex-direction: column;
   width: 100%;
   max-width: 26rem;
+  /* The table underneath lays itself out against the height it actually has;
+     see `.board` in GameTable.css for why that is not the same as 100vh. */
+  min-height: 0;
 }
 
 .coach {
