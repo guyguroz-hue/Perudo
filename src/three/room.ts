@@ -353,11 +353,28 @@ export function makeRoom(): Group {
    *
    * Unlit, because it is a photograph of a room rather than a wall in this one,
    * and lighting it would flatten the bokeh into grey discs.
+   *
+   * Not tone-mapped either, and that is the right way round: this card is
+   * painted, and a painted backdrop is graded by whoever painted it rather
+   * than by the pipeline. Run through ACES with everything else it came out
+   * eight percent off the look it was drawn to match, where left alone it is
+   * two — the curve was undoing decisions already made by hand.
+   *
+   * What it did need was dimming. It was as bright as the timber in front of
+   * it, which in the lobby — where this card fills a third of the screen —
+   * made the couch a pale lilac smear competing with the table for the eye.
+   * The table is the lit thing in this room; the room is what it is lit
+   * against, and a backdrop that matches its subject for brightness is a
+   * backdrop nobody looks past.
    */
   const height = 2 * Math.tan((CAMERA.fov * Math.PI) / 360) * DEPTH
   const shell = new Mesh(
     new PlaneGeometry(height * STAGE_ASPECT, height),
-    new MeshBasicMaterial({ map: roomTexture(), toneMapped: false }),
+    new MeshBasicMaterial({
+      map: roomTexture(),
+      toneMapped: false,
+      color: new Color('#c8c2cb'),
+    }),
   )
   const eye = new Vector3(0, CAMERA.height, CAMERA.distance)
   const aim = new Vector3(LOOK_AT.x, LOOK_AT.y, LOOK_AT.z)

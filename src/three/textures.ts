@@ -97,8 +97,18 @@ export function woodTexture(size = 1024): { map: Texture; rough: Texture } {
       // come out as corduroy, which is the other way this can go wrong.
       const wander = fbm(noise, u * 1.1 + 11, v * 1.1 + 7) - 0.5
       const jitter = fbm(noise, u * 11 + 31, v * 11 + 2) - 0.5
-      const r = Math.hypot(u - heartX, v - heartY) + wander * 0.13 + jitter * 0.022
-      const rings = Math.sin(r * 62) * 0.5 + 0.5
+      const r = Math.hypot(u - heartX, v - heartY) + wander * 0.13 + jitter * 0.028
+      /*
+       * Fine, because a table is not a dartboard.
+       *
+       * At sixty-two the rings came out about a dozen broad bands across the
+       * whole top, which at the size this is actually seen reads as painted
+       * stripes — you see the individual line before you see the figure, which
+       * is the wrong way round for timber. Real grain on a board this size is
+       * fine enough that the figure arrives first and the lines are what it is
+       * made of.
+       */
+      const rings = Math.sin(r * 104) * 0.5 + 0.5
       // Rings are not sine waves: the late wood is a narrow dark band.
       const band = Math.pow(rings, 2.4)
 
@@ -112,7 +122,9 @@ export function woodTexture(size = 1024): { map: Texture; rough: Texture } {
       // Kept close together on purpose. Wide swings read as marble or as fire;
       // cherry is nearly one colour, with the grain showing mostly in how it
       // takes the light rather than in how dark it is.
-      const shade = clamp01(0.46 + band * 0.12 + fibre * 0.11 + drift * 0.85)
+      // Less contrast per ring than before, because there are now twice as many
+      // of them: the total figure is what stayed the same.
+      const shade = clamp01(0.46 + band * 0.085 + fibre * 0.13 + drift * 0.85)
       const i = (y * size + x) * 4
       /*
        * Cherry, not walnut.
