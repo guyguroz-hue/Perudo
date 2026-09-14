@@ -97,15 +97,31 @@ function Failed({
   detail: string | null
   onRetry: () => void
 }) {
+  /*
+   * The sentence, the way out, and then the evidence.
+   *
+   * The evidence used to come between the two, at the same size as the
+   * sentence: a player who could not get in was reading "Failed to fetch" and
+   * a project URL before they reached the button, which is a developer's
+   * screen wearing a player's words. It stays — a screenshot of this has to be
+   * enough to diagnose it, and hiding it behind a disclosure would mean the
+   * screenshot no longer is — but it goes under the button and gets out of the
+   * way of somebody who only wants to try again.
+   */
   return (
     <div className="app__status" role="alert">
       <h2>That did not work</h2>
       <p>{message}</p>
-      {detail !== null && <p className="app__detail">{detail}</p>}
-      <p className="app__detail">
-        Built against: <code>{supabaseUrl ?? 'nothing — no URL in this build'}</code>
-      </p>
       <Button onClick={onRetry}>Try again</Button>
+      <p className="app__detail">
+        {detail !== null && (
+          <>
+            {detail}
+            <br />
+          </>
+        )}
+        Built against <code>{supabaseUrl ?? 'nothing — no URL in this build'}</code>
+      </p>
     </div>
   )
 }

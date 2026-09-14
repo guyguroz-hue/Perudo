@@ -20,9 +20,15 @@
   color: var(--ink-dim);
 }
 
+/* Under the button and out of the way, but still on the screen: a screenshot
+   of this has to be enough to diagnose it. */
 .app__detail {
-  font-size: var(--text-sm);
+  max-width: 22rem;
+  margin: 0;
+  font-size: var(--text-2xs);
+  line-height: 1.6;
   color: var(--ink-faint);
+  overflow-wrap: anywhere;
 }
 
 .app__rolling {

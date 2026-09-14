@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './Countdown.css'
 
 /**
@@ -14,14 +14,33 @@ import './Countdown.css'
 export function Countdown({ onDone }: { onDone: () => void }) {
   const [n, setN] = useState(3)
 
+  /*
+   * The clock does not restart because the room moved.
+   *
+   * `onDone` is written at the call site as an arrow, so it is a new function
+   * on every render — and this sits inside a live room, which re-renders on
+   * every Realtime event and on every heartbeat any of six clients sends. With
+   * the callback in the dependencies, each of those cleared the running timer
+   * and started a fresh one, so a busy room could hold the count on three
+   * indefinitely and never reach the table.
+   *
+   * Held in a ref so the effect depends on the number alone. Fixing it at the
+   * call site would work until the next caller wrote an arrow, which is the
+   * obvious way to write it.
+   */
+  const done = useRef(onDone)
+  useEffect(() => {
+    done.current = onDone
+  }, [onDone])
+
   useEffect(() => {
     if (n === 0) {
-      const finish = setTimeout(onDone, 500)
+      const finish = setTimeout(() => done.current(), 500)
       return () => clearTimeout(finish)
     }
     const tick = setTimeout(() => setN((value) => value - 1), 700)
     return () => clearTimeout(tick)
-  }, [n, onDone])
+  }, [n])
 
   return (
     <div className="countdown" role="status" aria-live="polite">
