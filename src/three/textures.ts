@@ -166,9 +166,17 @@ function drawWood(size: number): { map: Texture; rough: Texture } {
       // Kept close together on purpose. Wide swings read as marble or as fire;
       // cherry is nearly one colour, with the grain showing mostly in how it
       // takes the light rather than in how dark it is.
-      // Less contrast per ring than before, because there are now twice as many
-      // of them: the total figure is what stayed the same.
-      const shade = clamp01(0.46 + band * 0.085 + fibre * 0.13 + drift * 0.85)
+      /*
+       * Quieter than it wants to be.
+       *
+       * Grain is read at a glance and then stopped being looked at, and any
+       * setting where you can count the lines is a setting where the table is
+       * a pattern rather than a surface. Under a satin lacquer almost all of
+       * the figure arrives through the *reflection* — the roughness map below,
+       * which is left alone — and what the colour needs to do is much less
+       * than it looks like on a flat swatch.
+       */
+      const shade = clamp01(0.46 + band * 0.05 + fibre * 0.075 + drift * 0.85)
       const i = (y * size + x) * 4
       /*
        * Cherry, not walnut.
