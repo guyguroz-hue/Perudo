@@ -39,11 +39,29 @@ function makeNoise(seed: number) {
   }
 }
 
-function fbm(noise: (x: number, y: number) => number, x: number, y: number): number {
+/**
+ * Fractal noise, with the octaves named rather than assumed.
+ *
+ * Four was the same everywhere, and for two of the three uses below most of
+ * that was work nobody can see: an octave only shows if its wavelength is
+ * wider than a texel. The fibre term is already sampled at two hundred times
+ * the board, so its third and fourth octaves land inside a single pixel and
+ * average out to a constant; the slow drift across the whole board is two
+ * octaves of information asked four times.
+ *
+ * This function is called three times for each of a million pixels, so the
+ * count is most of what the table costs to build.
+ */
+function fbm(
+  noise: (x: number, y: number) => number,
+  x: number,
+  y: number,
+  octaves = 4,
+): number {
   let total = 0
   let amp = 0.5
   let freq = 1
-  for (let i = 0; i < 4; i += 1) {
+  for (let i = 0; i < octaves; i += 1) {
     total += noise(x * freq, y * freq) * amp
     freq *= 2.1
     amp *= 0.5
@@ -66,7 +84,33 @@ function fbm(noise: (x: number, y: number) => number, x: number, y: number): num
  * much closer to grey than it feels like it should, and a saturated red-brown
  * comes out of the tone mapper looking like moulded plastic.
  */
+/**
+ * Drawn once for the life of the page.
+ *
+ * This is the most expensive thing the product does: a million pixels, each
+ * costing three fractal noises of four octaves, twice over for the colour and
+ * the roughness. It measures around four hundred milliseconds on a desktop and
+ * two or three times that on a mid-range phone — and it was being paid again
+ * for every scene built, so a player crossing from the lobby to the table paid
+ * it twice, the second time with the screen already showing a table they were
+ * waiting to see.
+ *
+ * The result is deterministic — the noise is seeded — and nothing mutates it,
+ * so there is nothing to invalidate. Keyed by size only because the tests ask
+ * for a small one.
+ */
+const woodCache = new Map<number, { map: Texture; rough: Texture }>()
+
 export function woodTexture(size = 1024): { map: Texture; rough: Texture } {
+  const held = woodCache.get(size)
+  if (held !== undefined) return held
+
+  const made = drawWood(size)
+  woodCache.set(size, made)
+  return made
+}
+
+function drawWood(size: number): { map: Texture; rough: Texture } {
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
@@ -95,7 +139,7 @@ export function woodTexture(size = 1024): { map: Texture; rough: Texture } {
       // Two scales of disturbance: a slow wander that bends whole rings, and a
       // finer one that roughens their edges. Rings drawn from a clean radius
       // come out as corduroy, which is the other way this can go wrong.
-      const wander = fbm(noise, u * 1.1 + 11, v * 1.1 + 7) - 0.5
+      const wander = fbm(noise, u * 1.1 + 11, v * 1.1 + 7, 3) - 0.5
       const jitter = fbm(noise, u * 11 + 31, v * 11 + 2) - 0.5
       const r = Math.hypot(u - heartX, v - heartY) + wander * 0.13 + jitter * 0.028
       /*
@@ -113,11 +157,11 @@ export function woodTexture(size = 1024): { map: Texture; rough: Texture } {
       const band = Math.pow(rings, 2.4)
 
       // Fine fibre running along the grain, which is what catches the light.
-      const fibre = (fbm(noise, u * 210 + 3, v * 12 + 19) - 0.5) * 0.8
+      const fibre = (fbm(noise, u * 210 + 3, v * 12 + 19, 2) - 0.5) * 0.8
 
       // A slow drift across the whole board, so the table is not one flat tone
       // with a pattern on it. Boards are lighter at one end than the other.
-      const drift = (fbm(noise, u * 0.8 + 41, v * 0.8 + 5) - 0.5) * 0.22
+      const drift = (fbm(noise, u * 0.8 + 41, v * 0.8 + 5, 2) - 0.5) * 0.22
 
       // Kept close together on purpose. Wide swings read as marble or as fire;
       // cherry is nearly one colour, with the grain showing mostly in how it

@@ -76,7 +76,20 @@ const BOKEH: readonly Bokeh[] = [
  * real photograph of it, and painting it sharp is the single thing that makes a
  * background read as wallpaper stuck behind a 3D object.
  */
+/*
+ * Also drawn once. The card is the same painting at every table, and building
+ * it per scene meant the lobby's copy and the game's copy were two identical
+ * megapixel canvases sitting in memory at the same time.
+ */
+let roomCard: CanvasTexture | null = null
+
 function roomTexture(width = 1024): CanvasTexture {
+  if (roomCard !== null) return roomCard
+  roomCard = drawRoom(width)
+  return roomCard
+}
+
+function drawRoom(width: number): CanvasTexture {
   const height = Math.round(width / STAGE_ASPECT)
   const canvas = document.createElement('canvas')
   canvas.width = width
@@ -305,7 +318,15 @@ function roomTexture(width = 1024): CanvasTexture {
 }
 
 /** The soft dark pool a table sits in, rather than a shadow of one. */
+let poolMap: CanvasTexture | null = null
+
 function poolTexture(size = 256): CanvasTexture {
+  if (poolMap !== null) return poolMap
+  poolMap = drawPool(size)
+  return poolMap
+}
+
+function drawPool(size: number): CanvasTexture {
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
@@ -328,7 +349,15 @@ function poolTexture(size = 256): CanvasTexture {
  * Opaque to well past the table, then gone. A hard rim reads as the edge of a
  * platter; a dissolve reads as a floor running out into an unlit room.
  */
+let floorMap: CanvasTexture | null = null
+
 function floorFade(size = 256): CanvasTexture {
+  if (floorMap !== null) return floorMap
+  floorMap = drawFloorFade(size)
+  return floorMap
+}
+
+function drawFloorFade(size: number): CanvasTexture {
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
