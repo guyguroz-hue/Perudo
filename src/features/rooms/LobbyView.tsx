@@ -73,38 +73,45 @@ export function LobbyView({
 
   return (
     <div className="lobby">
-      <div className="lobby__head">
-        <div className="lobby__invite">
-          {inLobby && <RoomCode code={code} />}
-          <SoundToggle on={sound.on} onToggle={sound.toggle} />
-        </div>
+      {/*
+        * The head belongs to the lobby, and only to the lobby.
+        *
+        * It used to stay up through the game, where every single thing on it
+        * was either useless or already on screen twice. The table carries its
+        * own sound switch over the scene and the game its own connection dot,
+        * so a running game showed two of each — and between them they said
+        * "Game in progress" to somebody who was looking at one.
+        *
+        * Taking it down is worth more than tidiness. This is a phone held
+        * upright and the table is the screen; a bar of chrome above it is a
+        * bar of table nobody gets to see.
+        */}
+      {inLobby && (
+        <div className="lobby__head">
+          <div className="lobby__invite">
+            <RoomCode code={code} />
+            <SoundToggle on={sound.on} onToggle={sound.toggle} />
+          </div>
 
-        <div className="lobby__status">
-          {inLobby ? (
-            <>
-              {/* The seats taken, drawn as well as counted. Six pips is the
-                  whole table, so how close the room is to a game is legible
-                  without reading the number beside them. */}
-              <span className="lobby__pips" aria-hidden="true">
-                {Array.from({ length: SEAT_COUNT }, (_, index) => (
-                  <span
-                    key={index}
-                    className={`lobby__pip${index < seats.length ? ' lobby__pip--taken' : ''}`}
-                  />
-                ))}
-              </span>
-              <p className="lobby__count">
-                {seats.length} / {SEAT_COUNT} players
-              </p>
-            </>
-          ) : (
+          <div className="lobby__status">
+            {/* The seats taken, drawn as well as counted. Six pips is the
+                whole table, so how close the room is to a game is legible
+                without reading the number beside them. */}
+            <span className="lobby__pips" aria-hidden="true">
+              {Array.from({ length: SEAT_COUNT }, (_, index) => (
+                <span
+                  key={index}
+                  className={`lobby__pip${index < seats.length ? ' lobby__pip--taken' : ''}`}
+                />
+              ))}
+            </span>
             <p className="lobby__count">
-              {status === 'finished' ? 'Game over' : 'Game in progress'}
+              {seats.length} / {SEAT_COUNT} players
             </p>
-          )}
-          <ConnectionDot connection={connection} />
+            <ConnectionDot connection={connection} />
+          </div>
         </div>
-      </div>
+      )}
 
       {inLobby ? (
         <RoomTable seats={[...seats]} canManage={youAreHost} onManage={onManage} />

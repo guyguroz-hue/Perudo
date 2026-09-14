@@ -102,13 +102,51 @@ describe('the lobby', () => {
     expect(screen.getByText('the game')).toBeTruthy()
     // The invite and the seat count belong to a room nobody has left yet.
     expect(screen.queryByText('4821')).toBeNull()
-    expect(screen.getByText('Game in progress')).toBeTruthy()
+  })
+
+  /*
+   * The lobby's chrome comes down with the lobby.
+   *
+   * It used to stay up through the game, and every part of it was either
+   * useless or already on screen twice: the table carries its own sound switch
+   * over the scene and the game its own connection dot, so a running game
+   * showed two of each. Asserted by count rather than by absence, because one
+   * of each is exactly right and the fault was the second.
+   *
+   * A test with a stub for a child cannot see the table's own controls, so
+   * what it pins is that this component contributes none — which is the half
+   * of the arrangement that lives here.
+   */
+  it('leaves the sound and the connection to the table once a game is running', () => {
+    const { container } = render(
+      <LobbyView
+        code="4821"
+        status="in_game"
+        seats={[sit(0, 'Dana', true, true), sit(1, 'Alice')]}
+        connection="live"
+        youAreHost
+        busy={false}
+        error={null}
+        onStart={vi.fn()}
+        onPlayAgain={vi.fn()}
+        onManage={vi.fn()}
+        onEnd={vi.fn()}
+        onLeave={vi.fn()}
+      >
+        <p>the game</p>
+      </LobbyView>,
+    )
+
+    expect(container.querySelector('.lobby__head')).toBeNull()
+    expect(screen.queryByRole('button', { name: /sound/i })).toBeNull()
+    // And the way out of the room is still there, which is the one thing on
+    // this component a player needs mid-game.
+    expect(screen.getByRole('button', { name: /leave|end room/i })).toBeTruthy()
   })
 
   it('offers the host another game when one has finished', async () => {
     const { onPlayAgain } = lobby({ status: 'finished' })
 
-    expect(screen.getByText('Game over')).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: 'Play again' }))
     expect(onPlayAgain).toHaveBeenCalledTimes(1)
   })
