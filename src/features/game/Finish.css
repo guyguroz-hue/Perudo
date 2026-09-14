@@ -5,20 +5,23 @@
  * screen says so, and confetti over a result they already watched arrive is a
  * game congratulating itself. What is worth showing is the shape of the finish:
  * who was still holding dice, and how many.
+ *
+ * It sits in the dock now, where the controls were, with the table still
+ * behind it — so it is a slab on the same wood rather than a card on a black
+ * field, and it is sized like the console it replaced.
  */
 .finish {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   width: 100%;
-  max-width: 26rem;
-  margin: 0 auto;
-  padding: var(--space-5) var(--space-4);
+  padding: var(--space-4) var(--space-3);
   border-radius: var(--radius-lg);
-  background: var(--panel);
-  box-shadow: var(--shadow-control);
-  backdrop-filter: blur(12px);
+  background: linear-gradient(180deg, var(--slab-lift) 0%, var(--slab) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--slab-edge),
+    var(--shadow-control);
   text-align: center;
 }
 
@@ -29,7 +32,7 @@
 }
 
 .finish__mark svg {
-  width: 44px;
+  width: 38px;
   height: auto;
   filter: drop-shadow(0 3px 12px rgb(212 162 76 / 0.45));
 }
@@ -76,6 +79,15 @@
   list-style: none;
 }
 
+/*
+ * Arriving in order, worst first.
+ *
+ * Not a flourish — a beat. Everybody at this table already knows who won, and
+ * the question the room actually asks at the end is how close the rest of them
+ * came; a list that appears all at once answers it in no particular order. Rows
+ * that land one after another, with the winner last, read the way a table reads
+ * a finish out loud. It costs a third of a second and no confetti.
+ */
 .finish__place {
   --seat-tone: var(--p6);
   display: flex;
@@ -86,6 +98,22 @@
   border-radius: var(--radius);
   background: rgb(255 255 255 / 0.04);
   font-size: var(--text-sm);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .finish__place {
+    animation: finish-arrives 260ms var(--ease-arrive) both;
+    /* Set per row from the markup, so the order is the standings' order and
+       not the order the browser happens to lay them out in. */
+    animation-delay: calc(var(--place) * 70ms);
+  }
+}
+
+@keyframes finish-arrives {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
 }
 
 /* The winner's row, lit in their own colour rather than in a generic gold. */

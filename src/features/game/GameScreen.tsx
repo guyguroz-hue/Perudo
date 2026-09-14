@@ -17,7 +17,8 @@ import './GameScreen.css'
  * One screen: the table, from the first deal to the last die. A reveal is not
  * another screen and not a dialog — it happens on this table, the cups coming
  * off where they stand, with the controls giving way to the count underneath.
- * The only thing that ever replaces the table is the end of the game.
+ * Nor is the end of the game: the standings take the same place the controls
+ * had, and the table stays where it is with one cup still standing on it.
  */
 export function GameScreen({ gameId, youId }: { gameId: string; youId: string }) {
   const game = useGame(gameId, youId)
@@ -62,12 +63,6 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
 
   if (game.view === null) {
     return <p className="game__waiting">Setting the table…</p>
-  }
-
-  // The reveal still plays over a finished game: the hand that ended it is the
-  // one most worth seeing, and cutting to a result screen would skip it.
-  if (game.over !== null && game.reveal === null) {
-    return <Finish winnerName={game.over.winnerName} view={game.view} />
   }
 
   return (
@@ -115,6 +110,17 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
       <GameTable
         view={game.view}
         busy={game.busy}
+        /*
+         * The reveal still plays over a finished game: the hand that ended it
+         * is the one most worth seeing, and cutting to a result would skip it.
+         * Once it has, the standings take the dock and the table stays where
+         * it is — a game ends at the table it was played on.
+         */
+        finish={
+          game.over !== null && game.reveal === null ? (
+            <Finish winnerName={game.over.winnerName} view={game.view} />
+          ) : null
+        }
         reveal={
           game.reveal === null
             ? null

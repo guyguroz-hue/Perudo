@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Die } from '../../components/Die'
 import { SoundToggle } from '../../components/SoundToggle'
 import type { ActiveBid, ProposedBid } from '../../game'
@@ -47,11 +48,18 @@ import './GameTable.css'
  * and the controls give way to the count. Cutting to a separate screen for the
  * one moment the game has been building to threw away the table at exactly the
  * point it was worth the most.
+ *
+ * The end of the game is the same argument one step further on. It used to
+ * replace this whole screen with a panel on a black field — the last thing
+ * anybody saw, and the only screen in the product that still looked like a
+ * different application. A game ends at the table it was played on, with the
+ * winner's cup the one still standing.
  */
 export function GameTable({
   view,
   busy = false,
   reveal = null,
+  finish = null,
   onBid,
   onLie,
   onBull,
@@ -66,6 +74,15 @@ export function GameTable({
    * and the network wait are the same moment.
    */
   reveal?: { claim: RevealClaim; data: RevealData | null; onDone?: () => void } | null
+  /**
+   * How the game ended, once it has.
+   *
+   * Takes the dock, exactly as a reveal does — and for the same reason. The
+   * result of a game is not somewhere else: it is this table with one cup left
+   * standing on it, and replacing the whole screen with a panel threw away the
+   * only picture anybody wanted to be looking at.
+   */
+  finish?: ReactNode
   onBid: (bid: ProposedBid) => void
   onLie: () => void
   onBull: () => void
@@ -250,16 +267,21 @@ export function GameTable({
             moving the evidence at the moment of judgement would be an odd thing
             to do — the panel below carries it again because that is where the
             count happens, not because it left the table. */}
-        <div
-          className="board__centre"
-          style={{ ...centreAnchor(eye), minWidth: `${inlayWidth(eye)}%` }}
-          // Overhead the middle of the table is where the dice are, so the bid
-          // gets out of their way rather than sitting on the evidence.
-          data-overhead={eye > 0.5 ? 'true' : undefined}
-        >
-          {/* The claim's owner, which a Bull changes hands (§8.3). */}
-          <CurrentBid bid={bid} owner={claimOwner(view, bid)} />
-        </div>
+        {/* Nothing is on trial once the game is over. The middle said "open",
+            which is true of a round waiting for its first bid and meaningless
+            over a table nobody is going to bid at again. */}
+        {finish === null && (
+          <div
+            className="board__centre"
+            style={{ ...centreAnchor(eye), minWidth: `${inlayWidth(eye)}%` }}
+            // Overhead the middle of the table is where the dice are, so the
+            // bid gets out of their way rather than sitting on the evidence.
+            data-overhead={eye > 0.5 ? 'true' : undefined}
+          >
+            {/* The claim's owner, which a Bull changes hands (§8.3). */}
+            <CurrentBid bid={bid} owner={claimOwner(view, bid)} />
+          </div>
+        )}
 
         <ul className="board__seats">
           {seats.map((placement) => (
@@ -283,6 +305,8 @@ export function GameTable({
             counted={counted}
             onDone={reveal.onDone}
           />
+        ) : finish !== null ? (
+          finish
         ) : (
           <TableDock
             view={view}

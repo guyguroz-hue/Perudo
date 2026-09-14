@@ -163,7 +163,18 @@ export function PreviewScreen() {
               </button>
             ))}
           </nav>
-          <Finish winnerName={ENDINGS[ending].winnerName} view={ENDINGS[ending].view} />
+          {/* On the table, because that is where a game ends. Previewing the
+              card on its own would be previewing a screen that no longer
+              exists. */}
+          <GameTable
+            view={ENDINGS[ending].view}
+            finish={
+              <Finish winnerName={ENDINGS[ending].winnerName} view={ENDINGS[ending].view} />
+            }
+            onBid={() => setActed('Bid')}
+            onLie={() => setActed('Lie')}
+            onBull={() => setActed('Bull')}
+          />
         </>
       ) : tab === 'table' ? (
         <>

@@ -51,14 +51,22 @@ export function Finish({ winnerName, view }: { winnerName: string | null; view: 
       </p>
 
       <ul className="finish__standings">
-        {standings.map((player) => {
+        {standings.map((player, place) => {
           const tone = toneForSeat(player.seatIndex)
           const won = winnerName !== null && player.name === winnerName
           return (
             <li
               key={player.id}
               className={`finish__place${won ? ' finish__place--won' : ''}`}
-              style={{ '--seat-tone': tone } as CSSProperties}
+              // Counted from the bottom, so the rows land worst first and the
+              // winner's arrives last — which is the order a table reads a
+              // finish out loud in.
+              style={
+                {
+                  '--seat-tone': tone,
+                  '--place': standings.length - 1 - place,
+                } as CSSProperties
+              }
             >
               <span className="finish__name">
                 <span className="finish__dot" aria-hidden="true" />
