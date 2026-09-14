@@ -29,6 +29,13 @@ export function describeAuthError(error: unknown): FriendlyError {
     return { message: 'Could not reach the server. Check your connection.', detail }
   }
 
+  // The deadline in AuthProvider, rather than anything the server said. It
+  // looks identical to a dead connection from here and wants the same sentence,
+  // because the thing to do about it is the same: press the button again.
+  if (lower.includes('took too long')) {
+    return { message: 'The server did not answer. Check your connection.', detail }
+  }
+
   if (lower.includes('rate') && lower.includes('limit')) {
     return { message: 'Too many attempts just now. Wait a moment and try again.', detail }
   }

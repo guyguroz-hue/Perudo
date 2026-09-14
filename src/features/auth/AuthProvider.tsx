@@ -19,6 +19,39 @@ import type { AuthApi, AuthState, ClaimNameResult, Profile } from './types'
  * the client writes at all: the RLS policy restricts the row to
  * `id = auth.uid()`, so a player can only ever name themselves.
  */
+/**
+ * How long the first connection may take before the app gives up on it.
+ *
+ * There was no limit, and this is the worst place in the product not to have
+ * one: everything else is behind it. A request that hangs — a phone that
+ * dropped its signal between the tap and the fetch, a captive portal swallowing
+ * the connection — leaves "Finding you a seat…" on screen forever, with a
+ * rolling die for reassurance and nothing to press. The app simply never opens,
+ * and reloading is a thing a player has to think of on their own.
+ *
+ * Longer than the game's own patience, because this includes an anonymous
+ * sign-up on a cold project and a player who has just tapped an invite link
+ * has nothing else to look at yet. Short enough that nobody decides the app is
+ * broken: the error screen it lands on has a Try again on it.
+ */
+const PATIENCE_MS = 15_000
+
+/**
+ * Fail rather than hang.
+ *
+ * The underlying request is abandoned rather than cancelled — supabase-js
+ * settles it eventually and nothing is listening by then. What matters is that
+ * the screen stops waiting.
+ */
+function withDeadline<T>(work: Promise<T>): Promise<T> {
+  return Promise.race([
+    work,
+    new Promise<never>((_resolve, reject) => {
+      setTimeout(() => reject(new Error('The connection took too long.')), PATIENCE_MS)
+    }),
+  ])
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: 'connecting' })
   const [attempt, setAttempt] = useState(0)
@@ -47,10 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const userId = await establishSession()
+        const userId = await withDeadline(establishSession())
         if (isStale()) return
 
-        const profile = await loadProfile(userId)
+        const profile = await withDeadline(loadProfile(userId))
         if (isStale()) return
 
         setState(
