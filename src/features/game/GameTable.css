@@ -268,8 +268,22 @@
   flex-direction: column;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   max-height: 15rem;
+}
+
+/*
+ * Read across when the hand has the whole width.
+ *
+ * A column is what keeps it from looking like the rack, and it only has to do
+ * that while the two are side by side. With every control in the game between
+ * them there is nothing to be confused with, and a row is the shape a hand has
+ * everywhere else in the product.
+ */
+.board__dock > .board__hand .board__hand-row {
+  flex-direction: row;
+  max-height: none;
 }
 
 /* Quiet, but there. It is a caption on the one secret on the screen, not a

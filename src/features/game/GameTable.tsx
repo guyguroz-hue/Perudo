@@ -5,7 +5,7 @@ import { SoundToggle } from '../../components/SoundToggle'
 import type { ActiveBid, ProposedBid } from '../../game'
 import { diceOnTable } from '../../game'
 import { INLAY_RADIUS, STAGE_ASPECT, centreAnchor, inlayWidth } from '../../three/layout'
-import { BidBuilder } from './BidBuilder'
+import { BidRow, FaceRack, useBidDraft } from './BidBuilder'
 import { ChallengeActions } from './ChallengeActions'
 import { CurrentBid } from './CurrentBid'
 import type { ClaimOwner } from './CurrentBid'
@@ -61,6 +61,7 @@ export function GameTable({
   busy = false,
   reveal = null,
   finish = null,
+  layout = 'split',
   onBid,
   onLie,
   onBull,
@@ -84,6 +85,14 @@ export function GameTable({
    * only picture anybody wanted to be looking at.
    */
   finish?: ReactNode
+  /**
+   * Which way round the console goes. See `DockLayout`.
+   *
+   * Only `/preview` ever passes this; every real screen takes the default, so
+   * the arrangement players see cannot change by accident while the two are
+   * being compared.
+   */
+  layout?: DockLayout
   onBid: (bid: ProposedBid) => void
   onLie: () => void
   onBull: () => void
@@ -320,6 +329,7 @@ export function GameTable({
           finish
         ) : (
           <TableDock
+            layout={layout}
             view={view}
             self={self}
             bid={bid}
@@ -344,6 +354,25 @@ export function GameTable({
  * bid on and nothing to challenge, and leaving the controls up would be
  * offering moves that would be refused.
  */
+/**
+ * Which way round the console goes.
+ *
+ * Two arrangements of the same four things, and the thing they disagree about
+ * is where the rack of faces sits relative to the player's own dice. Those two
+ * were a row of dice each, an inch apart, one secret and one a picker — and a
+ * heading over each was nowhere near enough to tell them apart.
+ *
+ *   split    the hand beside the bid, sharing a line
+ *   stacked  the hand on top, the rack at the very bottom, with everything
+ *            you can press in between
+ *
+ * Both are here because which one is better is a question about how it feels
+ * in a hand, and that is not a question source code answers. `/preview` shows
+ * either; every real screen takes the default, so the one players get cannot
+ * change while the two are being compared. Whichever wins, the other goes.
+ */
+export type DockLayout = 'split' | 'stacked'
+
 function TableDock({
   view,
   self,
@@ -352,6 +381,7 @@ function TableDock({
   canAct,
   busy,
   onTable,
+  layout,
   onBid,
   onLie,
   onBull,
@@ -363,68 +393,93 @@ function TableDock({
   canAct: boolean
   busy: boolean
   onTable: number
+  layout: DockLayout
   onBid: (bid: ProposedBid) => void
   onLie: () => void
   onBull: () => void
 }) {
+  // Held here rather than inside the controls, so moving them around the screen
+  // cannot leave two half-built bids that disagree.
+  const draft = useBidDraft(view.round, onTable, view.yourHand ?? [])
   const playing = canAct && self !== null
 
-  return (
-    <>
-      {/*
-        * What you know, then what you can say.
-        *
-        * Side by side, and that is the whole point of the arrangement. Your own
-        * dice and the rack of faces were two rows of dice an inch apart, one
-        * secret and one a control — a heading over each was not nearly enough,
-        * and a player reaching for "I want to bid sixes" was as likely to reach
-        * into their own hand. Now they are different objects in different
-        * places: a hand is a column of dice lying on felt, a rack is a grid of
-        * buttons, and nothing about one suggests pressing it.
-        */}
-      <div className={`board__console${playing ? '' : ' board__console--watching'}`}>
-        <section className="board__hand" aria-label="Your dice">
-          <h2 className="board__mine">Your dice</h2>
-          <div className="board__hand-row">
-            {view.yourHand === null ? (
-              <p className="board__nohand">
-                {self?.isEliminated === true ? 'You are out. Watching.' : 'Waiting for dice'}
-              </p>
-            ) : (
-              view.yourHand.map((face, i) => <Die key={i} face={face} size={34} />)
-            )}
-          </div>
-        </section>
-
-        {playing && (
-          <BidBuilder
-            round={view.round}
-            diceOnTable={onTable}
-            ownHand={view.yourHand ?? []}
-            burst={burst}
-            busy={busy}
-            onBid={onBid}
-          />
+  const hand = (
+    <section className="board__hand" aria-label="Your dice">
+      <h2 className="board__mine">Your dice</h2>
+      <div className="board__hand-row">
+        {view.yourHand === null ? (
+          <p className="board__nohand">
+            {self?.isEliminated === true ? 'You are out. Watching.' : 'Waiting for dice'}
+          </p>
+        ) : (
+          view.yourHand.map((face, i) => (
+            <Die key={i} face={face} size={layout === 'split' ? 34 : 38} />
+          ))
         )}
       </div>
+    </section>
+  )
 
-      {/*
-        * Across the foot, under both.
-        *
-        * They are the only two things here that are not part of building a bid
-        * — they are thrown at somebody else's — so they get the full width and
-        * a line of their own rather than a corner of the panel that makes one.
-        */}
-      {playing && bid !== null && (
-        <ChallengeActions
-          bid={bid}
-          burst={burst}
-          ownDiceCount={self.diceCount}
-          busy={busy}
-          onLie={onLie}
-          onBull={onBull}
-        />
-      )}
+  const challenge =
+    playing && bid !== null ? (
+      <ChallengeActions
+        bid={bid}
+        burst={burst}
+        ownDiceCount={self.diceCount}
+        busy={busy}
+        onLie={onLie}
+        onBull={onBull}
+      />
+    ) : null
+
+  /*
+   * Stacked: what you hold, what you can do, and the faces last.
+   *
+   * Everything you can press sits between your own dice and the rack, so the
+   * two rows of dice are never adjacent — which is the whole idea. The cost is
+   * that the control choosing the face ends up *below* the button that sends
+   * the bid, so the sentence is read out of order.
+   */
+  if (layout === 'stacked') {
+    return (
+      <>
+        {hand}
+        {playing && (
+          <div className="builder">
+            <p className="builder__label">Make your bid</p>
+            <BidRow draft={draft} burst={burst} busy={busy} onBid={onBid} inline />
+            {challenge}
+          </div>
+        )}
+        {playing && (
+          <div className="builder builder--rack">
+            <FaceRack draft={draft} />
+          </div>
+        )}
+      </>
+    )
+  }
+
+  /*
+   * Split: what you know beside what you can say.
+   *
+   * The hand and the rack are separated across the screen rather than along
+   * it, and they are shaped differently as well — a column of dice on timber
+   * against a grid of buttons on slate — so neither suggests the other.
+   */
+  return (
+    <>
+      <div className={`board__console${playing ? '' : ' board__console--watching'}`}>
+        {hand}
+        {playing && (
+          <div className="builder">
+            <p className="builder__label">Make your bid</p>
+            <FaceRack draft={draft} />
+            <BidRow draft={draft} burst={burst} busy={busy} onBid={onBid} />
+          </div>
+        )}
+      </div>
+      {challenge}
     </>
   )
 }

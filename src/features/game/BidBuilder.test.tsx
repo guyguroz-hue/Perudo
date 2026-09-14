@@ -2,19 +2,43 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { BidBuilder } from './BidBuilder'
+import { BidRow, FaceRack, useBidDraft } from './BidBuilder'
 import { checkBid } from '../../game'
-import type { Face, RoundState } from '../../game'
+import type { Face, ProposedBid, RoundState } from '../../game'
 import { bid, farewellRound, normalRound } from '../../game/testing'
 
 afterEach(cleanup)
 
 const HAND: readonly Face[] = [5, 5, 1, 3, 2]
 
-function show(round: RoundState, onBid = vi.fn()) {
-  render(
-    <BidBuilder round={round} diceOnTable={15} ownHand={HAND} burst={false} onBid={onBid} />,
+/*
+ * The rack and the row, with one draft between them.
+ *
+ * Assembled here the way the dock assembles them, rather than through a
+ * component that owns both: where they sit relative to each other is the thing
+ * still being decided, and a test that pinned one arrangement would have to be
+ * rewritten to answer a question about layout it was never asking.
+ */
+function Console({
+  round,
+  onBid,
+  burst = false,
+}: {
+  round: RoundState
+  onBid: (bid: ProposedBid) => void
+  burst?: boolean
+}) {
+  const draft = useBidDraft(round, 15, HAND)
+  return (
+    <>
+      <FaceRack draft={draft} />
+      <BidRow draft={draft} burst={burst} onBid={onBid} />
+    </>
   )
+}
+
+function show(round: RoundState, onBid = vi.fn()) {
+  render(<Console round={round} onBid={onBid} />)
   return onBid
 }
 
@@ -90,26 +114,10 @@ describe('illegal bids cannot be expressed', () => {
 describe('the builder follows the table', () => {
   it('resets to the new minimum when somebody else raises', async () => {
     const onBid = vi.fn()
-    const { rerender } = render(
-      <BidBuilder
-        round={normalRound(bid(4, 5))}
-        diceOnTable={15}
-        ownHand={HAND}
-        burst={false}
-        onBid={onBid}
-      />,
-    )
+    const { rerender } = render(<Console round={normalRound(bid(4, 5))} onBid={onBid} />)
     await userEvent.click(screen.getByRole('button', { name: 'One more' }))
 
-    rerender(
-      <BidBuilder
-        round={normalRound(bid(7, 3))}
-        diceOnTable={15}
-        ownHand={HAND}
-        burst={false}
-        onBid={onBid}
-      />,
-    )
+    rerender(<Console round={normalRound(bid(7, 3))} onBid={onBid} />)
     await userEvent.click(submit())
     expect(onBid).toHaveBeenCalledWith({ quantity: 7, face: 4 })
   })
@@ -121,15 +129,7 @@ describe('the builder follows the table', () => {
   })
 
   it('calls a bid made out of turn a Burst', () => {
-    render(
-      <BidBuilder
-        round={normalRound(bid(4, 5))}
-        diceOnTable={15}
-        ownHand={HAND}
-        burst
-        onBid={vi.fn()}
-      />,
-    )
+    render(<Console round={normalRound(bid(4, 5))} burst onBid={vi.fn()} />)
     expect(screen.getByRole('button', { name: 'Burst bid' })).toBeTruthy()
     expect(within(document.body).queryByRole('button', { name: 'Bid' })).toBeNull()
   })

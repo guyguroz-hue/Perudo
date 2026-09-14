@@ -39,6 +39,18 @@
   gap: 5px;
 }
 
+/*
+ * The rack with a slab to itself, at the foot of the screen.
+ *
+ * It has the whole width there, so six across fits with room over the 44px a
+ * thumb needs — and a single row is the shape it wants, as long as nothing
+ * that looks like a hand is anywhere near it. Which is the arrangement's whole
+ * argument: everything you can press sits between this and your own dice.
+ */
+.builder--rack .builder__deck {
+  grid-template-columns: repeat(6, 1fr);
+}
+
 .builder__face {
   display: grid;
   place-items: center;
@@ -91,6 +103,28 @@
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--ink-faint);
+}
+
+/*
+ * The count and the button that sends it.
+ *
+ * Stacked when this panel is sharing its width with the hand, where a Bid
+ * button squeezed in beside a stepper is a target nobody wants to aim at. Side
+ * by side when it has the whole width, because two rows for one decision is
+ * two rows of table nobody gets to see.
+ */
+.builder__row {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.builder__row--inline {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.builder__row--inline .builder__submit {
+  min-width: 96px;
 }
 
 /* One pill holding the count and the two controls that change it, so the

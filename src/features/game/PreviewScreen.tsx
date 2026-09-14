@@ -3,6 +3,7 @@ import { Atoms } from './Atoms'
 import { Finish } from './Finish'
 import { RenderPreview } from './RenderPreview'
 import { GameTable } from './GameTable'
+import type { DockLayout } from './GameTable'
 import { LobbyView } from '../rooms/LobbyView'
 import { ENDINGS, LOBBIES, REVEALS, SCENARIOS, claimFor, tableFor } from './fixtures'
 import type { RevealData } from './reveal'
@@ -28,6 +29,17 @@ export function PreviewScreen() {
   const [lobby, setLobby] = useState(0)
   const [ending, setEnding] = useState(0)
   const [scenario, setScenario] = useState(SCENARIOS[0])
+  /*
+   * Which arrangement of the console to show.
+   *
+   * Two layouts of the same four controls, kept side by side because the thing
+   * they disagree about — whether the rack of faces can be told apart from the
+   * player's own dice — is a question about how a screen feels in a hand, and
+   * that is not a question source code answers. Only this screen passes it;
+   * every real one takes the default, so comparing them cannot change what a
+   * player gets. Whichever wins, the other goes.
+   */
+  const [layout, setLayout] = useState<DockLayout>('split')
   const [revealIndex, setRevealIndex] = useState(0)
   // Null replays the held beat, so the pause can be seen and not just reasoned
   // about — it is the part of the reveal most easily got wrong.
@@ -191,12 +203,30 @@ export function PreviewScreen() {
             ))}
           </nav>
           <p className="preview__note">{scenario.note}</p>
+          <nav className="preview__picks" aria-label="Console layout">
+            {(
+              [
+                ['split', 'Hand beside the bid'],
+                ['stacked', 'Faces at the foot'],
+              ] as const
+            ).map(([option, label]) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={option === layout}
+                onClick={() => setLayout(option)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
           {acted !== null && (
             <p className="preview__acted" role="status">
               {acted}
             </p>
           )}
           <GameTable
+            layout={layout}
             view={scenario.view}
             onBid={(bid) =>
               setActed(`Bid ${bid.quantity} × ${bid.face === 1 ? 'Perudo' : bid.face}`)
