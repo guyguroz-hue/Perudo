@@ -111,10 +111,18 @@ Completed items are marked `[x]` and kept, not deleted.
       indexed, but nothing deletes yet. Not urgent — joins will reject expired
       rooms — but the table grows without it.
 
-- [ ] **T-20** Animations. Done: a die lost or won back (it is lifted off the table, or set down on it, on the back of the verdict — the only thing that ever changes a player's standing, shown happening to the hand it happens to); the deal (every cup shaken for a beat when the
-      round number moves) and the reveal (cups lifted on the table itself, the
-      count filling one die at a time). Still owed: the Burst interruption, and
-      the victory.
+- [ ] **T-20** Animations. Done: a die lost or won back (it is lifted off the
+      table, or set down on it, on the back of the verdict — the only thing
+      that ever changes a player's standing, shown happening to the hand it
+      happens to); the deal (every cup shaken for a beat when the round number
+      moves); the reveal (cups lifted on the table itself, the count filling
+      one die at a time); the Burst interruption (two raps and a flash of light
+      across the timber — light rather than colour, because colour is whose and
+      light is where to look, and no shake, because a table does not move when
+      a person speaks). Still owed: the victory, which now happens on the table
+      rather than on a screen of its own — the standings arrive worst first
+      with the winner's row last, and what is missing is anything happening to
+      the winner's cup.
 - [x] **T-21** ~~Reduced-motion support~~ — the media query zeroes every
       duration globally, and the two sequences that are driven by timers rather
       than by CSS — the deal shake and the reveal — each check it and go
@@ -199,6 +207,17 @@ Completed items are marked `[x]` and kept, not deleted.
       browser at 360, 390 and 430 wide: if a person puts their finger in the
       middle of this control, does the control get it? It names what is in the
       way, and it fails against the bug on nine controls.
+
+      Two more of the same kind have joined it, both for faults nothing in
+      jsdom can see. `npm run test:recover` takes the GPU context away with
+      WEBGL_lose_context and checks the table comes back — this scene renders
+      when something changes and stands still otherwise, so a restored context
+      arrives at a canvas with no loop behind it to paint, and the table stayed
+      black until a round happened to change a seat. And `npm run look` renders
+      the real scene and reports each region as a dark decile, a median and a
+      bright decile against `docs/reference.png`: the range is what separates a
+      rendered object from a flat fill, and it is exactly what comparing two
+      screenshots by eye throws away.
 
 - [x] **B-8** ~~Lie described the wrong bet once a bid had been Bulled.~~ Found
       while verifying, at Guy's request, that pressing Bull does not reveal (it

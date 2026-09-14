@@ -177,10 +177,23 @@ them.
 | Screen | Component | Seen at |
 |---|---|---|
 | The table, waiting and acting | `features/game/GameTable` | `/preview` → Table |
-| Building a bid | `features/game/BidBuilder` | inside the table |
-| Lie and Bull | `features/game/ChallengeActions` | inside the table |
+| The console: the rack and the bid | `features/game/BidBuilder` | inside the table |
+| Lie and Bull | `features/game/ChallengeActions` | inside the console |
+| What has been said this round | `features/game/MoveLog` | inside the table |
 | The reveal | `features/game/Reveal` | `/preview` → Reveal |
+| How the game ended | `features/game/Finish` | `/preview` → Game over |
 | The cup | `components/Cup` | inside the reveal |
+
+The console is two slabs, and the split is the sentence a bid is: which face on
+one, how many of them and what to do about it on the other. Lie and Bull are
+handed into the second rather than rendered beside it — they are actions
+against a bid, but they are measured against the same count, and a panel of
+their own made two consoles out of one decision.
+
+Nothing ever replaces the table. A reveal happens on it, with the controls
+giving way to the count; so does the end of the game, with the standings taking
+the same slot and the winner's cup left standing on the timber. The one screen
+that used to be a panel on a black field was the last thing anybody saw.
 
 `/preview` renders the real components against fixtures. It reaches no network
 and no database, needs no identity, and is therefore the one screen that still
