@@ -17,58 +17,70 @@
 }
 
 /*
- * Low and wide.
+ * Two tiles, read down: the mark, the name, and what it claims.
  *
- * These used to be two tall tiles, and between them they took a third of the
- * display to say two words. The icon and the name read across, the claim sits
- * under them, and the whole control is the height of one tap — which is all a
- * button that is pressed with a thumb has ever needed.
+ * Centred rather than ranged left, because these are the two decisions on the
+ * screen that are not adjustments — you do not tune a Lie, you throw it. A
+ * control that is committed to reads differently from one that is set, and a
+ * centred stack under a mark is how a card of consequence is laid out.
+ *
+ * They stay the height of a comfortable thumb and no more. An earlier pair of
+ * tall tiles took a third of the display between them to say two words, which
+ * is a third of the display not showing the table.
  */
 .challenge__lie,
 .challenge__bull {
   display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-areas:
-    'icon name'
-    'icon claim';
-  align-items: center;
-  gap: 0 var(--space-2);
-  min-height: 50px;
-  padding: 6px var(--space-2);
+  justify-items: center;
+  align-content: center;
+  gap: 1px;
+  min-height: 74px;
+  padding: var(--space-2) 6px;
   border: 0;
   border-radius: var(--radius);
-  text-align: left;
+  text-align: center;
   cursor: pointer;
   transition:
     scale var(--t-micro) var(--ease-ui),
     filter var(--t-micro) var(--ease-ui);
 }
 
+/*
+ * Deep, with one hot edge along the top.
+ *
+ * Flat mid-tone fills were the single loudest thing making this screen read as
+ * generated: a button is a moulded object under a lamp, so it is dark where it
+ * curves away and bright only where the light actually lands. The range top to
+ * bottom does more for it than the hue does.
+ */
 .challenge__lie {
-  background: linear-gradient(168deg, #f0517f 0%, var(--lie) 46%, #a01a45 100%);
+  background: linear-gradient(172deg, #ef6b91 0%, #c22a56 42%, #7d1030 100%);
   color: #fff;
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.35),
-    0 8px 22px rgb(229 52 107 / 0.3);
+    inset 0 1px 0 rgb(255 255 255 / 0.42),
+    inset 0 -1px 0 rgb(0 0 0 / 0.3),
+    0 8px 22px rgb(160 26 69 / 0.34);
 }
 
 .challenge__bull {
-  background: linear-gradient(168deg, #6e9dff 0%, var(--bull) 46%, #1c3fa0 100%);
+  background: linear-gradient(172deg, #6fb0ff 0%, #2b63d8 42%, #0f3593 100%);
   color: #fff;
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.35),
-    0 8px 22px rgb(47 107 245 / 0.3);
+    inset 0 1px 0 rgb(255 255 255 / 0.42),
+    inset 0 -1px 0 rgb(0 0 0 / 0.3),
+    0 8px 22px rgb(28 63 160 / 0.34);
 }
 
 .challenge__icon {
-  grid-area: icon;
-  width: 22px;
-  height: 22px;
-  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.4));
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.45));
 }
 
 .challenge__name {
-  grid-area: name;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-family: var(--font-display);
   font-size: var(--text-base);
   font-weight: 700;
@@ -77,14 +89,13 @@
 }
 
 .challenge__claim {
-  grid-area: claim;
   display: flex;
   align-items: center;
   gap: 4px;
   /* The reading and the number are one phrase. Broken across lines it stops
      being one, which is the only thing this row is for. */
   white-space: nowrap;
-  color: rgb(255 255 255 / 0.9);
+  color: rgb(255 255 255 / 0.88);
 }
 
 .challenge__reading {
@@ -96,7 +107,7 @@
 
 .challenge__count {
   font-family: var(--font-display);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -104,6 +115,7 @@
 .challenge__lie:disabled,
 .challenge__bull:disabled {
   opacity: 0.4;
+  box-shadow: none;
   cursor: default;
 }
 
@@ -128,12 +140,10 @@
    before the press rather than after. A mark on the name, not a line of its
    own — this control has room for two lines and both are spoken for. */
 .challenge__prize {
-  margin-left: 5px;
   padding: 1px 5px;
   border-radius: var(--radius-full);
-  background: rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.24);
   font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0;
-  vertical-align: 1px;
 }

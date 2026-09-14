@@ -158,6 +158,15 @@
   --panel-lift: #1c1a27;
   --panel-edge: rgb(255 255 255 / 0.08);
 
+  /* The console's own material: a moulded slate slab, cooler than the room.
+     The room is lit by a lamp and the table is cherry, so both run warm — a
+     control that ran warm too would sit *in* the scene instead of in front of
+     it. The cool is what puts it on the near side of the glass, and it is the
+     one place in the product where a surface is allowed to be a surface. */
+  --slab: #0d1220;
+  --slab-lift: #182032;
+  --slab-edge: rgb(255 255 255 / 0.09);
+
   --ink: #f6f4fb;
   --ink-dim: #aba8bd;
   --ink-faint: #6f6c80;

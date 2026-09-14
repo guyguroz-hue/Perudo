@@ -357,26 +357,29 @@ function TableDock({
       </section>
 
       {canAct && self !== null && (
-        <div className="board__console">
-          <BidBuilder
-            round={view.round}
-            diceOnTable={onTable}
-            ownHand={view.yourHand ?? []}
-            burst={burst}
-            busy={busy}
-            onBid={onBid}
-          />
-          {bid !== null && (
-            <ChallengeActions
-              bid={bid}
-              burst={burst}
-              ownDiceCount={self.diceCount}
-              busy={busy}
-              onLie={onLie}
-              onBull={onBull}
-            />
-          )}
-        </div>
+        <BidBuilder
+          round={view.round}
+          diceOnTable={onTable}
+          ownHand={view.yourHand ?? []}
+          burst={burst}
+          busy={busy}
+          onBid={onBid}
+          /* In the same slab as the count they are measured against. Doubting
+             is the other half of "what can I say?", and putting it in a panel
+             of its own made two consoles out of one decision. */
+          challenge={
+            bid !== null && (
+              <ChallengeActions
+                bid={bid}
+                burst={burst}
+                ownDiceCount={self.diceCount}
+                busy={busy}
+                onLie={onLie}
+                onBull={onBull}
+              />
+            )
+          }
+        />
       )}
     </>
   )

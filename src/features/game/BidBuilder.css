@@ -1,39 +1,76 @@
 /*
- * Building a bid.
+ * The console.
  *
- * The face you want, how many of them, and the word for it — in two rows along
- * the bottom edge rather than a panel the table has to share the screen with.
- * The commonest move in the game, raising the bid in front of you, is already
- * loaded when this opens, so it costs one tap on Bid.
+ * Two slabs along the bottom edge, and the split is the sentence a bid is:
+ * which face on one, how many and what to do about it on the other. They are
+ * laid over the foot of the scene rather than given a band of their own — a
+ * player should be looking at six cups, not at a form.
  *
- * The slab around it belongs to the console this sits in, not to the builder:
- * on a wide screen the builder and the two challenges share one.
+ * The material is deliberately not glass. Glass everywhere is the tell of an
+ * interface that was generated rather than designed; here the objects on the
+ * table are the material, and the controls are a dark slate slab that gets out
+ * of their way. One highlight along the top edge is all the depth they get,
+ * which is what a moulded panel under a lamp actually shows.
  */
 .builder {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--space-2);
 }
 
+/*
+ * Side by side once there is room for both, which on a phone held upright
+ * there is not. Stacked, the rack sits above the bid it is feeding, which is
+ * the same reading order — the wide arrangement is the portrait one turned.
+ */
+@container (min-width: 33rem) {
+  .builder {
+    grid-template-columns: auto 1fr;
+    align-items: start;
+  }
+}
+
+.builder__deck,
+.builder__bid {
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--slab-lift) 0%, var(--slab) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--slab-edge),
+    inset 0 0 0 1px rgb(255 255 255 / 0.03),
+    var(--shadow-control);
+}
+
 /* -----------------------------------------------------------------------------
- * The faces
+ * The rack
  * ---------------------------------------------------------------------------*/
-/* Dice, never the words "one, two, three": the builder, a hand and the reveal
-   all speak the same visual language, so choosing a face is picking up a die. */
+/* Dice, never the words "one, two, three": the rack, a hand and the reveal all
+   speak the same visual language, so choosing a face is picking up a die. */
 .builder__deck {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 4px;
+  gap: 5px;
+}
+
+@container (min-width: 33rem) {
+  .builder__deck {
+    /* A column of the same cells would be a tower; the rack stays a rack and
+       simply stops stretching. */
+    grid-template-columns: repeat(3, 50px);
+  }
 }
 
 .builder__face {
   display: grid;
   place-items: center;
-  min-height: 38px;
+  /* Square, so the rack reads as a tray of dice rather than a row of tabs. Six
+     across the narrowest phone still clears the 44px a thumb needs. */
+  aspect-ratio: 1;
+  min-height: 44px;
   padding: 3px 0;
   border: 0;
-  border-radius: var(--radius-sm);
-  background: rgb(255 255 255 / 0.05);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
   cursor: pointer;
   transition:
     background-color var(--t-micro) var(--ease-ui),
@@ -41,17 +78,22 @@
     scale var(--t-micro) var(--ease-ui);
 }
 
+/* The face you are bidding, lit in the metal every cup's foot and the ring in
+   the middle of the table are made of. Brass is "the game's own move" here —
+   the two colours in the product both mean "challenge". */
 .builder__face[aria-pressed='true'] {
-  background: rgb(255 255 255 / 0.12);
+  background: linear-gradient(180deg, rgb(240 205 135 / 0.22), rgb(212 162 76 / 0.08));
   box-shadow:
     inset 0 0 0 2px var(--brass),
-    0 0 14px rgb(212 162 76 / 0.3);
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    0 0 18px rgb(212 162 76 / 0.34);
 }
 
 /* Disabled, not hidden: the shape of the rule stays visible, so a player can
    see that the Joker is unavailable at this quantity and learn why. */
 .builder__face:disabled {
   opacity: 0.22;
+  box-shadow: none;
   cursor: default;
 }
 
@@ -62,24 +104,53 @@
 /* -----------------------------------------------------------------------------
  * How many, and saying it
  * ---------------------------------------------------------------------------*/
+.builder__bid {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.builder__label {
+  margin: 0 0 -2px 2px;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
 .builder__row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: var(--space-2);
+}
+
+/* One pill holding the count and the two controls that change it, so the
+   number is plainly the thing between them rather than a label beside them. */
+.builder__stepper {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  background: rgb(0 0 0 / 0.32);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.5);
 }
 
 /* Round, because they are the only controls here that are not a die or a slab,
    and a circle under a thumb is unmistakable. */
 .builder__step {
   flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border: 0;
   border-radius: 50%;
-  background: radial-gradient(75% 75% at 50% 28%, #2b2937, #16151f);
+  background: radial-gradient(75% 75% at 50% 28%, #2e3446, #171b28);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    0 3px 10px rgb(0 0 0 / 0.5);
+    inset 0 1px 0 rgb(255 255 255 / 0.16),
+    0 2px 8px rgb(0 0 0 / 0.5);
   color: var(--ink);
   font-family: var(--font-display);
   font-size: var(--text-xl);
@@ -102,7 +173,6 @@
    exactly what they are about to say before they say it. */
 .builder__preview {
   display: flex;
-  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
@@ -131,9 +201,9 @@
    than a colour of its own — the two colours in the product both mean
    "challenge". */
 .builder__submit {
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 42px;
+  min-width: 88px;
+  min-height: 48px;
+  padding-inline: var(--space-3);
   border: 0;
   border-radius: var(--radius);
   background: linear-gradient(180deg, #ffdf9e 0%, var(--brass) 52%, #b0812c 100%);
@@ -165,7 +235,7 @@
 /* A Burst interrupts somebody else's turn, and the button says so before it is
    pressed rather than after. */
 .builder__submit--burst {
-  background: linear-gradient(180deg, #3a3748 0%, #26232f 60%, #17151d 100%);
+  background: linear-gradient(180deg, #3d4356 0%, #272c3b 60%, #181c27 100%);
   color: var(--ink);
   box-shadow:
     inset 0 0 0 1px rgb(255 255 255 / 0.14),

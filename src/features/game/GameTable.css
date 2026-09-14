@@ -156,6 +156,10 @@
   flex-direction: column;
   gap: var(--space-2);
   margin-top: -6%;
+  /* A container, so the console asks how much room it has rather than how wide
+     the window is. The board is capped at 34rem however large the display, so
+     the two are not the same question. */
+  container-type: inline-size;
 }
 
 /*
@@ -197,33 +201,4 @@
   color: var(--ink-faint);
 }
 
-/*
- * The console.
- *
- * One slab, low and wide. On a phone the bid and the two challenges stack;
- * given the room, they take the arrangement a table would have — what you are
- * about to say on one side, what you can say about somebody else's bid on the
- * other.
- */
-.board__console {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-2);
-  border-radius: var(--radius-lg);
-  background: var(--panel);
-  box-shadow: var(--shadow-control);
-  backdrop-filter: blur(12px);
-}
 
-@media (min-width: 33rem) {
-  .board__console {
-    flex-direction: row;
-    align-items: stretch;
-  }
-
-  .board__console > * {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-}
