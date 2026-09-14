@@ -1,10 +1,10 @@
 /*
- * The console.
+ * Making a bid.
  *
- * Two slabs along the bottom edge, and the split is the sentence a bid is:
- * which face on one, how many and what to do about it on the other. They are
- * laid over the foot of the scene rather than given a band of their own — a
- * player should be looking at six cups, not at a form.
+ * One slab, and everything in it is a control — which is the reason it is a
+ * slab of its own. The player's hand sits beside it and must never be mistaken
+ * for something to press, so the two are different materials in different
+ * shapes: slate and a grid here, felt and a column there.
  *
  * The material is deliberately not glass. Glass everywhere is the tell of an
  * interface that was generated rather than designed; here the objects on the
@@ -15,23 +15,7 @@
 .builder {
   display: grid;
   gap: var(--space-2);
-}
-
-/*
- * Always stacked, and that is a decision rather than a fallback.
- *
- * There was a rule here putting the rack and the bid side by side past 33rem,
- * which could not fire: the board is capped at 30rem on any display, so the
- * widest this console is ever asked to be is 480px and the two slabs need
- * something over 600 between them. The reference this is drawn from is a
- * desktop picture; the game is played on a phone held upright, and a column
- * that stays phone-shaped on a laptop is the honest way to render a phone
- * game. Stacked, the rack sits above the bid it feeds, which is the reading
- * order either way.
- */
-
-.builder__deck,
-.builder__bid {
+  min-width: 0;
   padding: var(--space-2);
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, var(--slab-lift) 0%, var(--slab) 100%);
@@ -46,19 +30,22 @@
  * ---------------------------------------------------------------------------*/
 /* Dice, never the words "one, two, three": the rack, a hand and the reveal all
    speak the same visual language, so choosing a face is picking up a die. */
+/* Three across and two down. Six in a row is the shape a hand has, and it is
+   also 40px a cell once this panel is sharing its width — under the 44 a thumb
+   needs, which is the other half of why the rack changed shape. */
 .builder__deck {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 5px;
 }
 
 .builder__face {
   display: grid;
   place-items: center;
-  /* Square, so the rack reads as a tray of dice rather than a row of tabs. Six
-     across the narrowest phone still clears the 44px a thumb needs. */
-  aspect-ratio: 1;
-  min-height: 44px;
+  /* Tall enough for a thumb and no taller. Square cells looked right on paper
+     and came out as six large empty tiles once the rack had a column to
+     itself — a target has a size, and past it the extra is just panel. */
+  min-height: 52px;
   padding: 3px 0;
   border: 0;
   border-radius: var(--radius);
@@ -97,12 +84,6 @@
 /* -----------------------------------------------------------------------------
  * How many, and saying it
  * ---------------------------------------------------------------------------*/
-.builder__bid {
-  display: grid;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
 .builder__label {
   margin: 0 0 -2px 2px;
   font-size: var(--text-2xs);
@@ -110,13 +91,6 @@
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--ink-faint);
-}
-
-.builder__row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 /* One pill holding the count and the two controls that change it, so the
@@ -194,7 +168,6 @@
    than a colour of its own — the two colours in the product both mean
    "challenge". */
 .builder__submit {
-  min-width: 88px;
   min-height: 48px;
   padding-inline: var(--space-3);
   border: 0;

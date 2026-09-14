@@ -200,25 +200,76 @@
 }
 
 /*
+ * What you know, beside what you can say.
+ *
+ * The two halves of the dock, and the split is the point of it. Your own dice
+ * and the rack of faces used to be two rows of dice an inch apart, one secret
+ * and one a control; a heading over each was not nearly enough, and a player
+ * reaching for "I want to bid sixes" was as likely to reach into their own
+ * hand. Apart, and shaped differently — a column against a grid — they stop
+ * being the same kind of thing.
+ *
+ * The hand takes only the width it needs. The bid takes the rest, because
+ * everything in it is a target and a target wants room.
+ */
+.board__console {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: var(--space-2);
+}
+
+/* Nobody to bid against: the hand is the whole dock and may as well be read
+   across, which is also the shape it has everywhere else in the product. */
+.board__console--watching {
+  grid-template-columns: 1fr;
+}
+
+/*
  * Your own dice.
  *
  * The only information on this screen nobody else has, and the thing every bid
- * is weighed against — so it sits directly above the controls, and a player's
- * eye travels hand → bid → act without leaving the bottom of the display.
+ * is weighed against — so it sits beside the controls, and a player's eye
+ * travels hand → bid → act without leaving the bottom of the display.
+ *
+ * On felt rather than on slate. Everything to the right of it is a moulded
+ * panel with buttons set into it; this is a surface with objects lying on it,
+ * and being a different material is most of what stops it being mistaken for
+ * another row of things to press.
  */
 .board__hand {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  gap: 5px;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  /* The timber, in shadow. These dice are lying on the table in front of you,
+     and giving the slab the table's own colour says so — it is the one panel
+     down here that belongs to the world above rather than to the interface. */
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgb(255 196 130 / 0.07), transparent 70%),
+    linear-gradient(180deg, #2a1a11 0%, #170e09 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 0 0 1px rgb(255 255 255 / 0.03),
+    var(--shadow-control);
 }
 
+/*
+ * A column, because a rack is a grid.
+ *
+ * Five dice read across is the shape the face picker has, and the shape a hand
+ * had — which is exactly the confusion. Down the side they are unmistakably
+ * the player's own, and they wrap back into a second column at a table size
+ * that never happens rather than running off the bottom of the screen.
+ */
 .board__hand-row {
   display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: 46px;
+  gap: 5px;
+  max-height: 15rem;
 }
 
 /* Quiet, but there. It is a caption on the one secret on the screen, not a
@@ -229,11 +280,14 @@
   font-weight: 600;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
+  text-align: center;
   color: var(--ink-faint);
 }
 
 .board__nohand {
   margin: 0;
+  padding: var(--space-3) 0;
+  text-align: center;
   font-size: var(--text-sm);
   color: var(--ink-faint);
 }

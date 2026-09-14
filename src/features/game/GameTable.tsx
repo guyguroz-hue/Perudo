@@ -367,53 +367,62 @@ function TableDock({
   onLie: () => void
   onBull: () => void
 }) {
+  const playing = canAct && self !== null
+
   return (
     <>
-      <section className="board__hand" aria-label="Your dice">
-        {/*
-          * Said out loud, not just to a screen reader.
-          *
-          * Directly under this row is the face picker, which is also a row of
-          * dice — and the one below it is a claim about the whole table while
-          * this one is the only thing on screen nobody else can see. Two rows
-          * of dice an inch apart, one secret and one a control, and nothing
-          * saying which was which.
-          */}
-        <h2 className="board__mine">Your dice</h2>
-        <div className="board__hand-row">
-          {view.yourHand === null ? (
-            <p className="board__nohand">
-              {self?.isEliminated === true ? 'You are out. Watching.' : 'Waiting for dice'}
-            </p>
-          ) : (
-            view.yourHand.map((face, i) => <Die key={i} face={face} size={38} />)
-          )}
-        </div>
-      </section>
+      {/*
+        * What you know, then what you can say.
+        *
+        * Side by side, and that is the whole point of the arrangement. Your own
+        * dice and the rack of faces were two rows of dice an inch apart, one
+        * secret and one a control — a heading over each was not nearly enough,
+        * and a player reaching for "I want to bid sixes" was as likely to reach
+        * into their own hand. Now they are different objects in different
+        * places: a hand is a column of dice lying on felt, a rack is a grid of
+        * buttons, and nothing about one suggests pressing it.
+        */}
+      <div className={`board__console${playing ? '' : ' board__console--watching'}`}>
+        <section className="board__hand" aria-label="Your dice">
+          <h2 className="board__mine">Your dice</h2>
+          <div className="board__hand-row">
+            {view.yourHand === null ? (
+              <p className="board__nohand">
+                {self?.isEliminated === true ? 'You are out. Watching.' : 'Waiting for dice'}
+              </p>
+            ) : (
+              view.yourHand.map((face, i) => <Die key={i} face={face} size={34} />)
+            )}
+          </div>
+        </section>
 
-      {canAct && self !== null && (
-        <BidBuilder
-          round={view.round}
-          diceOnTable={onTable}
-          ownHand={view.yourHand ?? []}
+        {playing && (
+          <BidBuilder
+            round={view.round}
+            diceOnTable={onTable}
+            ownHand={view.yourHand ?? []}
+            burst={burst}
+            busy={busy}
+            onBid={onBid}
+          />
+        )}
+      </div>
+
+      {/*
+        * Across the foot, under both.
+        *
+        * They are the only two things here that are not part of building a bid
+        * — they are thrown at somebody else's — so they get the full width and
+        * a line of their own rather than a corner of the panel that makes one.
+        */}
+      {playing && bid !== null && (
+        <ChallengeActions
+          bid={bid}
           burst={burst}
+          ownDiceCount={self.diceCount}
           busy={busy}
-          onBid={onBid}
-          /* In the same slab as the count they are measured against. Doubting
-             is the other half of "what can I say?", and putting it in a panel
-             of its own made two consoles out of one decision. */
-          challenge={
-            bid !== null && (
-              <ChallengeActions
-                bid={bid}
-                burst={burst}
-                ownDiceCount={self.diceCount}
-                busy={busy}
-                onLie={onLie}
-                onBull={onBull}
-              />
-            )
-          }
+          onLie={onLie}
+          onBull={onBull}
         />
       )}
     </>
