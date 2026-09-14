@@ -35,13 +35,21 @@ export const TABLE_RADIUS = 1
 export const SEAT_RADIUS = 0.7
 
 /*
- * A dice cup is about as tall as it is wide across the base, and tapers by
- * roughly a third. Shorter and rounder than that and it stops being a cup: the
- * first attempt domed the top and came out looking like a bottle cap.
+ * A dice cup is about as tall as it is wide across the base, and it barely
+ * tapers.
+ *
+ * The taper was a third, and a third is a flowerpot. A real dice cup is close
+ * to a straight-sided tumbler with just enough draft to come out of the mould
+ * and to stack — the silhouette says "cup" before any colour does, and this
+ * one was saying "plant". Side by side with the reference it was the single
+ * loudest difference left in the picture, well ahead of any colour.
+ *
+ * Shorter and rounder than this and it goes the other way: the first attempt
+ * domed the top and came out looking like a bottle cap.
  */
 const CUP_BASE = 0.12
-const CUP_TOP = 0.085
-export const CUP_HEIGHT = 0.225
+const CUP_TOP = 0.1
+export const CUP_HEIGHT = 0.232
 
 /**
  * The table: a flat top with a bullnose edge you can see from a seated eye.
@@ -65,8 +73,15 @@ export function makeTable(): Group {
     // the whole tabletop into one soft highlight and the wood stops existing —
     // but not so thin that the lamp leaves no band across it. That band is what
     // says "polished", and half of what says the table is a real object.
+    //
+    // Satin rather than gloss, which is the thing that finally produced one. At
+    // a tenth the lacquer mirrors the lamp as a small hard spot near the middle
+    // and the rest of the timber is left evenly lit and flat; opened up, the
+    // same reflection spreads into a broad sweep across the top and falls away
+    // at the front corners. It is also what a bar table actually is — nobody
+    // polishes one to a mirror, and the ones that are look like plastic.
     clearcoat: 0.72,
-    clearcoatRoughness: 0.1,
+    clearcoatRoughness: 0.36,
     envMapIntensity: 1.15,
   })
 
@@ -213,8 +228,11 @@ function inlaySurface(): CanvasTexture {
   if (ctx === null) throw new Error('no 2d context for the inlay')
 
   const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
-  gradient.addColorStop(0, 'rgba(26, 20, 46, 0.6)')
-  gradient.addColorStop(0.62, 'rgba(34, 28, 62, 0.56)')
+  // Light enough that the mark cut into the timber still reads through it.
+  // The inlay is a piece set into the table, not a lid over it, and the
+  // maker's plate lives underneath.
+  gradient.addColorStop(0, 'rgba(26, 20, 46, 0.34)')
+  gradient.addColorStop(0.62, 'rgba(34, 28, 62, 0.34)')
   gradient.addColorStop(0.8, 'rgba(92, 88, 186, 0.48)')
   gradient.addColorStop(0.888, 'rgba(158, 158, 255, 0.54)')
   gradient.addColorStop(0.93, 'rgba(92, 88, 190, 0.16)')
@@ -383,7 +401,7 @@ export function makeCup(colour: string): Group {
        * hard line round the rim, which is the highlight that was doing the work
        * anyway.
        */
-      clearcoatRoughness: 0.09,
+      clearcoatRoughness: 0.14,
       // The lacquer picks the room up as well as the lamp, which is what stops
       // the unlit side of a cup going to flat black.
       envMapIntensity: 1.0,
@@ -394,20 +412,28 @@ export function makeCup(colour: string): Group {
   body.receiveShadow = true
   group.add(body)
 
-  // The brass foot every cup shares, whatever colour its body is.
+  /*
+   * The brass foot every cup shares, whatever colour its body is.
+   *
+   * A band, not a plinth. It stood a ninth of the cup's height and flared past
+   * the base, and at full polish that much metal caught the lamp as a gold
+   * ellipse wider and brighter than the cup standing in it — the eye went to
+   * the trim instead of the object. On the real thing it is a rim you notice
+   * second.
+   */
   const foot = new Mesh(
     new LatheGeometry(
       [
-        new Vector2(CUP_BASE + 0.007, 0.0),
-        new Vector2(CUP_BASE + 0.009, 0.007),
-        new Vector2(CUP_BASE + 0.003, 0.021),
-        new Vector2(CUP_BASE - 0.004, 0.026),
+        new Vector2(CUP_BASE + 0.003, 0.0),
+        new Vector2(CUP_BASE + 0.004, 0.004),
+        new Vector2(CUP_BASE + 0.0005, 0.011),
+        new Vector2(CUP_BASE - 0.004, 0.014),
       ],
       96,
     ),
     new MeshStandardMaterial({
-      color: new Color('#c69a45'),
-      roughness: 0.24,
+      color: new Color('#a8802f'),
+      roughness: 0.36,
       metalness: 1,
       side: DoubleSide,
     }),
@@ -420,19 +446,28 @@ export function makeCup(colour: string): Group {
   // changes nothing except where the mark ends up, so it may as well end up
   // where it can be seen.
   const mark = new Mesh(
-    new PlaneGeometry(0.092, 0.063),
+    new PlaneGeometry(0.062, 0.043),
     new MeshStandardMaterial({
-      color: new Color('#e6b95f'),
-      roughness: 0.3,
-      metalness: 0.85,
+      color: new Color('#d8a94e'),
+      /*
+       * Barely metal, and smaller than it was.
+       *
+       * A mark this size at full metalness mirrors the environment rather than
+       * reflecting it, so it came back white — a bright blob the size of a
+       * thumbnail, competing with the cup it is stamped on. It is a pressed
+       * foil transfer, not a casting: it wants to read as gold, which means
+       * keeping its own colour and taking only a sheen from the room.
+       */
+      roughness: 0.42,
+      metalness: 0.35,
       transparent: true,
       alphaMap: crownStamp(),
       alphaTest: 0.28,
     }),
   )
-  mark.position.set(0, CUP_HEIGHT * 0.4, CUP_TOP + 0.024)
+  mark.position.set(0, CUP_HEIGHT * 0.33, CUP_TOP + 0.03)
   // Leaned back to lie along the cup's taper rather than floating off it.
-  mark.rotation.x = -0.17
+  mark.rotation.x = -0.1
   group.add(mark)
 
   /*
@@ -463,8 +498,12 @@ export function makeCup(colour: string): Group {
   const trim = new Mesh(
     new RingGeometry(CUP_FOOT - 0.006, CUP_FOOT, 64),
     new MeshStandardMaterial({
-      color: new Color('#b08637'),
-      roughness: 0.3,
+      // Darker and rougher than the cup's own foot. It is a mat under an
+      // object, not a second piece of trim on it: lit like the foot it read as
+      // a bright gold ellipse wider than the cup, which is the one thing on
+      // the table that should not be catching the eye.
+      color: new Color('#5d4419'),
+      roughness: 0.55,
       metalness: 1,
     }),
   )
