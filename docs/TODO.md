@@ -219,6 +219,19 @@ Completed items are marked `[x]` and kept, not deleted.
       rendered object from a flat fill, and it is exactly what comparing two
       screenshots by eye throws away.
 
+      A fourth has joined them: `npm run test:fit`, for the fault that the
+      other three were built to miss. Both of the browser scripts above use a
+      deliberately tall window, so that what-covers-what is never confused with
+      what is below the fold — and below the fold is exactly where the controls
+      went. A web app does not get the screen: iOS Safari keeps a URL bar along
+      the bottom, `100vh` is the height the page would have once that bar
+      retracts, and it retracts only after the player scrolls. Lie and Bull were
+      drawn underneath it. `test:fit` loads the table at the height five real
+      phones actually give a page, from an iPhone SE upward, and asks whether
+      anything is under the fold, whether the page scrolls at all, and what the
+      controls are costing — that last one because the stage gives way to them,
+      so "it fits" is otherwise satisfied by a table squeezed to a strip.
+
 - [x] **B-8** ~~Lie described the wrong bet once a bid had been Bulled.~~ Found
       while verifying, at Guy's request, that pressing Bull does not reveal (it
       does not — see below). A Bull re-reads the claim on the table from "at
