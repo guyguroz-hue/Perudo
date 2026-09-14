@@ -99,3 +99,17 @@
 .log__move--burst {
   color: var(--ink);
 }
+
+/* The mark lands rather than fades in, so the line reads as the interruption
+   it is recording. Same length as the flash across the table, because they are
+   one event. */
+@media (prefers-reduced-motion: no-preference) {
+  .log__move--burst .log__burst {
+    animation: log-cut-in 420ms var(--ease-arrive) both;
+  }
+}
+
+@keyframes log-cut-in {
+  0% { opacity: 0; scale: 1.5; }
+  45% { opacity: 1; scale: 1; }
+}

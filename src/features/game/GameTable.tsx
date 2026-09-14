@@ -13,6 +13,7 @@ import { MoveLog } from './MoveLog'
 import { PlayerSeat } from './PlayerSeat'
 import { RevealPanel } from './RevealPanel'
 import { TableScene } from './TableScene'
+import { useBurst } from './burst'
 import { SHAKE_MS, useDealShake } from './dealing'
 import type { RevealClaim, RevealData } from './reveal'
 import { PAY_AFTER_MS, useRevealStage } from './revealStage'
@@ -105,6 +106,14 @@ export function GameTable({
    * different, and a banner saying so would be a banner covering the table.
    */
   const shaking = useDealShake(view.roundNumber)
+  /*
+   * Somebody cut in.
+   *
+   * The move this game is built around, and until now the quietest thing on
+   * the screen: a line in the log, in the corner, while the player was looking
+   * at the middle of the table.
+   */
+  const jolting = useBurst(view.moves)
   const { stage, counted } = useRevealStage(reveal?.data ?? null)
   const lifting = reveal !== null && stage !== 'held'
   const mood = lifting ? 'revealing' : shaking ? 'dealing' : 'still'
@@ -212,7 +221,9 @@ export function GameTable({
 
   return (
     <div
-      className={`board${yourTurn ? ' board--yours' : ''}${shaking ? ' board--dealing' : ''}`}
+      className={`board${yourTurn ? ' board--yours' : ''}${shaking ? ' board--dealing' : ''}${
+        jolting ? ' board--burst' : ''
+      }`}
     >
       <div className="board__stage" style={{ aspectRatio: STAGE_ASPECT }}>
         <TableScene

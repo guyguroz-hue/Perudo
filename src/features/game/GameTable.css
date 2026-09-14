@@ -47,6 +47,47 @@
   container-type: inline-size;
 }
 
+/*
+ * Somebody cut in.
+ *
+ * A flash of light across the timber and nothing else — no shake, because the
+ * table does not move when a person speaks, and no colour, because in this
+ * product colour is whose and light is where to look. A Burst is not a new
+ * player, it is a new moment.
+ *
+ * On the stage rather than on the board, so it lies over the scene and under
+ * every control: the console must not blink while a thumb is on it.
+ */
+.board__stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 80% at 50% 62%,
+    rgb(255 228 176 / 0.4),
+    rgb(255 205 135 / 0.14) 45%,
+    transparent 72%
+  );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .board--burst .board__stage::after {
+    animation: board-burst 420ms var(--ease-ui);
+  }
+}
+
+/* With motion off the flash would be a frame of light and gone, which reads as
+   a glitch. The log's mark carries it instead, which is where it is written
+   down anyway. */
+@keyframes board-burst {
+  0% { opacity: 0; }
+  14% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* -----------------------------------------------------------------------------
  * Laid over the table
  * ---------------------------------------------------------------------------*/

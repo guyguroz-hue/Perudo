@@ -28,7 +28,7 @@ import type { Ambient } from './ambient'
 /** Where a real track lives, if the project has been given one. */
 const MUSIC_URL = '/audio/table.mp3'
 
-export type SoundName = 'shake' | 'lift' | 'tap' | 'win'
+export type SoundName = 'shake' | 'lift' | 'tap' | 'burst' | 'win'
 
 let context: AudioContext | null = null
 let master: GainNode | null = null
@@ -257,6 +257,21 @@ export function play(name: SoundName, seconds = 1.1) {
   if (name === 'lift') {
     knock(now, 190)
     rattle(now + 0.03, 0.32, 9)
+    return
+  }
+  if (name === 'burst') {
+    /*
+     * Two raps on the table, close together.
+     *
+     * Somebody cutting in out of turn is a physical act at a real table — you
+     * knock to be heard over whoever was about to speak — and it has to be
+     * distinguishable from the single knock a move makes without being an
+     * alarm. Higher than the ordinary tap, and the second harder than the
+     * first, which is what makes it read as interruption rather than as two
+     * of something.
+     */
+    knock(now, 430)
+    knock(now + 0.085, 370)
     return
   }
   knock(now, 320)
