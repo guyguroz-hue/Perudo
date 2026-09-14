@@ -274,6 +274,45 @@ rollback;
 \echo 'PASS  a player can edit only their own profile'
 
 -- -----------------------------------------------------------------------------
+-- A name may not rewrite the sentence it is rendered in
+-- -----------------------------------------------------------------------------
+-- The client strips these before it writes, which is what an honest player
+-- gets. This is the one who opens the console — and it is also the only place
+-- that proves the constraint matches anything at all: Postgres reads \uXXXX
+-- inside a regex, and a character class that silently matches nothing is worse
+-- than no constraint, because it looks like one.
+begin;
+do $$
+declare
+  bad text;
+begin
+  foreach bad in array array[
+    'Alice' || chr(8238),   -- RIGHT-TO-LEFT OVERRIDE: reorders the move around it
+    'Alice' || chr(8294),   -- LEFT-TO-RIGHT ISOLATE
+    'Da' || chr(8203) || 'na',  -- ZERO WIDTH SPACE: two names that read as one
+    'Da' || chr(65279) || 'na', -- ZERO WIDTH NO-BREAK SPACE
+    'Bo' || chr(9) || 'b',      -- a tab, which is not a letter in any script
+    'Bo' || chr(127) || 'b'     -- DEL
+  ] loop
+    begin
+      update public.profiles set display_name = bad
+       where id = '11111111-1111-1111-1111-111111111111';
+      raise exception 'FAIL: stored the name %', quote_literal(bad);
+    exception when check_violation then null;
+    end;
+  end loop;
+
+  -- And the names people actually have still go in. Hebrew carries its own
+  -- direction and must never be caught by a rule aimed at overrides.
+  update public.profiles set display_name = 'גיא גורוז'
+   where id = '11111111-1111-1111-1111-111111111111';
+  update public.profiles set display_name = 'Dana Levy'
+   where id = '11111111-1111-1111-1111-111111111111';
+end $$;
+rollback;
+\echo 'PASS  control, zero-width and bidi characters are refused in a display name'
+
+-- -----------------------------------------------------------------------------
 -- Signed-out callers get nothing
 -- -----------------------------------------------------------------------------
 

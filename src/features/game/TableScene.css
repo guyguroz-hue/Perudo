@@ -20,13 +20,21 @@
 }
 
 /*
- * The scene fades out at the foot.
+ * The scene fades out top and bottom.
  *
  * It runs to the sides of the display, so there is no edge to hide there. The
- * bottom is different: below the table the room is only dark floor, and fading
- * it into the page is what lets the controls sit under the table rather than
- * on a rectangle that stops above them.
+ * other two are different, and for different reasons.
+ *
+ * Below the table the room is only dark floor, and fading it into the page is
+ * what lets the controls sit under the table rather than on a rectangle that
+ * stops above them.
+ *
+ * Above it is a seam. The page paints its own version of this room in three
+ * gradients — the same cool window and warm lamp — and the canvas began with a
+ * hard horizontal line across it, one painted room stopping and a rendered one
+ * starting. Nothing above that line belongs to the table, so a short fade
+ * costs nothing and the two rooms become one.
  */
 .scene {
-  mask-image: linear-gradient(180deg, #000 0%, #000 86%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 7%, #000 86%, transparent 100%);
 }
