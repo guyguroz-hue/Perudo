@@ -1,4 +1,5 @@
 import {
+  AdditiveBlending,
   CanvasTexture,
   CircleGeometry,
   Color,
@@ -6,12 +7,15 @@ import {
   Group,
   LatheGeometry,
   Mesh,
+  MeshBasicMaterial,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   PlaneGeometry,
+  RingGeometry,
   Vector2,
 } from 'three'
 import { CROWN_PATH } from './crown'
+import { INLAY_RADIUS } from './layout'
 import { woodTexture } from './textures'
 
 /**
@@ -57,10 +61,13 @@ export function makeTable(): Group {
     metalness: 0,
     // A bar table is lacquered, and the lacquer is a separate layer sitting on
     // the grain: it reflects the room evenly while the wood underneath does not.
-    // Lacquer, but thin. A heavy clearcoat turns the whole tabletop into one
-    // soft highlight and the wood underneath stops being visible.
-    clearcoat: 0.5,
-    clearcoatRoughness: 0.15,
+    // Thin enough that the grain still shows through — a heavy clearcoat turns
+    // the whole tabletop into one soft highlight and the wood stops existing —
+    // but not so thin that the lamp leaves no band across it. That band is what
+    // says "polished", and half of what says the table is a real object.
+    clearcoat: 0.72,
+    clearcoatRoughness: 0.1,
+    envMapIntensity: 1.15,
   })
 
   const top = new Mesh(new CircleGeometry(TABLE_RADIUS * 0.985, 128), wood)
@@ -106,6 +113,116 @@ export function makeTable(): Group {
 }
 
 /**
+ * The ring inlaid in the middle of the table.
+ *
+ * The centre of the table carries the bid, and it was carrying it on bare
+ * timber: the brand etched into the grain is the right mark for a maker's
+ * plate and the wrong one for the place every decision in the game is read
+ * from. Nothing said "look here", so nothing did.
+ *
+ * A brass line with a cool bloom inside it. The line belongs to the table —
+ * the same metal as every cup's foot and coaster — and the bloom does not: it
+ * is the one light in the scene that is not the lamp, which is exactly why the
+ * eye goes to it in a room lit entirely in amber. Two rings rather than a lit
+ * disc, because a disc would be a glowing tabletop and this has to stay a
+ * thing inlaid *into* a tabletop.
+ *
+ * Unlit on purpose. A real emissive would bounce through the environment map
+ * and wash the timber around it pale; this is a mark on the surface that
+ * happens to be bright, and it costs one draw call and no light.
+ */
+export function makeInlay(): Group {
+  const group = new Group()
+
+  const bloom = new Mesh(
+    new CircleGeometry(INLAY_RADIUS * 1.1, 96),
+    new MeshBasicMaterial({
+      map: bloomFalloff(),
+      transparent: true,
+      // Added to the wood rather than painted over it, so the grain still runs
+      // through it and it reads as light lying on the table.
+      blending: AdditiveBlending,
+      depthWrite: false,
+      opacity: 0.8,
+    }),
+  )
+  bloom.rotation.x = -Math.PI / 2
+  bloom.position.y = 0.0016
+  bloom.renderOrder = 1
+  group.add(bloom)
+
+  /*
+   * The brass line itself, lit from within.
+   *
+   * A metal ring lying flat reflects what is above it, and what is above this
+   * table is an unlit ceiling — so an honest brass ring here came out as a
+   * *dark* line scored into the wood, which is the opposite of the job. A
+   * little emissive is not cheating: the inlay is meant to be catching the
+   * bloom sitting on top of it, and this is what that would look like.
+   */
+  const line = new Mesh(
+    new RingGeometry(INLAY_RADIUS - 0.009, INLAY_RADIUS, 128),
+    new MeshStandardMaterial({
+      color: new Color('#e8bd72'),
+      roughness: 0.18,
+      metalness: 1,
+      emissive: new Color('#8a6a34'),
+      emissiveIntensity: 1,
+    }),
+  )
+  line.rotation.x = -Math.PI / 2
+  line.position.y = 0.0018
+  group.add(line)
+
+  return group
+}
+
+/**
+ * A soft ring of light, drawn once.
+ *
+ * The falloff is the whole job: a hard-edged annulus reads as a decal and a
+ * flat disc reads as a stain, so the alpha rises into the ring and dies away
+ * on both sides of it.
+ */
+let bloomMap: CanvasTexture | null = null
+
+function bloomFalloff(): CanvasTexture {
+  if (bloomMap !== null) return bloomMap
+
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (ctx === null) throw new Error('no 2d context for the inlay bloom')
+
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+  /*
+   * Cool, and much cooler than it looks here.
+   *
+   * This is added to cherry under a warm lamp, so whatever goes in loses its
+   * blue on the way: a balanced violet came out of the renderer as an orange
+   * halo — the red channel was already near the top and only the blue had
+   * anywhere to go. Written blue-heavy and nearly free of red, it lands on the
+   * timber as the cool violet it was meant to be.
+   *
+   * Narrow, too. A wide falloff is a stain on the tabletop; the ring has to be
+   * a line of light with the wood still legible on both sides of it, and the
+   * bid sits inside it and has to stay readable.
+   */
+  gradient.addColorStop(0, 'rgba(24, 52, 140, 0.03)')
+  gradient.addColorStop(0.7, 'rgba(34, 68, 175, 0.06)')
+  gradient.addColorStop(0.88, 'rgba(104, 150, 255, 0.34)')
+  gradient.addColorStop(0.95, 'rgba(56, 92, 205, 0.07)')
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, size, size)
+
+  bloomMap = new CanvasTexture(canvas)
+  return bloomMap
+}
+
+/**
  * A cup.
  *
  * Lacquer over an opaque body, with a brass foot. The profile runs from the
@@ -115,27 +232,71 @@ export function makeTable(): Group {
 export function makeCup(colour: string): Group {
   const group = new Group()
 
+  /*
+   * The top has to be flat, and visibly flat.
+   *
+   * From a seat you barely see it and almost anything passes. The near cup is
+   * a different question: the eye is forty degrees up and eighteen inches away
+   * from it, so its top face is a large ellipse filling the middle of the
+   * screen — and a top that eases into the axis over four points reads from
+   * there as a dome. It stopped being the same object as the five cups around
+   * it, which is the one thing six identical cups must not do.
+   *
+   * So the wall ends, a tight chamfer turns the corner, and the lid is a disc
+   * at one height. The chamfer is what catches the lamp as a hard line round
+   * the rim, and that line is what says "flat" before the shading does.
+   */
   const wall: Vector2[] = [
     new Vector2(CUP_BASE, 0.0),
     new Vector2(CUP_BASE - 0.001, 0.022),
     // A straight taper, which is what a moulded cup actually is.
-    new Vector2(CUP_TOP + 0.006, CUP_HEIGHT - 0.03),
-    new Vector2(CUP_TOP, CUP_HEIGHT - 0.016),
-    // A tight bevel into a flat top, not a dome.
-    new Vector2(CUP_TOP - 0.004, CUP_HEIGHT - 0.006),
-    new Vector2(CUP_TOP - 0.014, CUP_HEIGHT - 0.001),
-    new Vector2(CUP_TOP - 0.03, CUP_HEIGHT),
-    new Vector2(0, CUP_HEIGHT + 0.0015),
+    new Vector2(CUP_TOP + 0.006, CUP_HEIGHT - 0.026),
+    new Vector2(CUP_TOP, CUP_HEIGHT - 0.014),
+    new Vector2(CUP_TOP - 0.005, CUP_HEIGHT - 0.0015),
+    new Vector2(CUP_TOP - 0.013, CUP_HEIGHT),
+    // The lid sinks, the way the closed end of a moulded cup does where the
+    // wall meets it. Flat, it was a mirror the size of a thumbnail pointed
+    // straight back at the lamp: the near cup came back with one hard blob of
+    // light across its whole top and read as an egg. Dished by four
+    // thousandths, the same reflection stretches into a ring round the rim —
+    // which is both what the real object does and the thing that makes it
+    // legible as a lid rather than a dome.
+    new Vector2(CUP_TOP - 0.024, CUP_HEIGHT - 0.0045),
+    new Vector2(CUP_TOP - 0.05, CUP_HEIGHT - 0.0065),
+    new Vector2(0, CUP_HEIGHT - 0.007),
   ]
 
+  /*
+   * Deep body, hot lacquer.
+   *
+   * The range from the shaded side of a cup to its highlight is what makes it
+   * an object rather than a coloured shape, and that range is bought with a
+   * dark albedo and a tight clearcoat lobe — not with a brighter colour. A
+   * mid-value body with the same clearcoat has the highlight sitting on top of
+   * something already pale, so there is nowhere for it to travel.
+   */
   const body = new Mesh(
     new LatheGeometry(wall, 96),
     new MeshPhysicalMaterial({
       color: new Color(colour),
-      roughness: 0.34,
+      roughness: 0.3,
       metalness: 0,
       clearcoat: 1,
-      clearcoatRoughness: 0.05,
+      /*
+       * Blurred, not mirrored.
+       *
+       * At a near-zero clearcoat roughness the lacquer reflects the room
+       * sharply, and on the one cup whose flat lid faces the camera that put a
+       * hand-sized white blob dead centre — the near cup stopped reading as a
+       * cup and started reading as an egg. Real moulded lacquer scatters a
+       * little; giving it that turns the blob back into a sheen and leaves the
+       * hard line round the rim, which is the highlight that was doing the work
+       * anyway.
+       */
+      clearcoatRoughness: 0.09,
+      // The lacquer picks the room up as well as the lamp, which is what stops
+      // the unlit side of a cup going to flat black.
+      envMapIntensity: 1.0,
       side: DoubleSide,
     }),
   )
@@ -187,11 +348,32 @@ export function makeCup(colour: string): Group {
   // The dark ring it stands on, which is what stops a cup floating.
   const coaster = new Mesh(
     new CircleGeometry(CUP_BASE + 0.038, 64),
-    new MeshStandardMaterial({ color: new Color('#0f0803'), roughness: 0.55 }),
+    new MeshStandardMaterial({ color: new Color('#0c0705'), roughness: 0.62 }),
   )
   coaster.rotation.x = -Math.PI / 2
   coaster.position.y = 0.0015
   group.add(coaster)
+
+  /*
+   * A brass line round the coaster's edge.
+   *
+   * The cup already wears brass at its foot, and the coaster was the one part
+   * of the assembly with no metal on it at all — so from a seat it read as a
+   * soft shadow the cup happened to be standing in rather than as a mat the cup
+   * had been set down on. A single lit ring is enough to say the difference,
+   * and it catches the lamp from every seat because it is a ring.
+   */
+  const trim = new Mesh(
+    new RingGeometry(CUP_BASE + 0.032, CUP_BASE + 0.038, 64),
+    new MeshStandardMaterial({
+      color: new Color('#b08637'),
+      roughness: 0.3,
+      metalness: 1,
+    }),
+  )
+  trim.rotation.x = -Math.PI / 2
+  trim.position.y = 0.002
+  group.add(trim)
 
   return group
 }

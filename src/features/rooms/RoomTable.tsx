@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import { TableScene } from '../game/TableScene'
-import { hexForSeat, toneForSeat } from '../game/colors'
+import { cupHexForSeat, toneForSeat } from '../game/colors'
 import { STAGE_ASPECT, badgeAnchor, emptySeatAnchor } from '../../three/layout'
 import { SEAT_COUNT } from './types'
 import type { Seat as SeatModel } from './types'
@@ -54,7 +54,7 @@ export function RoomTable({
           id: `seat-${place.position}`,
           index: place.step,
           count: SEAT_COUNT,
-          colour: hexForSeat(place.position),
+          colour: cupHexForSeat(place.position),
         })),
     // The cups only change when somebody sits down or leaves.
     // eslint-disable-next-line react-hooks/exhaustive-deps

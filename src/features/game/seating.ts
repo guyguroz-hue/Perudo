@@ -1,7 +1,7 @@
 import { badgeAnchor } from '../../three/layout'
 import type { BadgeAnchor } from '../../three/layout'
 import type { SceneSeat } from '../../three/scene'
-import { hexForSeat } from './colors'
+import { cupHexForSeat } from './colors'
 import { countsToward } from '../../game'
 import type { Face } from '../../game'
 import type { RevealHand } from './reveal'
@@ -88,7 +88,7 @@ export function sceneSeats(
       id: seat.player.id,
       index: seat.index,
       count: seat.count,
-      colour: hexForSeat(seat.player.seatIndex),
+      colour: cupHexForSeat(seat.player.seatIndex),
       dice: shown,
       counted:
         claim === null || shown === undefined

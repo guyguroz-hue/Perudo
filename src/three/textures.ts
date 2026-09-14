@@ -110,13 +110,25 @@ export function woodTexture(size = 1024): { map: Texture; rough: Texture } {
       const drift = (fbm(noise, u * 0.8 + 41, v * 0.8 + 5) - 0.5) * 0.22
 
       // Kept close together on purpose. Wide swings read as marble or as fire;
-      // walnut is nearly one colour, with the grain showing mostly in how it
+      // cherry is nearly one colour, with the grain showing mostly in how it
       // takes the light rather than in how dark it is.
-      const shade = clamp01(0.46 + band * 0.11 + fibre * 0.1 + drift * 0.8)
+      const shade = clamp01(0.46 + band * 0.12 + fibre * 0.11 + drift * 0.85)
       const i = (y * size + x) * 4
-      image.data[i] = 38 + 104 * shade
-      image.data[i + 1] = 26 + 74 * shade
-      image.data[i + 2] = 20 + 52 * shade
+      /*
+       * Cherry, not walnut.
+       *
+       * These channels were much closer together, on the reasoning that wood
+       * sits nearer grey than it feels like it should and a saturated red-brown
+       * tone-maps into moulded plastic. That is true of a board in daylight and
+       * wrong here: this table is lit by one warm lamp in a dark room, and ACES
+       * pulls the saturation *out* of a warm midtone on its way to the screen.
+       * Compensating before the tone mapper rather than after is what finally
+       * made it read as timber — the wood the reference is cut from is plainly
+       * red, and ours was going through the whole pipeline as cardboard.
+       */
+      image.data[i] = 40 + 132 * shade
+      image.data[i + 1] = 24 + 76 * shade
+      image.data[i + 2] = 16 + 46 * shade
       image.data[i + 3] = 255
 
       // Late wood is denser and takes a polish differently, so the grain shows

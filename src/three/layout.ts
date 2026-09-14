@@ -13,14 +13,25 @@ import { PerspectiveCamera, Vector3 } from 'three'
 /**
  * Where the eye is.
  *
- * A person at the table, leaning in — about thirty-five degrees above the
- * surface. Lower than that and the cups stack up on each other and the far ones
- * cannot be told apart; higher and it stops being a seat and becomes a security
- * camera. The angle is chosen so the table fills the width of a phone held
- * upright and still leaves room above it for the room itself, which is what
- * stops the screen feeling like a table in a void.
+ * A person at the table, leaning in — about forty degrees above the surface.
+ * Lower than that and the cups stack up on each other and the far ones cannot
+ * be told apart; higher and it stops being a seat and becomes a security
+ * camera.
+ *
+ * It used to sit ten degrees lower and a third of a table further back, and
+ * the cost was not the angle, it was the framing: the whole ellipse fitted
+ * inside the picture with floor showing all the way round it, which reads as a
+ * table in a void — the one thing the room behind it exists to prevent. From
+ * here the timber runs off both sides of the frame, so the table is the
+ * surface the screen is standing on rather than an object on a screen, and
+ * there is still a band of room above it to be standing in.
+ *
+ * A longer lens than the obvious one, and moved back to keep the same framing.
+ * Six identical cups want to read as six of the same object, and a wide angle
+ * this close draws the near one half again the size of the far one — which
+ * stops being perspective and starts being a different cup.
  */
-export const CAMERA = { height: 1.8, distance: 2.6, fov: 46 } as const
+export const CAMERA = { height: 2.28, distance: 2.55, fov: 40 } as const
 
 /**
  * What the camera is pointed at.
@@ -30,7 +41,7 @@ export const CAMERA = { height: 1.8, distance: 2.6, fov: 46 } as const
  * floor under it; lifted, it drops to where a table in front of you actually
  * is, and the room gets the space above instead.
  */
-export const LOOK_AT = { x: 0, y: 0.2, z: 0.02 } as const
+export const LOOK_AT = { x: 0, y: 0.16, z: 0.02 } as const
 
 /**
  * The shape of the scene.
@@ -51,6 +62,16 @@ export const SEAT_RADIUS = 0.72
  * can see — not above the spot on the timber it is standing on.
  */
 export const CUP_LID = 0.3
+
+/**
+ * How far a cup's coaster reaches out from the middle of its chair.
+ *
+ * Shared with the renderer, which draws the coaster, because a badge hung
+ * below a near cup has to clear the *front* of that cup and not the spot on
+ * the timber its middle stands on. Those are the same point only if the eye is
+ * level with the table, and this one is forty degrees above it.
+ */
+export const CUP_FOOT = 0.158
 
 /**
  * How far a cup rises when it is lifted.
@@ -100,14 +121,21 @@ export const INLAY_RADIUS = 0.34
  * Straight down, high enough that every cup's dice are inside the frame. A
  * seat's view is the right one for playing — it is a table in front of you —
  * and the wrong one for the one moment the game is about arithmetic: six hands
- * lying flat, seen at thirty-five degrees, are six huddles of foreshortened
- * specks, and the player is asked to take the count on trust.
+ * lying flat, seen at forty degrees, are six huddles of foreshortened specks,
+ * and the player is asked to take the count on trust.
  *
- * The height is not chosen by eye. The dice sit on a ring of SEAT_RADIUS plus
- * their own spread, and the stage is taller than it is wide, so it is the
- * horizontal field that has to contain them: at this fov and aspect the
- * half-angle across is atan(tan(fov/2) * STAGE_ASPECT), and the height below
- * puts the outermost die comfortably inside it.
+ * The height is not chosen by eye, and it is not independent of the seated
+ * camera either — both views are the same lens. The dice sit on a ring of
+ * SEAT_RADIUS plus their own spread, and the stage is taller than it is wide,
+ * so it is the horizontal field that has to contain them: at this fov and
+ * aspect the half-angle across is atan(tan(fov/2) * STAGE_ASPECT), and the
+ * height below puts the rim at about ninety percent of it.
+ *
+ * Which means narrowing the lens for the seated view — a longer lens is kinder
+ * to six identical cups at close range — pushes this number up in step. It is
+ * the only place in the scene where one of those two decisions reaches the
+ * other, and the test that says the whole table stays in the picture is what
+ * catches it when it is forgotten.
  */
 export const OVERHEAD = {
   /*
@@ -115,11 +143,13 @@ export const OVERHEAD = {
    *
    * The stage is taller than it is wide, so the horizontal field is the tight
    * one: at this fov and aspect its half-angle has tan = tan(fov/2) * aspect
-   * ≈ 0.327, so a height of 3.3 reaches about 1.08 either side of the middle.
+   * ≈ 0.28, so a height of 3.9 reaches about 1.09 either side of the middle.
    * The table's rim is at 1, and the badges ride just inside it, which is the
    * outermost thing that must not be cut.
+   *
+   * It rises whenever the lens narrows, because both views are the same lens.
    */
-  height: 3.3,
+  height: 3.9,
   /*
    * Not zero.
    *
@@ -238,7 +268,24 @@ export function badgeAnchor(
    * moment the hand is the thing worth looking at. It slides outward instead,
    * past the cup, onto the rim where nothing else is.
    */
-  const reach = SEAT_RADIUS + (BADGE_RIM - SEAT_RADIUS) * overhead
+  /*
+   * Which half of the table this chair is in, decided before anything is
+   * placed — the reach depends on it, so it cannot be read off the result.
+   */
+  const near = seatPoint(index, count).z > 0.001
+
+  /*
+   * A near badge hangs off the front of its cup, not off its chair.
+   *
+   * Anchored at the middle of the chair it cleared the cup comfortably from a
+   * low seat and stopped clearing it the moment the eye came up: the higher
+   * the camera, the more of the cup's base ellipse opens toward the viewer, so
+   * the front of the coaster drops further below the point its centre projects
+   * to. Reaching out by the coaster's own radius is the same clearance at any
+   * angle, because it is the thing being cleared.
+   */
+  const seated = SEAT_RADIUS + (near ? CUP_FOOT : 0)
+  const reach = seated + (BADGE_RIM - seated) * overhead
   const { x, z } = seatPoint(index, count, reach)
   /*
    * Near is a half of the table, not one chair.
@@ -250,7 +297,6 @@ export function badgeAnchor(
    * up. Anybody on the near side of the middle hangs their badge down off the
    * front of the table, where the only thing under them is floor.
    */
-  const near = z > 0.001
   // A lifted cup climbs into the badge that was floating over it, so the badge
   // moves up with it and the gap between them stays the gap it was.
   const anchor = project(x, near ? 0 : CUP_LID + lifted * CUP_LIFT, z, overhead)

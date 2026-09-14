@@ -12,7 +12,7 @@ import {
   WebGLRenderer,
 } from 'three'
 import { roomEnvironment } from './environment'
-import { CUP_HEIGHT, makeCup, makeTable } from './objects'
+import { CUP_HEIGHT, makeCup, makeInlay, makeTable } from './objects'
 import { CAMERA, CUP_LIFT, HAND_DRAW_IN, SEAT_RADIUS, placeCamera, seatAngle } from './layout'
 import { FACE_UP, DIE_SIZE, fadeDie, makeDie } from './die'
 import type { Die } from './die'
@@ -161,6 +161,7 @@ export function createTableScene(canvas: HTMLCanvasElement): TableScene {
 
   scene.add(makeRoom())
   scene.add(makeTable())
+  scene.add(makeInlay())
 
   // The lamp: warm, high, behind and to the right, which is where the
   // environment puts it. Lights and reflections have to agree or the eye knows.

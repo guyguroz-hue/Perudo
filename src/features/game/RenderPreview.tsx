@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { CupState } from '../../three/scene'
 import { TableScene } from './TableScene'
-import { SEAT_HEX, hexForSeat } from './colors'
+import { SEAT_HEX, cupHexForSeat } from './colors'
 import './RenderPreview.css'
 
 /**
@@ -24,7 +24,7 @@ export function RenderPreview() {
     id: `s${index}`,
     index,
     count: SEAT_HEX.length,
-    colour: hexForSeat(index),
+    colour: cupHexForSeat(index),
     dice: HANDS[index],
     state,
   }))

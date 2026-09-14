@@ -43,3 +43,31 @@ export const SEAT_HEX: readonly string[] = [
 export function hexForSeat(seat: number): string {
   return SEAT_HEX[((seat % SEAT_HEX.length) + SEAT_HEX.length) % SEAT_HEX.length]
 }
+
+/**
+ * The same six colours as a lacquered object rather than as a label.
+ *
+ * A cup is not its swatch. The colours above are chosen to stay legible as a
+ * name tag on a dark screen, which makes them mid-value — and a mid-value
+ * albedo under a bright lamp comes back out of the tone mapper as a flat,
+ * chalky fill. It is the single reason the table read as a diagram of cups
+ * instead of six objects: real moulded plastic is *dark*, and everything that
+ * makes it look like plastic is the highlight sitting on top of that dark.
+ *
+ * So the body is the seat's hue taken down to roughly a third of its lightness
+ * and pushed up in saturation, and the clearcoat is left to supply the range.
+ * Same hue, same identity, same six colours — a player's cup and their badge
+ * are still recognisably one thing.
+ */
+export const CUP_HEX: readonly string[] = [
+  '#3a1178',
+  '#08744a',
+  '#0c357f',
+  '#74061f',
+  '#8c4402',
+  '#045a66',
+]
+
+export function cupHexForSeat(seat: number): string {
+  return CUP_HEX[((seat % CUP_HEX.length) + CUP_HEX.length) % CUP_HEX.length]
+}

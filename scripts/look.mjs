@@ -42,16 +42,14 @@ const OUT = process.env.LOOK_OUT ?? '/tmp'
  * a shadow and tells you nothing about the object.
  */
 const REGIONS = {
-  // The six cups, by seat, at a table of six. Read off the projection rather
-  // than guessed: these are the boxes the cups actually land in.
-  'cup near': [0.42, 0.6, 0.58, 0.75],
-  'cup far': [0.42, 0.28, 0.58, 0.4],
-  'cup left': [0.13, 0.44, 0.28, 0.58],
-  'cup right': [0.72, 0.44, 0.87, 0.58],
-  // Timber with nothing standing on it, between the near cup and the rim.
-  wood: [0.3, 0.76, 0.7, 0.86],
+  // Bare timber on the near left, where no cup stands at any table size.
+  wood: [0.06, 0.55, 0.34, 0.84],
+  // The near player's cup, which is at the bottom middle whoever is playing.
+  cup: [0.42, 0.66, 0.58, 0.8],
+  // The ring in the middle, and whether it is actually carrying any light.
+  inlay: [0.36, 0.44, 0.64, 0.56],
   // The room behind the table, above the far rim.
-  room: [0.05, 0.04, 0.95, 0.2],
+  room: [0.05, 0.03, 0.95, 0.18],
 }
 
 /**
@@ -185,11 +183,11 @@ try {
     const got = band(pixels)
     const want = TARGET[name]
     const note =
-      want === undefined
+      want?.mid === undefined
         ? ''
         : `mid ${(apart(got.mid, want.mid) * 100).toFixed(0)}%  ` +
           `bright ${(apart(got.bright, want.bright) * 100).toFixed(0)}%`
-    if (name.startsWith('cup ')) cupSpreads.push(got.spread)
+    if (name === 'cup') cupSpreads.push(got.spread)
     console.log(
       `${name.padEnd(11)} ${got.dark}  ${got.mid}  ${got.bright}  ` +
         `${got.spread.toFixed(2)}    ${note}`,
