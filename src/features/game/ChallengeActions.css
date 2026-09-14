@@ -147,3 +147,14 @@
   font-weight: 700;
   letter-spacing: 0;
 }
+
+/* The same slot, saying the opposite thing, and saying it quietly: this is not
+   a prize, it is the reason there is not one. Lettering rather than a plus, so
+   it cannot be misread as a smaller reward. */
+.challenge__prize--full {
+  background: rgb(0 0 0 / 0.22);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.66);
+}

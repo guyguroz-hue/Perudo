@@ -30,8 +30,19 @@ export function ChallengeActions({
   onLie: () => void
   onBull: () => void
 }) {
-  // Only a Burst Lie can ever hand a die back, and never above five (§9.3).
-  const canWinADie = burst && ownDiceCount < MAX_DICE
+  /*
+   * What this press is worth, which is not the same question all game.
+   *
+   * Only a Burst Lie can ever hand a die back, and never above five (§9.3,
+   * R-007) — so a player watches the +1 appear, disappear the moment they are
+   * full, and come back when they lose one. Left as an empty slot that reads
+   * as something breaking rather than as a rule: the prize was there a minute
+   * ago and now it is not, and nothing on the screen says the ceiling is why.
+   *
+   * So the slot always says something when a Burst is on the table. There is
+   * nothing to win, or there is nowhere to put it.
+   */
+  const prize = !burst ? null : ownDiceCount < MAX_DICE ? 'win' : 'full'
 
   /*
    * A bid can only be Bulled once.
@@ -67,13 +78,24 @@ export function ChallengeActions({
         disabled={busy}
         onClick={onLie}
         aria-label={`${burst ? 'Burst Lie' : 'Lie'}: ${doubting}${
-          canWinADie ? ', and win a die if I am right' : ''
+          prize === 'win'
+            ? ', and win a die if I am right'
+            : prize === 'full'
+              ? ', with no die to win — already holding five'
+              : ''
         }`}
       >
         <CrossMark />
         <span className="challenge__name">
           {burst ? 'Burst Lie' : 'Lie'}
-          {canWinADie && <b className="challenge__prize" aria-hidden="true">+1</b>}
+          {prize !== null && (
+            <b
+              className={`challenge__prize${prize === 'full' ? ' challenge__prize--full' : ''}`}
+              aria-hidden="true"
+            >
+              {prize === 'win' ? '+1' : 'full'}
+            </b>
+          )}
         </span>
         <span className="challenge__claim">
           <span className="challenge__reading">{reading}</span>
