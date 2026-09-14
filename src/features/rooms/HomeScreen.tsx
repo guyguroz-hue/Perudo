@@ -98,12 +98,15 @@ export function HomeScreen({ name }: { name: string }) {
       </div>
 
       <form className="home__join" onSubmit={onJoin}>
+        {/* Six characters now, and five still accepted: codes minted before
+            the sixth was added are in links being passed around this minute,
+            and rooms are short-lived enough that they age out within a day. */}
         <input
           className="home__code"
           value={code}
           onChange={(event) => setCode(event.target.value.toUpperCase())}
           placeholder="ROOM CODE"
-          maxLength={5}
+          maxLength={6}
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}

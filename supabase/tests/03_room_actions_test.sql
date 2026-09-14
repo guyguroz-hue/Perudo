@@ -42,7 +42,7 @@ begin
   set local role authenticated;
   select room_id, code into v_id, v_code from public.create_room();
 
-  if v_code !~ '^[2346789ABCDEFGHJKMNPQRTUVWXYZ]{5}$' then
+  if v_code !~ '^[2346789ABCDEFGHJKMNPQRTUVWXYZ]{6}$' then
     raise exception 'FAIL: create_room produced a bad code: %', v_code;
   end if;
 

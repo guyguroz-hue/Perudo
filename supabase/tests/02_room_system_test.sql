@@ -116,6 +116,21 @@ begin
     raise exception 'FAIL: a four-character code was accepted';
   exception when check_violation then null;
   end;
+
+  -- Five is still accepted and six is what the generator now mints, so the
+  -- bound has two sides and both are worth pinning: a width nobody produces is
+  -- a width nobody has thought about.
+  begin
+    insert into public.rooms (code, host_id)
+    values ('K7MPQR2', 'a0000000-0000-0000-0000-000000000001');
+    raise exception 'FAIL: a seven-character code was accepted';
+  exception when check_violation then null;
+  end;
+
+  insert into public.rooms (code, host_id)
+  values ('K7MPQ', 'a0000000-0000-0000-0000-000000000001');
+  insert into public.rooms (code, host_id)
+  values ('K7MPQR', 'a0000000-0000-0000-0000-000000000001');
 end $$;
 \echo 'PASS  confusable and malformed room codes are rejected'
 
@@ -125,7 +140,7 @@ declare
 begin
   for i in 1..200 loop
     code := public.generate_room_code();
-    if code !~ '^[2346789ABCDEFGHJKMNPQRTUVWXYZ]{5}$' then
+    if code !~ '^[2346789ABCDEFGHJKMNPQRTUVWXYZ]{6}$' then
       raise exception 'FAIL: generator produced an invalid code: %', code;
     end if;
   end loop;
