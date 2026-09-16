@@ -167,6 +167,44 @@ async function overflow(page) {
   })
 }
 
+/*
+ * Nothing from the picture lies across anything you can press.
+ *
+ * Both tables hang labels off the chairs at their edges, and both sit directly
+ * above a row of controls. The labels are placed by the camera in percentages
+ * of the stage; the controls are laid out in pixels underneath it. Those two
+ * agree only by arithmetic, and the arithmetic changes whenever the stage does
+ * — which is how the host's own name came to be drawn across the Start button
+ * the day the stage got shorter.
+ *
+ * Presses were never the problem there: the overlay refuses them, so the button
+ * still worked. It simply looked broken, and nothing in the project could see
+ * it. `test:reach` asks whether a control takes a press; this asks whether it
+ * can be read.
+ */
+async function collisions(page, stage, controls) {
+  return page.evaluate(
+    ({ stage, controls }) => {
+      const boxes = (sel) => [...document.querySelectorAll(sel)].map((el) => ({
+        text: el.textContent.trim().slice(0, 14),
+        box: el.getBoundingClientRect(),
+      }))
+      const over = (a, b) =>
+        a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+      const found = []
+      for (const label of boxes(`${stage} > li`)) {
+        for (const control of controls.flatMap(boxes)) {
+          if (over(label.box, control.box)) {
+            found.push(`"${label.text}" lies across "${control.text}"`)
+          }
+        }
+      }
+      return found
+    },
+    { stage, controls },
+  )
+}
+
 try {
   for (const phone of PHONES) {
     const page = await browser.newPage({ viewport: { width: phone.width, height: phone.height } })
@@ -198,6 +236,19 @@ try {
       )
     }
 
+    // ---- The lobby, where a badge once landed on the Start button.
+    await page.getByRole('tab', { name: 'Lobby' }).click()
+    for (const room of ['Just you', 'Full house']) {
+      await page.getByRole('button', { name: room }).click()
+      await page.waitForTimeout(400)
+      const hits = await collisions(page, '.lobby-table__seats', [
+        '.lobby__controls .btn',
+        '.lobby__leave',
+        '.lobby__muted',
+      ])
+      report(hits.length === 0, `lobby, ${room}`, hits.length === 0 ? 'clear' : hits.join('; '))
+    }
+
     // ---- The practice table: a whole real screen, in a window this size.
     await page.goto(`http://localhost:${PORT}/solo`, { waitUntil: 'networkidle' })
     await page.waitForSelector('.builder__submit')
@@ -211,6 +262,14 @@ try {
         await page.click('.builder__submit')
         await page.waitForTimeout(900)
       }
+      const hits = await collisions(page, '.board__seats', [
+        '.challenge__lie',
+        '.challenge__bull',
+        '.builder__submit',
+        '.board__mine',
+      ])
+      if (hits.length > 0) report(false, `table, ${state}`, hits.join('; '))
+
       const o = await overflow(page)
       const spill = o.worst === null ? 0 : o.worst.bottom - o.room
       const ok = o.page - o.room <= 1 && spill <= 0

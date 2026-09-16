@@ -70,12 +70,26 @@ export function RoomTable({
           {ring.map(({ position, step, taken }) => {
             // An empty chair is marked on the table; a taken one is labelled
             // above or below the cup standing on it.
-            const anchor =
+            const { top, near, ...anchor } =
               taken === undefined ? emptySeatAnchor(step, SEAT_COUNT) : badgeAnchor(step, SEAT_COUNT)
+            /*
+             * The projection places the badge; the stylesheet keeps it in the
+             * picture. `top` goes over as a custom property because a badge has
+             * to be held off the edge of the frame by its own height, which is
+             * a number of pixels the camera knows nothing about.
+             *
+             * An empty chair gets neither bound. It lies flat on the timber in
+             * the ring of wood where a cup would stand, straddling its anchor
+             * rather than hanging off it, and that ring is well inside the
+             * frame at every table size.
+             */
             const style = {
               ...anchor,
+              top,
+              '--seat-top': top,
               '--seat-tone': toneForSeat(position),
             } as CSSProperties
+            const edge = taken === undefined ? '' : near ? ' badge--near' : ' badge--far'
 
             if (taken === undefined) {
               return (
@@ -93,7 +107,7 @@ export function RoomTable({
             return (
               <li
                 key={position}
-                className={`badge${taken.is_you ? ' badge--mine' : ''}`}
+                className={`badge${edge}${taken.is_you ? ' badge--mine' : ''}`}
                 style={style}
               >
                 <span className="badge__avatar" aria-hidden="true">

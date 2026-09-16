@@ -18,28 +18,28 @@
   width: min(100vw, 34rem);
   margin-inline: calc((100% - min(100vw, 34rem)) / 2);
   /*
-   * The floor in front of the table is not content.
+   * The controls stop where the picture stops.
    *
-   * The stage is as tall as the camera needs it to be, and the camera needs
-   * room above the table for the room. Below the table it needs nothing: the
-   * bottom sixth of the frame is empty floor, and on a phone that is the
-   * difference between the start button sitting under the table and sitting
-   * below the fold. Measured at 360, 390 and 430 wide — the band is 16-17.5%
-   * of the stage, and 12% is reclaimed, so the nearest badge keeps its air.
+   * This used to pull them up by a sixth of the stage's width, to reclaim the
+   * band of empty floor below the table. That band was measured against a stage
+   * a third taller than it was wide; shortening the stage to fit a phone, and
+   * narrowing the lens to match, spent it — and the reclaim went on taking the
+   * same number of pixels, which by then were not floor but the nearest
+   * player's own badge. The host's name was drawn across the Start button.
+   *
+   * The canvas fades out over its last seventh, and that fade is what makes the
+   * controls sit under the table rather than on a rectangle that stops above
+   * them. The overlap was never what did it.
    */
-  margin-bottom: calc(min(100vw, 34rem) * -0.156);
   /*
    * And nothing in it takes a press.
    *
-   * That negative margin is why this line exists. The stage's box now reaches
-   * down past the table into the controls below it, and a positioned box paints
-   * above static content — so the stage lay invisibly across the Start button
-   * and swallowed every press. The host tapped, nothing happened, and there was
-   * nothing on screen to suggest why.
-   *
    * A lobby table is a picture: the cups are scenery and the names are labels.
-   * The one thing in here anybody can touch is the host's menu on another
-   * player's badge, and it puts this back for itself.
+   * The list of badges is stretched over the whole stage and positioned content
+   * paints above static content, so without this it lies across whatever is
+   * beneath it and swallows presses. The one thing in here anybody can touch is
+   * the host's menu on another player's badge, and it puts this back for
+   * itself.
    */
   pointer-events: none;
   container-type: inline-size;
@@ -49,13 +49,11 @@
  * The labels on the table, and nothing else.
  *
  * `pointer-events: none` is load-bearing, not tidiness. This list is stretched
- * over the whole stage, and the stage reaches past its own bottom edge into the
- * controls below it — it is pulled up there on purpose, to take back the band
- * of empty floor in front of the table. Positioned content paints above static
- * content, so without this the list lies invisibly across the Start button and
- * swallows every press: the host taps, nothing happens, and there is nothing on
- * screen to suggest why. The game's own overlay has carried this rule from the
- * start; this one did not, and the negative margin is what made it matter.
+ * over the whole stage, and positioned content paints above static content — so
+ * without this the list lies invisibly across whatever sits below the stage and
+ * swallows every press. It did exactly that to the Start button once: the host
+ * tapped, nothing happened, and there was nothing on screen to suggest why. The
+ * game's own overlay has carried this rule from the start; this one did not.
  *
  * The host's menu on another player's badge puts it back for itself.
  */
@@ -107,6 +105,32 @@
 
 .lobby-table__seats .badge__name {
   font-size: var(--text-xs);
+}
+
+/*
+ * Kept in the picture.
+ *
+ * The same clamp the game's table carries, and it belongs here for the same
+ * reason: the camera hands back a percentage and cannot know how tall the badge
+ * hanging off it is, or how tall the stage was actually laid out. A near chair
+ * hangs its badge below the anchor, so what it can run into is the bottom of
+ * the frame — and below the frame are the room's controls. A far chair holds
+ * its badge above its cup and can run off the top.
+ *
+ * Smaller reserves than the game's, because a lobby badge is smaller: one line,
+ * a face beside a name, with no dice to carry and no turn to announce.
+ */
+.lobby-table__seats .badge {
+  --badge-below: 44px;
+  --badge-above: 44px;
+}
+
+.lobby-table__seats .badge--near {
+  top: min(var(--seat-top), calc(100% - var(--badge-below)));
+}
+
+.lobby-table__seats .badge--far {
+  top: max(var(--seat-top), var(--badge-above));
 }
 
 /* -----------------------------------------------------------------------------
