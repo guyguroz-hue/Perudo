@@ -97,8 +97,25 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
             {game.error.message}
           </p>
         ) : (
+          /*
+           * A refusal, with the name of the refusal on it.
+           *
+           * The sentence is for the player and the code is for whoever has to
+           * fix it, and leaving the code off cost a day: "I press Bull and get
+           * an error" is not a bug report, and it cannot be turned into one
+           * without the player being asked to reproduce it while somebody
+           * reads logs. Every refusal here already carries a stable code —
+           * BULL_ALREADY_CALLED, NOT_DEPLOYED, STALE_STATE — and putting it on
+           * screen means a screenshot is the report.
+           *
+           * Quiet and after the sentence, the way `.app__detail` carries the
+           * connection failure's detail on the first screen. Not on the stale
+           * line above: that one is the game working, and a code beside
+           * "somebody got there first" would make ordinary play look broken.
+           */
           <p className="game__error" role="alert">
             {game.error.message}
+            <b className="game__code">{game.error.code}</b>
           </p>
         ))}
 

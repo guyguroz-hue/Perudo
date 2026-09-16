@@ -54,3 +54,35 @@ describe('reading a refusal', () => {
     expect(toGameError('boom')).toBeInstanceOf(GameActionError)
   })
 })
+
+/*
+ * The code has to survive the trip to the screen.
+ *
+ * `toGameError` has always produced one; the screen used to drop it, because
+ * the hook between them kept only the sentence and the stale flag. The cost
+ * arrived as a bug report that could not be acted on — "I press Bull and get an
+ * error" — for a refusal the client had already identified precisely and then
+ * thrown away. These hold the two halves apart: a sentence written for the
+ * player, and a name written for whoever has to fix it.
+ */
+describe('a refusal keeps its name', () => {
+  it('carries a code beside every reworded message', () => {
+    const failure = toGameError({ error: 'BULL_ALREADY_CALLED', message: 'This bid has already been Bulled.' })
+    expect(failure.code).toBe('BULL_ALREADY_CALLED')
+    // The server's own sentence survives: nothing generic here could do better.
+    expect(failure.message).toBe('This bid has already been Bulled.')
+  })
+
+  // The two that send somebody looking in completely different places, and the
+  // pair most easily confused from the sentence alone.
+  it('tells a spent Bull apart from a stale one', () => {
+    expect(toGameError({ error: 'BULL_ALREADY_CALLED' }).stale).toBe(false)
+    expect(toGameError({ error: 'STALE_STATE' }).stale).toBe(true)
+  })
+
+  it('never leaves the code empty', () => {
+    for (const thrown of ['boom', new TypeError('Failed to fetch'), {}, null]) {
+      expect(toGameError(thrown).code).not.toBe('')
+    }
+  })
+})

@@ -51,7 +51,22 @@ export interface GameHandle {
    * the player to do about it. Everything else is a refusal they have to read
    * and act on.
    */
-  readonly error: { readonly message: string; readonly stale: boolean } | null
+  /*
+   * The last refusal, as something to put on screen.
+   *
+   * The code travels with the sentence. It used to be dropped here — the hook
+   * kept the message and the stale flag and nothing else — and the cost showed
+   * up the first time a player reported "I press Bull and get an error": the
+   * screen knew which refusal it was, threw the name away, and left the
+   * sentence, which is the half written for the player rather than the half
+   * that says where to look.
+   */
+  readonly error: {
+    readonly message: string
+    /** Stable identifier: 'BULL_ALREADY_CALLED', 'NOT_DEPLOYED', … */
+    readonly code: string
+    readonly stale: boolean
+  } | null
   bid: (bid: ProposedBid) => Promise<void>
   bull: () => Promise<void>
   doubt: () => Promise<void>
@@ -146,7 +161,8 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
       }
     } catch (caught) {
       if (generation.current !== mine) return
-      setError({ message: toGameError(caught).message, stale: false })
+      const failure = toGameError(caught)
+      setError({ message: failure.message, code: failure.code, stale: false })
     }
   }, [gameId, youId])
 
@@ -247,7 +263,7 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
         await refresh()
       } catch (caught) {
         const failure = toGameError(caught)
-        setError({ message: failure.message, stale: failure.stale })
+        setError({ message: failure.message, code: failure.code, stale: failure.stale })
         // "Somebody got there first" is answered by looking again, not by the
         // player doing anything differently.
         if (failure.stale) await refresh()
@@ -301,7 +317,7 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
       setReveal(null)
       showing.current = null
       const failure = toGameError(caught)
-      setError({ message: failure.message, stale: failure.stale })
+      setError({ message: failure.message, code: failure.code, stale: failure.stale })
       if (failure.stale) await refresh()
     } finally {
       setBusy(false)

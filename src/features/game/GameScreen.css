@@ -29,6 +29,23 @@
   color: var(--lie);
 }
 
+/* The refusal's own name, for whoever has to fix it rather than for the player
+   reading the sentence in front of it. Small, dim and on the same line: it has
+   to survive a screenshot, and it must not be the thing the eye lands on. */
+.game__code {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 0.08);
+  font-family: var(--font-ui);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  color: var(--ink-faint);
+  vertical-align: middle;
+}
+
 /* Somebody got there first. That is the game, not a fault, so it is said in
    the colour everything else uninteresting is said in — red here would alarm a
    player for playing correctly, and with Burst in the rules it would do so
