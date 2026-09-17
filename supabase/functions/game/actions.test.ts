@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { callBull, challenge, openRound, placeBid } from './actions'
-import type { BidWrite, BullWrite, GameRow, GameStore, PlayerRow, RoundRow } from './store'
+import type {
+  BidWrite,
+  BullWrite,
+  ChallengeWrite,
+  GameRow,
+  GameStore,
+  PlayerRow,
+  RoundRow,
+} from './store'
 import type { PlayerId, RoundType } from '../../../src/game'
 
 /**
@@ -24,7 +32,7 @@ interface Scene {
 class Fake implements GameStore {
   readonly bids: BidWrite[] = []
   readonly bulls: BullWrite[] = []
-  readonly challenges: Record<string, unknown>[] = []
+  readonly challenges: ChallengeWrite[] = []
   readonly opened: { type: RoundType; starter: PlayerId }[] = []
 
   #game: GameRow
@@ -87,7 +95,7 @@ class Fake implements GameStore {
     this.bulls.push(args)
     return Promise.resolve()
   }
-  applyChallenge(args: Record<string, unknown>) {
+  applyChallenge(args: ChallengeWrite) {
     this.challenges.push(args)
     return Promise.resolve({ reveals: [], standings: [], new_round_id: 'rd2' })
   }

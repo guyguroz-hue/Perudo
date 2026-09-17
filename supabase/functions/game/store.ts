@@ -56,7 +56,32 @@ export interface GameStore {
   openRound(gameId: string, type: RoundType, starter: PlayerId): Promise<string>
   applyBid(args: BidWrite): Promise<void>
   applyBull(args: BullWrite): Promise<void>
-  applyChallenge(args: Record<string, unknown>): Promise<Record<string, unknown>>
+  applyChallenge(args: ChallengeWrite): Promise<Record<string, unknown>>
+}
+
+/*
+ * The thirteen arguments of a resolution, named.
+ *
+ * This was `Record<string, unknown>` — the one write in the system with
+ * thirteen parameters was the only one whose shape nothing checked, so a
+ * mistyped key compiled cleanly and failed as "could not find the function in
+ * the schema cache" at the moment a challenge was being resolved. The names are
+ * the database's, because PostgREST resolves an RPC by them.
+ */
+export interface ChallengeWrite {
+  readonly p_round_id: string
+  readonly p_version: number
+  readonly p_challenger: string
+  readonly p_kind: string
+  readonly p_actual_count: number
+  readonly p_claim_holds: boolean
+  readonly p_deltas: Record<string, number>
+  readonly p_eliminated: readonly string[]
+  readonly p_game_over: boolean
+  readonly p_winner: string | null
+  readonly p_next_starter: string | null
+  readonly p_next_type: string
+  readonly p_next_queue: readonly string[]
 }
 
 export interface BidWrite {
@@ -180,7 +205,7 @@ export class Store implements GameStore {
     if (error !== null) throw lift(error)
   }
 
-  async applyChallenge(args: Record<string, unknown>): Promise<Record<string, unknown>> {
+  async applyChallenge(args: ChallengeWrite): Promise<Record<string, unknown>> {
     const { data, error } = await this.#db.rpc('apply_challenge', args)
     if (error !== null) throw lift(error)
     return data as Record<string, unknown>
