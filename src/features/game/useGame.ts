@@ -22,11 +22,22 @@ import type { TableView } from './view'
  * through RLS. Six players and one round — refetching costs nothing, and drift
  * between a local model and the truth costs a great deal.
  */
+/**
+ * The action a player has sent and is waiting on, if any.
+ *
+ * Named rather than a boolean because the button that was pressed wants to look
+ * different from the ones that were not: one is working, the others are simply
+ * unavailable while it does.
+ */
+export type PendingAction = 'bid' | 'bull' | 'lie' | null
+
 export interface GameHandle {
   readonly view: TableView | null
   readonly connection: Connection
   /** An action is in flight. The table stays visible; the buttons do not fire twice. */
   readonly busy: boolean
+  /** Which of the three actions is in flight, for the control that sent it. */
+  readonly pending: PendingAction
   /**
    * The reveal to play, or null.
    *
@@ -78,6 +89,22 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
   const [view, setView] = useState<TableView | null>(null)
   const [connection, setConnection] = useState<Connection>('connecting')
   const [busy, setBusy] = useState(false)
+  /*
+   * Which action is on its way, for the button that was pressed.
+   *
+   * `busy` says "not now" to every control at once, which is right for the ones
+   * the player did not touch and wrong for the one they did: dimming the button
+   * somebody just pressed is indistinguishable from refusing it, and a player
+   * who cannot tell presses again.
+   */
+  const [pending, setPending] = useState<PendingAction>(null)
+  /*
+   * The same fact, kept somewhere React cannot be late with it.
+   *
+   * State is applied on the next render; a double tap is two events in one
+   * frame. This is the guard, and `pending` is only what it looks like.
+   */
+  const inFlight = useRef<PendingAction>(null)
   const [reveal, setReveal] = useState<GameHandle['reveal']>(null)
   const [over, setOver] = useState<GameHandle['over']>(null)
   const [error, setError] = useState<GameHandle['error']>(null)
@@ -254,8 +281,27 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
    * nothing happen. The action already knows the state moved.
    */
   const run = useCallback(
-    async (action: () => Promise<void>) => {
+    async (action: () => Promise<void>, kind: PendingAction) => {
       if (gameId === null) return
+      /*
+       * One action at a time, decided here rather than by the buttons.
+       *
+       * `busy` disables them, but `busy` is React state: it reaches the DOM on
+       * the next render, and a double tap is two events in the same frame. Both
+       * got through, and the second was worse than a wasted request — both
+       * carried the same round version, so the server applied the first and
+       * refused the second on the optimistic-concurrency check. The player was
+       * shown "Somebody got there first. Have another look." for their own
+       * second tap, at a table where nobody else had moved.
+       *
+       * A ref is read and written synchronously, so the second call sees the
+       * first before it has had a chance to await anything. It returns in
+       * silence, because the player's action is already on its way and the only
+       * honest thing to say about a duplicate is nothing.
+       */
+      if (inFlight.current !== null) return
+      inFlight.current = kind
+      setPending(kind)
       setBusy(true)
       setError(null)
       try {
@@ -268,6 +314,8 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
         // player doing anything differently.
         if (failure.stale) await refresh()
       } finally {
+        inFlight.current = null
+        setPending(null)
         setBusy(false)
       }
     },
@@ -276,14 +324,20 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
 
   const bid = useCallback(
     (next: ProposedBid) =>
-      run(() => api.placeBid(gameId as string, next.quantity, next.face)),
+      run(() => api.placeBid(gameId as string, next.quantity, next.face), 'bid'),
     [gameId, run],
   )
 
-  const bull = useCallback(() => run(() => api.callBull(gameId as string)), [gameId, run])
+  const bull = useCallback(() => run(() => api.callBull(gameId as string), 'bull'), [gameId, run])
 
   const doubt = useCallback(async () => {
     if (gameId === null) return
+    // Same guard as `run`, and it matters most here: two challenges in one
+    // frame would open the reveal, claim the round, and then have the second
+    // refused — with the cups already off the table.
+    if (inFlight.current !== null) return
+    inFlight.current = 'lie'
+    setPending('lie')
     // The reveal opens on the pause, before the answer exists. That is the
     // whole point: what would otherwise be a spinner is the beat where a player
     // wonders whether they were right.
@@ -320,6 +374,8 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
       setError({ message: failure.message, code: failure.code, stale: failure.stale })
       if (failure.stale) await refresh()
     } finally {
+      inFlight.current = null
+      setPending(null)
       setBusy(false)
     }
   }, [gameId, refresh])
@@ -330,6 +386,7 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
     view,
     connection,
     busy,
+    pending,
     reveal,
     over,
     error,

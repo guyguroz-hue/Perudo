@@ -167,3 +167,49 @@
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.66);
 }
+
+/*
+ * The one you just pressed.
+ *
+ * Every control goes `disabled` while an action is in flight, and a disabled
+ * button on a dark panel looks the same whether it is working or refusing. On a
+ * phone network that is a second or two of a button that has visibly gone dead
+ * under a thumb which has just been told, by the whole rest of the interface,
+ * that nothing happened. So the thumb presses again. That is most of what "lots
+ * of double presses that did not count" was, before it ever reached the server.
+ *
+ * So the pressed one keeps its colour and says Sending, while the others dim as
+ * before. It is lifted slightly out of the panel, because a control that is
+ * working is doing something and the ones beside it are not.
+ */
+.challenge--sending:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
+.challenge__lie.challenge--sending:disabled {
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.5),
+    0 0 0 2px rgb(239 107 145 / 0.45),
+    0 8px 22px rgb(160 26 69 / 0.4);
+}
+
+.challenge__bull.challenge--sending:disabled {
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.5),
+    0 0 0 2px rgb(111 176 255 / 0.45),
+    0 8px 22px rgb(28 63 160 / 0.4);
+}
+
+/* A slow pulse: enough to read as "in hand" at a glance, not enough to become
+   a thing on the screen that is moving. */
+@media (prefers-reduced-motion: no-preference) {
+  .challenge--sending:disabled {
+    animation: challenge-sending 1.1s var(--ease-ui) infinite;
+  }
+}
+
+@keyframes challenge-sending {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.22); }
+}

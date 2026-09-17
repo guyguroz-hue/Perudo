@@ -2,6 +2,7 @@ import { Die } from '../../components/Die'
 import type { ProposedBid } from '../../game'
 import { FACES } from '../../game'
 import type { BidDraft } from './bidDraft'
+import type { PendingAction } from './useGame'
 import './BidBuilder.css'
 
 /**
@@ -57,6 +58,7 @@ export function BidRow({
   draft,
   burst,
   busy = false,
+  pending = null,
   onBid,
   /** True when the button sits beside the stepper rather than under it. */
   inline = false,
@@ -65,6 +67,8 @@ export function BidRow({
   /** True when this would be a Burst: a bid made out of turn (GAME_RULES §9.1). */
   burst: boolean
   busy?: boolean
+  /** Which action is on its way, if any. */
+  pending?: PendingAction
   onBid: (bid: ProposedBid) => void
   inline?: boolean
 }) {
@@ -109,14 +113,16 @@ export function BidRow({
 
         <button
           type="button"
-          className={`builder__submit${burst ? ' builder__submit--burst' : ''}`}
+          className={`builder__submit${burst ? ' builder__submit--burst' : ''}${
+            pending === 'bid' ? ' builder__submit--sending' : ''
+          }`}
           disabled={busy || !verdict.legal}
           onClick={() => onBid(bid)}
           /* Short on the button, whole in the name it is announced by: the dock
              has room for one word and a screen reader has room for the sense. */
           aria-label={burst ? 'Burst bid' : 'Bid'}
         >
-          {burst ? 'Burst' : 'Bid'}
+          {pending === 'bid' ? 'Sending' : burst ? 'Burst' : 'Bid'}
         </button>
       </div>
 

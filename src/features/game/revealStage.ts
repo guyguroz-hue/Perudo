@@ -34,7 +34,7 @@ const HELD_MS = 750
 const MIN_BEAT_MS = 90
 const LIFT_MS = 620
 const SETTLE_MS = 340
-const PER_DIE_MS = 150
+const PER_DIE_MS = 185
 
 /**
  * The beat between the verdict and the dice moving.
@@ -47,7 +47,7 @@ const PER_DIE_MS = 150
  * So nothing moves for a moment. The count is there to be read, the sentence
  * under it says who pays, and only then is anybody's die taken.
  */
-export const PAY_AFTER_MS = 1800
+export const PAY_AFTER_MS = 2100
 
 /**
  * How long a die takes to leave the table, or to arrive on it.
@@ -76,13 +76,26 @@ export const PAY_MS = 1000
  * correct Bull that takes a die from five people and knocks two of them out is
  * the longest thing this panel ever says.
  */
+/*
+ * Lengthened once, from a real table.
+ *
+ * "The reveal is too fast and there is not enough time between rounds" — six
+ * people around a phone each, where the round that just ended is the thing
+ * everybody wants to talk about for a moment before the next one is dealt. The
+ * count runs slower by a third and the settled table stays up about a second
+ * and a half longer.
+ *
+ * It can afford to: the panel carries a button that takes this client's curtain
+ * down early, so a long hold costs an impatient player one tap and buys
+ * everybody else the beat they asked for.
+ */
 export function resultHoldMs(changedPlayers: number): number {
   // Everything before the table settles, and then time to look at it settled.
   // Written as a sum rather than as one number so the pause before the dice
   // move and the hold can never drift apart: lengthen one and the other
   // follows, instead of the table advancing over a die still in the air.
   const settling = PAY_AFTER_MS + PAY_MS
-  return Math.min(settling + 2200 + changedPlayers * 700, 9000 + settling)
+  return Math.min(settling + 3200 + changedPlayers * 780, 9000 + settling)
 }
 
 export interface Revealing {

@@ -18,6 +18,7 @@ import { PlayerSeat } from './PlayerSeat'
 import { RevealPanel } from './RevealPanel'
 import { TableScene } from './TableScene'
 import { useBurst } from './burst'
+import type { PendingAction } from './useGame'
 import { SHAKE_MS, useDealShake } from './dealing'
 import type { RevealClaim, RevealData } from './reveal'
 import { PAY_AFTER_MS, useRevealStage } from './revealStage'
@@ -63,6 +64,7 @@ import './GameTable.css'
 export function GameTable({
   view,
   busy = false,
+  pending = null,
   reveal = null,
   finish = null,
   connection = 'live',
@@ -73,6 +75,16 @@ export function GameTable({
 }: {
   view: TableView
   busy?: boolean
+  /**
+   * Which action the player has sent and is waiting on.
+   *
+   * `busy` says "not now" to every control at once, which is right for the ones
+   * they did not touch and wrong for the one they did: a dimmed button is
+   * indistinguishable from a refused one, and a player who cannot tell whether
+   * their press landed presses again. That is most of what "lots of double
+   * presses that did not count" was.
+   */
+  pending?: PendingAction
   /**
    * Whether changes are still arriving.
    *
@@ -364,6 +376,7 @@ export function GameTable({
             burst={burst}
             canAct={canAct}
             busy={busy}
+            pending={pending}
             onTable={onTable}
             onBid={onBid}
             onLie={onLie}
@@ -390,6 +403,7 @@ function TableDock({
   burst,
   canAct,
   busy,
+  pending,
   onTable,
   onBid,
   onLie,
@@ -403,6 +417,8 @@ function TableDock({
   burst: boolean
   canAct: boolean
   busy: boolean
+  /** Which action is in flight, so the control that sent it can say so. */
+  pending: PendingAction
   onTable: number
   onBid: (bid: ProposedBid) => void
   onLie: () => void
@@ -462,13 +478,14 @@ function TableDock({
               is what you were dealt, the other is what you can say about it. */}
           <p className="builder__label">Your bid</p>
           <FaceRack draft={draft} />
-          <BidRow draft={draft} burst={burst} busy={busy} onBid={onBid} inline />
+          <BidRow draft={draft} burst={burst} busy={busy} pending={pending} onBid={onBid} inline />
           {bid !== null && (
             <ChallengeActions
               bid={bid}
               burst={burst}
               ownDiceCount={self.diceCount}
               busy={busy}
+              pending={pending}
               onLie={onLie}
               onBull={onBull}
             />

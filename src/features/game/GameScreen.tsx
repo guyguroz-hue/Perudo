@@ -134,6 +134,7 @@ export function GameScreen({
         roomMenu={roomMenu}
         view={game.view}
         busy={game.busy}
+        pending={game.pending}
         /*
          * The reveal still plays over a finished game: the hand that ended it
          * is the one most worth seeing, and cutting to a result would skip it.

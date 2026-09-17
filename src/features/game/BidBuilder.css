@@ -240,3 +240,30 @@
     inset 0 0 0 1px rgb(255 255 255 / 0.14),
     0 4px 14px rgb(0 0 0 / 0.45);
 }
+
+/*
+ * The bid on its way.
+ *
+ * Same argument as Lie and Bull: `disabled` alone cannot tell a player whether
+ * the press landed or was refused, so it keeps its brass and says Sending while
+ * everything else dims.
+ */
+.builder__submit--sending:disabled {
+  opacity: 1;
+  cursor: progress;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.6),
+    0 0 0 2px rgb(240 205 135 / 0.4),
+    0 4px 14px rgb(212 162 76 / 0.3);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .builder__submit--sending:disabled {
+    animation: submit-sending 1.1s var(--ease-ui) infinite;
+  }
+}
+
+@keyframes submit-sending {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.15); }
+}

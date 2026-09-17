@@ -1,6 +1,7 @@
 import { Die } from '../../components/Die'
 import type { ActiveBid } from '../../game'
 import { MAX_DICE } from '../../game'
+import type { PendingAction } from './useGame'
 import './ChallengeActions.css'
 
 /**
@@ -19,6 +20,7 @@ export function ChallengeActions({
   burst,
   ownDiceCount,
   busy = false,
+  pending = null,
   onLie,
   onBull,
 }: {
@@ -27,6 +29,14 @@ export function ChallengeActions({
   burst: boolean
   ownDiceCount: number
   busy?: boolean
+  /**
+   * Which action is on its way.
+   *
+   * A pressed button that only dims looks exactly like a button that has been
+   * refused, and a player who cannot tell presses it again — which is most of
+   * what a table full of double presses actually is.
+   */
+  pending?: PendingAction
   onLie: () => void
   onBull: () => void
 }) {
@@ -74,7 +84,7 @@ export function ChallengeActions({
     <div className="challenge">
       <button
         type="button"
-        className="challenge__lie"
+        className={`challenge__lie${pending === 'lie' ? ' challenge--sending' : ''}`}
         disabled={busy}
         onClick={onLie}
         aria-label={`${burst ? 'Burst Lie' : 'Lie'}: ${doubting}${
@@ -87,7 +97,7 @@ export function ChallengeActions({
       >
         <CrossMark />
         <span className="challenge__name">
-          {burst ? 'Burst Lie' : 'Lie'}
+          {pending === 'lie' ? 'Sending' : burst ? 'Burst Lie' : 'Lie'}
           {prize !== null && (
             <b
               className={`challenge__prize${prize === 'full' ? ' challenge__prize--full' : ''}`}
@@ -106,7 +116,7 @@ export function ChallengeActions({
 
       <button
         type="button"
-        className="challenge__bull"
+        className={`challenge__bull${pending === 'bull' ? ' challenge--sending' : ''}`}
         disabled={busy || bulled}
         onClick={onBull}
         aria-label={
@@ -116,7 +126,9 @@ export function ChallengeActions({
         }
       >
         <Bullseye />
-        <span className="challenge__name">{bulled ? 'Bulled' : 'Bull'}</span>
+        <span className="challenge__name">
+          {pending === 'bull' ? 'Sending' : bulled ? 'Bulled' : 'Bull'}
+        </span>
         <span className="challenge__claim">
           <span className="challenge__reading">exactly</span>
           <span className="challenge__count">{bid.quantity}</span>

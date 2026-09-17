@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RevealPanel } from './RevealPanel'
-import { useRevealStage } from './revealStage'
+import { resultHoldMs, useRevealStage } from './revealStage'
 import type { RevealClaim, RevealData } from './reveal'
 
 afterEach(() => {
@@ -180,6 +180,15 @@ describe('the result', () => {
 describe('the result standing on its own deadline', () => {
   const held = (over: Partial<RevealData> = {}): RevealData => ({ ...DATA, ...over })
 
+  /*
+   * Asked of `resultHoldMs` rather than written down again.
+   *
+   * These two used to restate the arithmetic — "5000 + 700" — which made them
+   * fail every time the reveal was tuned, without telling anybody anything: the
+   * deadline had moved on purpose and the test was reporting that it had moved.
+   * What is worth holding is that the panel waits for the number the reveal
+   * computes, and not one frame less.
+   */
   it('continues by itself once the result has been readable a while', () => {
     vi.useFakeTimers()
     const onDone = vi.fn()
@@ -187,8 +196,9 @@ describe('the result standing on its own deadline', () => {
       <RevealPanel claim={CLAIM} data={held()} stage="result" counted={3} onDone={onDone} />,
     )
 
-    // One player lost a die: 5000 + 700.
-    act(() => void vi.advanceTimersByTime(5699))
+    // One player lost a die.
+    const hold = resultHoldMs(1)
+    act(() => void vi.advanceTimersByTime(hold - 1))
     expect(onDone).not.toHaveBeenCalled()
 
     act(() => void vi.advanceTimersByTime(2))
@@ -218,11 +228,14 @@ describe('the result standing on its own deadline', () => {
       />,
     )
 
-    // The single-change hold would have fired long before this.
-    act(() => void vi.advanceTimersByTime(5700))
+    // Four players paid, so it holds longer than a resolution that cost one.
+    const longer = resultHoldMs(4)
+    expect(longer).toBeGreaterThan(resultHoldMs(1))
+
+    act(() => void vi.advanceTimersByTime(resultHoldMs(1)))
     expect(onDone).not.toHaveBeenCalled()
 
-    act(() => void vi.advanceTimersByTime(2101))
+    act(() => void vi.advanceTimersByTime(longer - resultHoldMs(1) + 1))
     expect(onDone).toHaveBeenCalledTimes(1)
   })
 
