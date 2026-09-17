@@ -143,7 +143,11 @@ export function GameScreen({
          */
         finish={
           game.over !== null && game.reveal === null ? (
-            <Finish winnerName={game.over.winnerName} view={game.view} />
+            <Finish
+              winnerName={game.over.winnerName}
+              winnerId={game.over.winnerId}
+              view={game.view}
+            />
           ) : null
         }
         reveal={

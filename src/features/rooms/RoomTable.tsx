@@ -141,9 +141,22 @@ export function RoomTable({
 }
 
 function initial(name: string): string {
-  // Intl.Segmenter so an emoji or a combining mark counts as one character
-  // rather than rendering half a glyph.
-  const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
-  const [first] = segmenter.segment(name.trim())
-  return (first?.segment ?? '?').toUpperCase()
+  /*
+   * Intl.Segmenter so an emoji or a combining mark counts as one character
+   * rather than rendering half a glyph — and guarded, because it is not
+   * everywhere.
+   *
+   * The same helper in `PlayerSeat` has always feature-checked; this one did
+   * not, and it runs for every chair at the table. On a browser without it the
+   * whole lobby throws rather than one badge showing an odd letter, which is
+   * the difference between a blemish and a player who cannot get into a game.
+   */
+  const word = name.trim()
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    const [first] = segmenter.segment(word)
+    return (first?.segment ?? '?').toUpperCase()
+  }
+  // Spreading a string walks it by code point, so a surrogate pair survives.
+  return ([...word][0] ?? '?').toUpperCase()
 }

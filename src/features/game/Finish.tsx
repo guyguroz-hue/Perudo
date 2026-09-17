@@ -20,9 +20,27 @@ import './Finish.css'
  * missing value: if the last players are eliminated in the same resolution the
  * game ends with no winner rather than one awarded on a tiebreak (R-004).
  */
-export function Finish({ winnerName, view }: { winnerName: string | null; view: TableView }) {
+export function Finish({
+  winnerName,
+  winnerId,
+  view,
+}: {
+  winnerName: string | null
+  /** Who won, which is not the same question as what they are called. */
+  winnerId: string | null
+  view: TableView
+}) {
   const you = view.players.find((player) => player.isYou)
-  const youWon = winnerName !== null && you?.name === winnerName
+  /*
+   * By identity, not by name.
+   *
+   * Two players may choose the same word for themselves — the name rules stop
+   * one being dressed up as another, not two people liking the same name — and
+   * this compared names. A loser sharing a name with the winner was shown the
+   * winner's screen, at the end of the game, which is the worst moment this
+   * product has to get wrong.
+   */
+  const youWon = winnerId !== null && you?.id === winnerId
   const effect = useSoundEffect()
 
   // Once, on arrival. A result that announced itself again on every render

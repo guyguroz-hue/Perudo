@@ -104,15 +104,45 @@ export interface Revealing {
   readonly counted: number
 }
 
-export function useRevealStage(data: RevealData | null): Revealing {
+export function useRevealStage(data: RevealData | null, open: boolean): Revealing {
   const [timedStage, setTimedStage] = useState<RevealStage>('held')
   const [timedCount, setTimedCount] = useState(0)
   const startedAt = useRef(0)
   const reduced = usePrefersReducedMotion()
 
+  /*
+   * Back to the start whenever a new answer arrives.
+   *
+   * This hook lives in `GameTable`, which is mounted for the whole game, so its
+   * state outlives the reveal that set it. It was left at `result` — and the
+   * next reveal therefore opened *on its verdict*, held it for the length of
+   * the first beat, and only then rewound to the cups lifting. Every reveal
+   * after the first in a game showed the answer before the question.
+   *
+   * Reset during render rather than in an effect, so the frame that first
+   * carries the new resolution already has the stage to go with it. Nothing is
+   * painted in between.
+   */
+  const [shown, setShown] = useState(data)
+  if (data !== shown) {
+    setShown(data)
+    setTimedStage('held')
+    setTimedCount(0)
+  }
+
+  /*
+   * When the curtain went up — not when this component mounted.
+   *
+   * The beat below is meant to absorb the wait for the server: a fast answer
+   * still gets its pause and a slow one does not get two. That needs the moment
+   * the player pressed, and this was reading the moment the *table* was built,
+   * which on any real game is minutes earlier. `HELD_MS - minutes` is negative,
+   * so the pause collapsed to its floor of ninety milliseconds and the held
+   * beat this file is built around never once happened.
+   */
   useEffect(() => {
-    startedAt.current = Date.now()
-  }, [])
+    if (open) startedAt.current = Date.now()
+  }, [open])
 
   useEffect(() => {
     if (data === null || reduced) return

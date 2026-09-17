@@ -31,6 +31,42 @@ import type { TableView } from './view'
  */
 export type PendingAction = 'bid' | 'bull' | 'lie' | null
 
+/**
+ * How long a burst of row changes is allowed to become one re-read.
+ *
+ * Long enough that the several writes of one move arrive together, short
+ * enough to be invisible beside the request that caused them.
+ */
+const COALESCE_MS = 110
+
+/**
+ * How often the table re-reads itself when nothing has told it to.
+ *
+ * The floor under Realtime, for the failure that does not announce itself.
+ * Long, because it is insurance and not the mechanism.
+ */
+const HEARTBEAT_MS = 15_000
+
+/**
+ * The view it already had, when the new one says the same thing.
+ *
+ * Every re-read builds the table from scratch, so it comes back as new objects
+ * whether or not anything happened — and most re-reads are exactly that: the
+ * heartbeat, the echo of your own move, the three events one resolution emits.
+ * Handed downstream, a new object is news. It rebuilds every cup in the 3D
+ * scene, re-runs every memo on the table, and re-fires the payment that throws
+ * dice off it, which is what a player sees as the game stuttering for no
+ * reason.
+ *
+ * So a re-read that found nothing new hands back what was already there, and
+ * React stops at the first identical reference. Compared by value because that
+ * is the question being asked: the view is a handful of small plain objects,
+ * and stringifying it costs nothing beside the round trip that produced it.
+ */
+function steady<T>(previous: T, next: T): T {
+  return JSON.stringify(previous) === JSON.stringify(next) ? previous : next
+}
+
 export interface GameHandle {
   readonly view: TableView | null
   readonly connection: Connection
@@ -51,7 +87,18 @@ export interface GameHandle {
    * a real outcome: if the last players are eliminated in the same resolution
    * there is no winner rather than one awarded on a tiebreak (R-004).
    */
-  readonly over: { readonly winnerName: string | null } | null
+  readonly over: {
+    readonly winnerName: string | null
+    /**
+     * And who they are, which is not the same question as what they are called.
+     *
+     * Two players may hold the same display name — the name rules stop one
+     * being dressed up as another, not two people choosing the same word — and
+     * the screen that announces the winner was comparing names. A loser sharing
+     * a name with the winner was told they had won.
+     */
+    readonly winnerId: string | null
+  } | null
   /*
    * Why the last action did not take.
    *
@@ -168,10 +215,14 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
 
       seenRound.current = round?.id ?? null
       started.current = true
-      setView(toTableView(round, players, hand, moves))
+      setView((previous) => steady(previous, toTableView(round, players, hand, moves)))
       setOver(
         standing.status === 'completed'
-          ? { winnerName: standing.winnerId === null ? null : (names.get(standing.winnerId) ?? null) }
+          ? {
+              winnerName:
+                standing.winnerId === null ? null : (names.get(standing.winnerId) ?? null),
+              winnerId: standing.winnerId,
+            }
           : null,
       )
 
@@ -199,6 +250,28 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
     // oxlint-disable-next-line react/set-state-in-effect
     void refresh()
 
+    /*
+     * One re-read per thing that happened, not per row that changed.
+     *
+     * A single move writes to more than one table — a bid touches `rounds`,
+     * and a resolution touches `rounds`, a `game_players` row for every player
+     * who paid, and `games` when somebody is knocked out. Each of those arrives
+     * as its own event, and each fired its own refresh: five queries apiece,
+     * eight or nine of them inside a second, on a phone, at the exact moment
+     * the table is trying to animate a reveal. The generation counter meant
+     * only the last one was ever drawn, so the rest were pure heat.
+     *
+     * A burst of changes is one piece of news. Collapsing them costs a tenth of
+     * a second on the first event, which is far below the time the reply is
+     * already taking, and it is what a table with six people bursting at each
+     * other actually needs.
+     */
+    let coalesce: ReturnType<typeof setTimeout> | undefined
+    const soon = () => {
+      clearTimeout(coalesce)
+      coalesce = setTimeout(() => void refresh(), COALESCE_MS)
+    }
+
     // Tracks whether we have been subscribed before. While the channel was
     // down, whole rounds may have come and gone; the only safe response to
     // coming back is to re-read everything.
@@ -209,17 +282,17 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'rounds', filter: `game_id=eq.${gameId}` },
-        () => void refresh(),
+        soon,
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'game_players', filter: `game_id=eq.${gameId}` },
-        () => void refresh(),
+        soon,
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
-        () => void refresh(),
+        soon,
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
@@ -233,7 +306,30 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
         }
       })
 
+    /*
+     * And a slow heartbeat underneath it all.
+     *
+     * Realtime is a notification channel, not a guarantee, and the way it fails
+     * that costs the most is the quiet way: the socket stays up, the connection
+     * reads `live`, and the events simply stop arriving. Every other kind of
+     * break announces itself and is already handled — a dropped channel, a
+     * backgrounded tab, a radio coming back — but this one leaves a player
+     * looking at a green dot and a table that has stopped, with nothing to do
+     * but reload and no reason to think they should.
+     *
+     * Once every fifteen seconds is nothing next to a round, and it is not a
+     * substitute for Realtime: it is the floor under it. Skipped while the tab
+     * is hidden, where nobody is looking and the visibility handler will
+     * re-read on the way back in.
+     */
+    const heartbeat = setInterval(() => {
+      if (document.hidden) return
+      void refresh()
+    }, HEARTBEAT_MS)
+
     return () => {
+      clearTimeout(coalesce)
+      clearInterval(heartbeat)
       void supabase.removeChannel(channel)
     }
   }, [gameId, youId, refresh])

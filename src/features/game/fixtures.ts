@@ -288,12 +288,15 @@ export const ENDINGS: readonly {
   readonly id: string
   readonly label: string
   readonly winnerName: string | null
+  /** Who won. The screen decides by this, not by the name. */
+  readonly winnerId: string | null
   readonly view: TableView
 }[] = [
   {
     id: 'you-won',
     label: 'You won',
     winnerName: 'Dana',
+    winnerId: 'you',
     view: {
       round: { type: 'normal', lockedFace: null, bid: null },
       roundNumber: 11,
@@ -310,6 +313,7 @@ export const ENDINGS: readonly {
     id: 'they-won',
     label: 'Somebody else won',
     winnerName: 'Maya',
+    winnerId: 'maya',
     view: {
       round: { type: 'normal', lockedFace: null, bid: null },
       roundNumber: 9,
@@ -326,6 +330,7 @@ export const ENDINGS: readonly {
     id: 'nobody',
     label: 'Nobody won (R-004)',
     winnerName: null,
+    winnerId: null,
     view: {
       round: { type: 'normal', lockedFace: null, bid: null },
       roundNumber: 7,

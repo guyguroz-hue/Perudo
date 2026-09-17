@@ -20,6 +20,14 @@ import './RoomScreen.css'
  * comes from the database — so every client switches at the same moment,
  * without anyone telling them to.
  */
+/**
+ * The longest this waits between asking which game is being played here.
+ *
+ * Long enough not to hammer a server that is having a moment, short enough
+ * that a player who hit one is back in the game within a round.
+ */
+const FIND_GAME_MAX_WAIT_MS = 5000
+
 export function RoomScreen() {
   const { roomId = null } = useParams()
   const navigate = useNavigate()
@@ -43,17 +51,51 @@ export function RoomScreen() {
     if (roomId === null || youId === null) return
     if (status !== 'in_game' && status !== 'finished') return
 
+    /*
+     * Keep asking until the answer comes.
+     *
+     * This ran once and swallowed everything it did not like — a request that
+     * failed, and equally an answer of `null`, which is what a room that has
+     * only just gone `in_game` returns while its game row is still on its way.
+     * Either left `gameId` unset, and nothing would ever set it: the effect
+     * depends on the room, the player and the status, and none of those is
+     * going to change again. That client sat on "Finding the game…" for the
+     * rest of the evening while everybody else played.
+     *
+     * Backing off rather than hammering, because whatever went wrong is more
+     * likely to be a moment than a fault, and giving up is the one response
+     * that cannot be recovered from.
+     */
     let stale = false
-    fetchGame(roomId, youId)
-      .then((result) => {
-        if (!stale && result !== null) setGameId(result.game.id)
-      })
-      .catch(() => {
-        // The room view already reports anything that matters; a roster that
-        // fails to load is not worth a second error on the same screen.
-      })
+    let attempt = 0
+    let retry: ReturnType<typeof setTimeout> | undefined
+
+    const find = () => {
+      fetchGame(roomId, youId)
+        .then((result) => {
+          if (stale) return
+          if (result !== null) {
+            setGameId(result.game.id)
+            return
+          }
+          again()
+        })
+        .catch(() => {
+          // Not reported: the room view already says whatever matters about
+          // this room, and a second error about the same moment helps nobody.
+          if (!stale) again()
+        })
+    }
+
+    const again = () => {
+      attempt += 1
+      retry = setTimeout(find, Math.min(1000 * 2 ** (attempt - 1), FIND_GAME_MAX_WAIT_MS))
+    }
+
+    find()
     return () => {
       stale = true
+      clearTimeout(retry)
     }
   }, [roomId, youId, status])
 

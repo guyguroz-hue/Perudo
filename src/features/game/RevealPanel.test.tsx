@@ -42,9 +42,23 @@ const DATA: RevealData = {
 
 const CLAIM: RevealClaim = { quantity: 4, face: 5, reading: 'at least' }
 
-/** The panel driven by the real sequence, the way the table drives it. */
-function Panel({ data, claim = CLAIM }: { data: RevealData | null; claim?: RevealClaim }) {
-  const { stage, counted } = useRevealStage(data)
+/**
+ * The panel driven by the real sequence, the way the table drives it.
+ *
+ * `open` is what the table passes: a reveal is open from the moment a player
+ * doubts, which is before the answer exists. It is what anchors the held beat,
+ * so that the wait for the server is the pause rather than being added to it.
+ */
+function Panel({
+  data,
+  claim = CLAIM,
+  open = true,
+}: {
+  data: RevealData | null
+  claim?: RevealClaim
+  open?: boolean
+}) {
+  const { stage, counted } = useRevealStage(data, open)
   return <RevealPanel claim={claim} data={data} stage={stage} counted={counted} />
 }
 

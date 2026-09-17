@@ -170,7 +170,11 @@ export function PreviewScreen() {
           <GameTable
             view={ENDINGS[ending].view}
             finish={
-              <Finish winnerName={ENDINGS[ending].winnerName} view={ENDINGS[ending].view} />
+              <Finish
+                winnerName={ENDINGS[ending].winnerName}
+                winnerId={ENDINGS[ending].winnerId}
+                view={ENDINGS[ending].view}
+              />
             }
             onBid={() => setActed('Bid')}
             onLie={() => setActed('Lie')}

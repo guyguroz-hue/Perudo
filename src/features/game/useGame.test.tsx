@@ -45,10 +45,19 @@ vi.mock('./read', () => ({
   toTableView: vi.fn(() => null),
 }))
 
+/*
+ * The channel, with its handlers kept where a test can pull them.
+ *
+ * Realtime is a notification channel: what matters here is not that it
+ * delivers, but what this hook does when it delivers several things at once.
+ */
+const listeners: (() => void)[] = []
+
 vi.mock('../../lib/supabaseClient', () => ({
   supabase: {
     channel: () => ({
-      on() {
+      on(_event: string, _filter: unknown, handler: () => void) {
+        listeners.push(handler)
         return this
       },
       subscribe() {
@@ -71,6 +80,7 @@ function held() {
 }
 
 beforeEach(() => {
+  listeners.length = 0
   placeBid.mockReset()
   callBull.mockReset()
   challenge.mockReset()
@@ -191,5 +201,122 @@ describe('sending one action', () => {
       gate.release()
       await gate.promise
     })
+  })
+})
+
+/*
+ * How often the table re-reads itself.
+ *
+ * One move writes to more than one table — a resolution touches `rounds`, a
+ * `game_players` row per player who paid, and `games` when somebody is knocked
+ * out — and each arrives as its own Realtime event. Each used to fire its own
+ * re-read, five queries apiece, eight or nine inside a second, on a phone, at
+ * the moment the table is trying to animate a reveal. Only the last was ever
+ * drawn; the rest were heat.
+ */
+describe('re-reading the table', () => {
+  it('turns a burst of row changes into one re-read', async () => {
+    vi.useFakeTimers()
+    const { fetchRound } = await import('./read')
+    const reads = vi.mocked(fetchRound)
+    reads.mockClear()
+
+    renderHook(() => useGame('g1', 'u1'))
+    // The first read happens on mount; this is about what the channel does.
+    await act(async () => {
+      await Promise.resolve()
+    })
+    reads.mockClear()
+
+    // Everything one resolution writes, as separate events in one tick.
+    act(() => {
+      for (const fire of listeners) fire()
+      for (const fire of listeners) fire()
+    })
+    expect(reads).not.toHaveBeenCalled()
+
+    await act(async () => {
+      vi.advanceTimersByTime(200)
+      await Promise.resolve()
+    })
+    expect(reads).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
+  })
+
+  /*
+   * And the floor under Realtime.
+   *
+   * The failure that costs most is the quiet one: the socket stays up, the dot
+   * reads live, and the events stop. Every other break announces itself.
+   */
+  it('re-reads on its own even when nothing tells it to', async () => {
+    vi.useFakeTimers()
+    const { fetchRound } = await import('./read')
+    const reads = vi.mocked(fetchRound)
+
+    renderHook(() => useGame('g1', 'u1'))
+    await act(async () => {
+      await Promise.resolve()
+    })
+    reads.mockClear()
+
+    await act(async () => {
+      vi.advanceTimersByTime(16_000)
+      await Promise.resolve()
+    })
+    expect(reads).toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+})
+
+/*
+ * A re-read that found nothing does not count as news.
+ *
+ * Every re-read builds the table from scratch, so it comes back as new objects
+ * whether or not anything happened — and most re-reads are exactly that: the
+ * heartbeat, the echo of your own move, the three events one resolution emits.
+ * Handed downstream a new object *is* news: it rebuilds every cup in the 3D
+ * scene, re-runs every memo on the table, and re-fires the payment that throws
+ * dice off it. That last one is a die flying off the table twice, mid-reveal,
+ * which is what a player sees as the game stuttering for no reason.
+ */
+describe('holding the table still', () => {
+  it('hands back the same view when nothing has changed', async () => {
+    const read = await import('./read')
+    // A fresh object each time, exactly as a real re-read produces.
+    vi.mocked(read.toTableView).mockImplementation(
+      () => ({ roundNumber: 1, players: [{ id: 'a' }] }) as never,
+    )
+
+    const { result } = renderHook(() => useGame('g1', 'u1'))
+    await waitFor(() => expect(result.current.view).not.toBeNull())
+    const first = result.current.view
+
+    act(() => {
+      for (const fire of listeners) fire()
+    })
+    await act(async () => {
+      await new Promise((settle) => setTimeout(settle, 250))
+    })
+
+    expect(result.current.view).toBe(first)
+  })
+
+  it('but does replace it the moment something is different', async () => {
+    const read = await import('./read')
+    let round = 1
+    vi.mocked(read.toTableView).mockImplementation(
+      () => ({ roundNumber: round, players: [{ id: 'a' }] }) as never,
+    )
+
+    const { result } = renderHook(() => useGame('g1', 'u1'))
+    await waitFor(() => expect(result.current.view).not.toBeNull())
+    const first = result.current.view
+
+    round = 2
+    act(() => {
+      for (const fire of listeners) fire()
+    })
+    await waitFor(() => expect(result.current.view).not.toBe(first))
   })
 })

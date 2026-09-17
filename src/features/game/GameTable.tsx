@@ -152,7 +152,7 @@ export function GameTable({
    * at the middle of the table.
    */
   const jolting = useBurst(view.moves)
-  const { stage, counted } = useRevealStage(reveal?.data ?? null)
+  const { stage, counted } = useRevealStage(reveal?.data ?? null, reveal !== null)
   const lifting = reveal !== null && stage !== 'held'
   const mood = lifting ? 'revealing' : shaking ? 'dealing' : 'still'
 
@@ -182,9 +182,18 @@ export function GameTable({
    */
   const sound = useSound()
   const effect = useSoundEffect()
+  /*
+   * The deal is heard only when the deal is what is being shown.
+   *
+   * The next round is dealt by the resolution that ended the last one, so the
+   * shake starts while the reveal is still counting — and `mood` already knows
+   * that, which is why the table does not *look* like it is dealing. The sound
+   * did not know, so a round ended to the rattle of the next one being shaken
+   * over the top of its own verdict.
+   */
   useEffect(() => {
-    if (shaking) effect('shake', SHAKE_MS / 1000)
-  }, [shaking, effect])
+    if (shaking && !lifting) effect('shake', SHAKE_MS / 1000)
+  }, [shaking, lifting, effect])
   useEffect(() => {
     if (lifting) effect('lift')
   }, [lifting, effect])
@@ -252,6 +261,30 @@ export function GameTable({
   // table, and the next one arrives as a different object.
   const dueNow = paidFor === settled ? settled : null
 
+  /*
+   * One payment per resolution, however often the table is re-read.
+   *
+   * This is the one place on the screen where an array's identity is
+   * behaviour: `TableScene` fires the payment whenever it is handed a new
+   * object, and says so. `seats` is rebuilt from scratch by every refetch — a
+   * bid by anybody, a Realtime event, the heartbeat — so any of those landing
+   * during the pause after the verdict threw the dice off the table a second
+   * time, mid-reveal, which is exactly the kind of thing a player reports as
+   * the game not running smoothly.
+   *
+   * What this actually needs from the seats is the map from player to chair,
+   * and that cannot change while one resolution is being paid. So the memo is
+   * keyed on that map rather than on the array holding it.
+   */
+  /*
+   * One payment per resolution, and `seats` is what makes that true.
+   *
+   * This is the one place on the screen where an array's identity is behaviour:
+   * `TableScene` fires the payment whenever it is handed a new object, and says
+   * so. That holds only because a re-read which changes nothing now hands back
+   * the view it already had — see `useGame`. Before that, every refetch during
+   * the pause after a verdict threw the dice off the table a second time.
+   */
   const paying = useMemo(
     () => (dueNow === null ? null : dueDice(seats, dueNow.deltas)),
     [dueNow, seats],
