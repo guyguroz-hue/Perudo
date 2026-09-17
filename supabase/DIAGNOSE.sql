@@ -66,3 +66,52 @@ left join pg_proc p
   on p.proname = e.name
  and p.pronamespace = (select oid from pg_namespace where nspname = 'public')
 order by e.name;
+
+-- =============================================================================
+-- And which of the recent migrations have actually landed.
+-- =============================================================================
+--
+-- The same question as above, asked of the things that are not functions. There
+-- is no migration table here — the files are pasted by hand — so
+-- `supabase/APPLIED.txt` is a note somebody keeps, and a note is only as good as
+-- the last person to remember. This asks the database instead.
+--
+-- Each row looks for one thing that migration and nothing else installs. `run`
+-- means it is there. Anything else is a file still to paste, and the fix column
+-- names it.
+
+select * from (
+  values
+    (
+      '20260913000000_deal_round_race',
+      case when exists (
+        select 1 from pg_proc p
+          join pg_namespace n on n.oid = p.pronamespace
+         where n.nspname = 'public' and p.proname = 'deal_round'
+           and pg_get_functiondef(p.oid) ilike '%unique_violation%'
+      ) then 'run' else '>> NOT RUN' end
+    ),
+    (
+      '20260914000000_room_code_entropy',
+      case when exists (
+        select 1 from pg_constraint
+         where conname = 'rooms_code_format'
+           and pg_get_constraintdef(oid) like '%{5,6}%'
+      ) then 'run' else '>> NOT RUN' end
+    ),
+    (
+      '20260914010000_name_hygiene',
+      case when exists (
+        select 1 from pg_constraint where conname = 'profiles_display_name_plain'
+      ) then 'run' else '>> NOT RUN' end
+    ),
+    (
+      '20260917000000_restore_apply_bull',
+      case when exists (
+        select 1 from pg_proc p
+          join pg_namespace n on n.oid = p.pronamespace
+         where n.nspname = 'public' and p.proname = 'apply_bull'
+      ) then 'run' else '>> NOT RUN' end
+    )
+) as t(migration, state)
+order by migration;
