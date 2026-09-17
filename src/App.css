@@ -54,8 +54,19 @@
  * is a control that is not there. So the game gets the full height of the
  * viewport to lay itself out in, and shrinks to it.
  */
-.app:has(> .game),
-.app:has(> .learn) {
+/*
+ * Descendants, not children.
+ *
+ * This said `> .game` and was wrong on the one screen that matters. In a game
+ * the room does not hand `GameScreen` to the app shell — it renders it inside
+ * `LobbyView`, which keeps its own controls below the table — so the table is a
+ * grandchild here, the rule never matched, and the height chain that keeps Lie
+ * and Bull above the fold simply did not apply. It held in the practice table,
+ * where `.learn` really is a child, which is why every check passed while a
+ * player had the controls drawn under Safari's address bar.
+ */
+.app:has(.game),
+.app:has(.learn) {
   align-items: stretch;
   /*
    * And no taller.

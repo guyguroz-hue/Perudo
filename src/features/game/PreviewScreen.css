@@ -73,4 +73,13 @@
   flex-direction: column;
   height: calc(100dvh - 2 * clamp(var(--space-2), 2.2vh, var(--space-5)));
   min-height: 0;
+  /*
+   * And never squeezed itself.
+   *
+   * It exists to be exactly as tall as a real game screen, so that the table
+   * inside it shrinks by the same amount it would on a phone. That only works
+   * if this height is the one thing on the page nothing else can take from it:
+   * the harness scrolls, the frame does not give.
+   */
+  flex: none;
 }

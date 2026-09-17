@@ -1,4 +1,5 @@
 .game {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -24,9 +25,58 @@
   font-size: var(--text-sm);
 }
 
+/*
+ * Over the table, not above it.
+ *
+ * Both of these come and go on their own after a few seconds. As rows in the
+ * column they pushed the whole game down for as long as they were there and let
+ * it spring back after — which on a phone meant the table shrinking by a fifth,
+ * the controls sliding under the browser's address bar, and everything jumping
+ * back a moment later. A notice that rearranges the game to deliver itself is
+ * worse than the news it carries.
+ *
+ * Laid over the top of the scene instead, where the only things underneath are
+ * the round number and the last two moves. It costs no layout at all, so
+ * nothing moves when it arrives and nothing moves when it goes.
+ *
+ * `.game__blocked` stays in the flow deliberately: it is not a passing notice
+ * but a stop, it carries a button, and it is shown instead of a playable table
+ * rather than over one.
+ */
+.game__error,
+.game__aside {
+  position: absolute;
+  z-index: 10;
+  /*
+   * Below the two things in the top corners of the scene.
+   *
+   * The round number and the sound toggle live up there, and the toggle is a
+   * control — the first version of this sat flush against the top edge and
+   * covered it, which `test:reach` said so within a minute of the change. A
+   * notice may lie over a label for four seconds; it may never lie over
+   * something a player presses.
+   *
+   * What it does cover is the move log, and that is the right thing to cover:
+   * it is the only thing up there that will still be saying the same thing when
+   * the notice has gone.
+   */
+  top: 56px;
+  right: var(--space-2);
+  left: var(--space-2);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.5);
+}
+
+/*
+ * Opaque, because there is a lit table behind it now.
+ *
+ * Both of these were a wash of colour over the page's flat background, which is
+ * all they needed to be while they were rows in a column. Over the scene the
+ * same fill let six cups and four name badges through it, and the sentence
+ * became unreadable at exactly the moment it mattered.
+ */
 .game__error {
-  background: rgb(192 71 47 / 0.18);
-  color: var(--lie);
+  background: linear-gradient(180deg, #5d1f14 0%, #43160f 100%);
+  color: #ffd9d2;
 }
 
 /* The refusal's own name, for whoever has to fix it rather than for the player
@@ -51,7 +101,7 @@
    player for playing correctly, and with Burst in the rules it would do so
    several times a round. */
 .game__aside {
-  background: rgb(255 255 255 / 0.05);
+  background: linear-gradient(180deg, #262430 0%, #1a1922 100%);
   color: var(--ink-dim);
 }
 

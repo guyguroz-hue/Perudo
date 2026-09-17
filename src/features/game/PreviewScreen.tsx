@@ -6,6 +6,7 @@ import { GameTable } from './GameTable'
 import { LobbyView } from '../rooms/LobbyView'
 import { ENDINGS, LOBBIES, REVEALS, SCENARIOS, claimFor, tableFor } from './fixtures'
 import type { RevealData } from './reveal'
+import '../game/GameScreen.css'
 import './PreviewScreen.css'
 
 /**
@@ -209,14 +210,56 @@ export function PreviewScreen() {
             * app shell's own gutter, which is what the real screen subtracts.
             */}
           <div className="preview__fit">
-            <GameTable
-              view={scenario.view}
-              onBid={(bid) =>
-                setActed(`Bid ${bid.quantity} × ${bid.face === 1 ? 'Perudo' : bid.face}`)
-              }
-              onLie={() => setActed('Lie')}
-              onBull={() => setActed('Bull')}
-            />
+            {/*
+              * Wrapped the way the real screen wraps it.
+              *
+              * In a game, `GameScreen` is not a child of the app shell: the
+              * room renders it *inside* `LobbyView`, which keeps its own
+              * controls below. Previewing the table bare meant previewing a
+              * different document from the one that ships — and the height
+              * rules that keep the controls above the fold are written against
+              * ancestors, so they held here and broke there. The player saw Lie
+              * and Bull under Safari's address bar on the one screen no test
+              * was looking at.
+              *
+              * The refusal line is part of it. It is a row that appears without
+              * warning, in the middle of a game, on the screen with the least
+              * room to spare.
+              */}
+            <LobbyView
+              code="4821"
+              status="in_game"
+              seats={LOBBIES[LOBBIES.length - 1].seats}
+              connection="live"
+              youAreHost
+              busy={false}
+              error={null}
+              onStart={() => setActed('Start game')}
+              onPlayAgain={() => setActed('Play again')}
+              onManage={() => setActed('Manage')}
+              onEnd={() => setActed('End room')}
+              onLeave={() => setActed('Leave room')}
+            >
+              <div className="game">
+                {/* On half the scenarios, so both states are measured: the one
+                    a player is in most of the time, and the one where a
+                    refusal has just pushed a row in above the table. */}
+                {scenario.id.charCodeAt(0) % 2 === 0 && (
+                  <p className="game__error" role="alert">
+                    Something broke at our end. Try again.
+                    <b className="game__code">INTERNAL</b>
+                  </p>
+                )}
+                <GameTable
+                  view={scenario.view}
+                  onBid={(bid) =>
+                    setActed(`Bid ${bid.quantity} × ${bid.face === 1 ? 'Perudo' : bid.face}`)
+                  }
+                  onLie={() => setActed('Lie')}
+                  onBull={() => setActed('Bull')}
+                />
+              </div>
+            </LobbyView>
           </div>
         </>
       ) : (

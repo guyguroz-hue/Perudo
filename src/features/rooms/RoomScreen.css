@@ -17,6 +17,27 @@
   padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
 }
 
+/*
+ * With a game inside it, this is a link in the height chain.
+ *
+ * The room keeps its own controls below the table during a game, so the table
+ * is not the app shell's child — it is in here. Which means the height the
+ * shell hands down stops at this element unless it is passed on: without these
+ * two lines the table sizes to its content, the page grows, and the controls
+ * at the foot of it are drawn under the browser's address bar.
+ *
+ * Only with a game inside. An empty lobby is a column of room code, table and
+ * buttons that may honestly scroll, and clamping it would cost the seats at a
+ * full table.
+ */
+.lobby:has(.game) {
+  min-height: 0;
+}
+
+.lobby > .game {
+  flex: 1;
+}
+
 /* -----------------------------------------------------------------------------
  * Above the table
  * ---------------------------------------------------------------------------*/
