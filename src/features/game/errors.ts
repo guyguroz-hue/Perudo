@@ -42,6 +42,23 @@ const EXPLANATIONS: Record<string, string> = {
   ELIMINATED: 'You are out of this game.',
   NOT_AUTHENTICATED: 'Your session ended. Reload to start a new one.',
   INTERNAL: 'Something broke at our end. Try again.',
+  /*
+   * The database does not match the code running against it.
+   *
+   * Not a bug in the game and not something a player can retry past, so it does
+   * not get the encouraging sentence the others do. The server's own wording
+   * says which step was skipped; these three only make sure the reader knows it
+   * is the deployment rather than the table.
+   */
+  DB_OUT_OF_DATE:
+    'The database is behind this version of the game. The pending migrations ' +
+    'have not been run.',
+  DB_AMBIGUOUS:
+    'The database has two versions of the same function. Re-run the latest ' +
+    'migrations.',
+  DB_FORBIDDEN:
+    'The game server is not permitted to make this write. A grant is missing; ' +
+    're-run the latest migrations.',
 }
 
 /** Refusals that mean "the table moved", which the UI answers by refetching. */

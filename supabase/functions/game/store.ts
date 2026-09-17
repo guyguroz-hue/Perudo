@@ -195,6 +195,13 @@ function nameOf(profiles: unknown): string {
   return typeof name === 'string' ? name : 'Player'
 }
 
-function lift(error: { message: string }): Error {
-  return fromPostgres(error.message) ?? new Error(error.message)
+/*
+ * A database failure, raised as something the layer above can act on.
+ *
+ * The whole error goes to `fromPostgres`, not just its message: a deployment
+ * fault is identified by its code, and PostgREST puts the code in a field of
+ * its own rather than in the sentence.
+ */
+function lift(error: { message: string; code?: string }): Error {
+  return fromPostgres(error) ?? new Error(error.message)
 }

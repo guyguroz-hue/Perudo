@@ -86,3 +86,28 @@ describe('a refusal keeps its name', () => {
     }
   })
 })
+
+/*
+ * A database that does not match the code.
+ *
+ * These used to arrive as INTERNAL — "Something broke at our end" — which is
+ * the same sentence for a missing migration, a leftover overload and a revoked
+ * grant, three faults with three different fixes and none of them a bug in the
+ * game. They are named now because a deployment fault is a fact about which SQL
+ * has been run, not about anybody's hand.
+ */
+describe('a database out of step with the code', () => {
+  it('does not offer a retry for something retrying cannot fix', () => {
+    for (const code of ['DB_OUT_OF_DATE', 'DB_AMBIGUOUS', 'DB_FORBIDDEN']) {
+      const failure = toGameError({ error: code })
+      expect(failure.message).toMatch(/migrations/)
+      expect(failure.message).not.toMatch(/Try again/)
+      // Not stale: looking at the table again changes nothing here.
+      expect(failure.stale).toBe(false)
+    }
+  })
+
+  it('keeps them apart from a genuine fault', () => {
+    expect(toGameError({ error: 'INTERNAL' }).message).toMatch(/Try again/)
+  })
+})
