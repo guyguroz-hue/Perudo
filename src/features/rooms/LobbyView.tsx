@@ -57,6 +57,14 @@ export function LobbyView({
   children,
 }: LobbyViewProps) {
   const inLobby = status === 'lobby'
+  /*
+   * A game is on the table.
+   *
+   * Not simply "not in the lobby": a finished room is also not in the lobby and
+   * still wants its row, because Play again lives there. This is the one state
+   * where the row would hold a single button and the table wants the height.
+   */
+  const playing = status === 'starting' || status === 'in_game'
   const short = MIN_PLAYERS - seats.length
 
   /*
@@ -125,6 +133,18 @@ export function LobbyView({
         </p>
       )}
 
+      {/*
+        * Nothing under the table while a game is being played.
+        *
+        * In the lobby and after a game this row carries Start, Play again and
+        * the waiting lines. During a game it carried exactly one control — End
+        * room, or Leave room — and charged seventy-two points for it on every
+        * screen, which on a small phone is a seventh of the display given to the
+        * one button a player hopes never to press, taken out of the table. It
+        * moves into the corner of the table instead; `GameTable` has a slot for
+        * it beside the sound toggle.
+        */}
+      {!playing && (
       <div className="lobby__controls">
         {youAreHost && inLobby && (
           <>
@@ -161,6 +181,7 @@ export function LobbyView({
           </button>
         )}
       </div>
+      )}
     </div>
   )
 }

@@ -592,7 +592,11 @@ function nameOf(profiles) {
 	return typeof name === "string" ? name : "Player";
 }
 function lift(error) {
-	return fromPostgres(error) ?? new Error(error.message);
+	const named = fromPostgres(error);
+	if (named !== null) return named;
+	const fault = new Error(error.message);
+	if (error.code !== void 0) Object.assign(fault, { sqlState: error.code });
+	return fault;
 }
 //#endregion
 //#region supabase/functions/game/index.ts
@@ -692,9 +696,11 @@ function fail(error) {
 		});
 	}
 	console.error("UNHANDLED", error);
+	const sqlState = error.sqlState;
 	return new Response(JSON.stringify({
 		error: "INTERNAL",
-		message: "Something broke."
+		message: "Something broke.",
+		...typeof sqlState === "string" ? { fault: sqlState } : {}
 	}), {
 		status: 500,
 		headers: {

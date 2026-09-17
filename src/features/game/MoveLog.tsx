@@ -59,10 +59,19 @@ export function MoveLog({
             aria-live={i === recent.length - 1 ? 'polite' : undefined}
           >
             <span className="log__who" aria-hidden="true" />
-            <span className="log__text">{move.text}</span>
-            {/* Out of turn is not a detail. It is why the player sitting next
-                never got to speak, and the reason the table is where it is. */}
+            {/*
+              * Before the sentence, not after it.
+              *
+              * Out of turn is not a detail: it is why the player sitting next
+              * never got to speak, and the reason the table is where it is. At
+              * the end of the line it was the first thing to go when a long
+              * move ran out of room — so the one line that most needed marking
+              * was the one that lost its mark. Ahead of the text it cannot be
+              * truncated away, and it reads in the order the thing happened:
+              * somebody cut in, and then said this.
+              */}
             {move.burst && <span className="log__burst">Burst</span>}
+            <span className="log__text">{move.text}</span>
           </li>
         )
       })}

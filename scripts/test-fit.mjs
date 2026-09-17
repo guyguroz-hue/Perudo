@@ -140,12 +140,21 @@ async function board(page) {
  * has grown enormous and a table squeezed to a strip, and the useful question
  * is not whether the page fits but what the controls are costing.
  *
- * Three hundred points against the 279 they currently use: enough room for a
+ * Three hundred and ten against the 307 they currently use: enough room for a
  * line of type to grow or a button to gain a few points, not enough for another
  * row. The floor under the table is the second guard, for the case where the
  * dock is honest and the window is simply tiny.
+ *
+ * It was 300, and the twenty-eight points that broke it were spent on purpose:
+ * a line at the head of the dock saying whose turn it is, because the table
+ * only ever glowed about it and a player reported being unable to follow turns
+ * at all. Raising a cap to fit what you just added is how a cap stops meaning
+ * anything, so the arithmetic is written down. The same change took the room's
+ * End room button off this screen — seventy-odd points for a control nobody
+ * wants to press — so the dock is smaller than it was before both, and the
+ * table's share went up at every size rather than down.
  */
-const MOST_CONTROLS = 300
+const MOST_CONTROLS = 310
 
 /*
  * How little of the screen the table may be left with.

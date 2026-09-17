@@ -116,6 +116,13 @@ describe('the lobby', () => {
    * A test with a stub for a child cannot see the table's own controls, so
    * what it pins is that this component contributes none — which is the half
    * of the arrangement that lives here.
+   *
+   * The way out of the room went the same way, later and for a different
+   * reason. It was the only thing left in the controls row during a game, and a
+   * full-width button charges about seventy points for itself on every screen —
+   * spent on the one control a player hopes never to press, and spent out of
+   * the table, because the table is what gives way when the screen runs short.
+   * It is a handle in the corner of the table now, beside the sound switch.
    */
   it('leaves the sound and the connection to the table once a game is running', () => {
     const { container } = render(
@@ -139,9 +146,27 @@ describe('the lobby', () => {
 
     expect(container.querySelector('.lobby__head')).toBeNull()
     expect(screen.queryByRole('button', { name: /sound/i })).toBeNull()
-    // And the way out of the room is still there, which is the one thing on
-    // this component a player needs mid-game.
-    expect(screen.getByRole('button', { name: /leave|end room/i })).toBeTruthy()
+    expect(container.querySelector('.lobby__controls')).toBeNull()
+    /*
+     * Not one button of its own. Everything this component would have offered
+     * mid-game is on the table, and the height it used to take is the table's.
+     */
+    expect(screen.queryAllByRole('button')).toHaveLength(0)
+  })
+
+  /*
+   * And it comes back the moment the game does not need the room.
+   *
+   * The row is gone while a game is being played, not whenever the lobby is
+   * not showing: a finished room is also not the lobby, and Play again lives
+   * in that row. Getting this wrong would strand a table with no way to start
+   * another game.
+   */
+  it('keeps its controls once a game has finished', () => {
+    lobby({ status: 'finished' })
+
+    expect(screen.getByRole('button', { name: 'Play again' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /end room/i })).toBeTruthy()
   })
 
   it('offers the host another game when one has finished', async () => {

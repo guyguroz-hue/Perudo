@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { GameTable } from './GameTable'
 import { Finish } from './Finish'
 import { PERUDO } from '../../game'
@@ -19,7 +20,16 @@ import './GameScreen.css'
  * Nor is the end of the game: the standings take the same place the controls
  * had, and the table stays where it is with one cup still standing on it.
  */
-export function GameScreen({ gameId, youId }: { gameId: string; youId: string }) {
+export function GameScreen({
+  gameId,
+  youId,
+  roomMenu = null,
+}: {
+  gameId: string
+  youId: string
+  /** Leaving the room, handed down to the table's own corner. */
+  roomMenu?: ReactNode
+}) {
   const game = useGame(gameId, youId)
   /*
    * Why the table never arrived.
@@ -121,6 +131,7 @@ export function GameScreen({ gameId, youId }: { gameId: string; youId: string })
 
       <GameTable
         connection={game.connection}
+        roomMenu={roomMenu}
         view={game.view}
         busy={game.busy}
         /*

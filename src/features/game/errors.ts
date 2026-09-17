@@ -68,7 +68,10 @@ export function toGameError(error: unknown): GameActionError {
   if (error instanceof GameActionError) return error
 
   const { code, message } = read(error)
-  return new GameActionError(code, EXPLANATIONS[code] ?? message, STALE.has(code))
+  // The code may carry a fault class after it; the sentence is chosen by the
+  // refusal's own name, which is the part before the space.
+  const name = code.split(' ')[0]
+  return new GameActionError(code, EXPLANATIONS[name] ?? message, STALE.has(name))
 }
 
 function read(error: unknown): { code: string; message: string } {
@@ -78,8 +81,21 @@ function read(error: unknown): { code: string; message: string } {
     // Our own refusal: a stable code and a sentence written where the decision
     // was made.
     if (typeof body.error === 'string') {
+      /*
+       * An internal fault brings its class with it.
+       *
+       * The server will not say what broke — an unexpected message can carry
+       * whatever the statement was holding — but it does say which kind, as the
+       * five-character SQLSTATE. Appended to the code rather than to the
+       * sentence: the player is not being asked to read 42883, only to
+       * photograph it.
+       */
+      const fault = (body as { fault?: unknown }).fault
       return {
-        code: body.error,
+        code:
+          typeof fault === 'string' && fault !== ''
+            ? `${body.error} ${fault}`
+            : body.error,
         message: typeof body.message === 'string' ? body.message : body.error,
       }
     }

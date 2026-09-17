@@ -111,3 +111,29 @@ describe('a database out of step with the code', () => {
     expect(toGameError({ error: 'INTERNAL' }).message).toMatch(/Try again/)
   })
 })
+
+/*
+ * What broke, without saying what it was holding.
+ *
+ * The server refuses to return an unexpected error's message — it can carry
+ * whatever the statement was touching, and this server holds dice — and for a
+ * while that meant every server-side fault reached a player, and a bug report,
+ * as the single word INTERNAL. The SQLSTATE is five characters naming a
+ * category and nothing else, so it comes back and rides on the code.
+ */
+describe('an internal fault names its class', () => {
+  it('appends the fault to the code and leaves the sentence alone', () => {
+    const failure = toGameError({ error: 'INTERNAL', message: 'Something broke.', fault: '42883' })
+    expect(failure.code).toBe('INTERNAL 42883')
+    // Still the reworded sentence: the lookup keys on the refusal's own name.
+    expect(failure.message).toMatch(/Try again/)
+  })
+
+  it('is unchanged when the server sends no fault', () => {
+    expect(toGameError({ error: 'INTERNAL', message: 'Something broke.' }).code).toBe('INTERNAL')
+  })
+
+  it('still reads stale-ness off the name, not the fault', () => {
+    expect(toGameError({ error: 'STALE_STATE', fault: '40001' }).stale).toBe(true)
+  })
+})

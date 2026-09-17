@@ -120,6 +120,14 @@ export function RoomScreen() {
     )
   }
 
+  // One way out of a room, asked for from two places now: the lobby's own row
+  // and, during a game, the handle in the corner of the table.
+  const leave = () =>
+    void act(async () => {
+      await leaveRoom(room.id)
+      navigate('/')
+    })
+
   return (
     <>
       <LobbyView
@@ -134,17 +142,44 @@ export function RoomScreen() {
       onPlayAgain={() => void act(() => returnToLobby(room.id))}
       onManage={setPendingKick}
       onEnd={() => setConfirmEnd(true)}
-      onLeave={() =>
-        void act(async () => {
-          await leaveRoom(room.id)
-          navigate('/')
-        })
-      }
+      onLeave={leave}
     >
         {gameId === null ? (
           <p className="lobby__muted">Finding the game…</p>
         ) : (
-          <GameScreen gameId={gameId} youId={youId as string} />
+          <GameScreen
+            gameId={gameId}
+            youId={youId as string}
+            /* The room's one mid-game control, in the corner of the table
+               rather than in a row underneath it. Same confirmation sheets
+               either way — only where the handle sits has changed. */
+            roomMenu={
+              <button
+                type="button"
+                className="board__exit"
+                onClick={() => (youAreHost ? setConfirmEnd(true) : leave())}
+                aria-label={youAreHost ? 'End this room' : 'Leave this room'}
+              >
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  {/* A door with a way out of it: the one shape that cannot be
+                      mistaken for a setting. */}
+                  <path
+                    d="M14 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h8"
+                    stroke="currentColor"
+                    strokeWidth="1.9"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M13 12h7m0 0-2.8-2.8M20 12l-2.8 2.8"
+                    stroke="currentColor"
+                    strokeWidth="1.9"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            }
+          />
         )}
       </LobbyView>
 

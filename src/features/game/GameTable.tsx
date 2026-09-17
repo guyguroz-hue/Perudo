@@ -13,6 +13,7 @@ import { ChallengeActions } from './ChallengeActions'
 import { CurrentBid } from './CurrentBid'
 import type { ClaimOwner } from './CurrentBid'
 import { MoveLog } from './MoveLog'
+import { TurnLine } from './TurnLine'
 import { PlayerSeat } from './PlayerSeat'
 import { RevealPanel } from './RevealPanel'
 import { TableScene } from './TableScene'
@@ -65,6 +66,7 @@ export function GameTable({
   reveal = null,
   finish = null,
   connection = 'live',
+  roomMenu = null,
   onBid,
   onLie,
   onBull,
@@ -81,6 +83,16 @@ export function GameTable({
    * a player is already looking.
    */
   connection?: Connection
+  /**
+   * Leaving the room, in the corner of the table.
+   *
+   * It lives here rather than in a row under the game because a row under the
+   * game is a row of table nobody gets to see. Ending a room is a once-a-session
+   * act and it was taking seventy-two points on every screen, which on a small
+   * phone is a seventh of the display spent on the one control a player hopes
+   * never to press — taken, of course, out of the table.
+   */
+  roomMenu?: ReactNode
   /**
    * A challenge being resolved, from the moment it is made.
    *
@@ -272,6 +284,7 @@ export function GameTable({
         <div className="board__sound">
           <ConnectionDot connection={connection} />
           <SoundToggle on={sound.on} onToggle={sound.toggle} />
+          {roomMenu}
         </div>
 
         {/*
@@ -346,6 +359,7 @@ export function GameTable({
           <TableDock
             view={view}
             self={self}
+            holder={holder}
             bid={bid}
             burst={burst}
             canAct={canAct}
@@ -371,6 +385,7 @@ export function GameTable({
 function TableDock({
   view,
   self,
+  holder,
   bid,
   burst,
   canAct,
@@ -382,6 +397,8 @@ function TableDock({
 }: {
   view: TableView
   self: TablePlayer | null
+  /** Whose turn it is, which is the one fact the table could only glow about. */
+  holder: TablePlayer | null
   bid: ActiveBid | null
   burst: boolean
   canAct: boolean
@@ -411,6 +428,10 @@ function TableDock({
         * lying on it, the same timber the cups are standing on a few
         * centimetres above. Nothing about it suggests pressing it.
         */}
+      {/* Said before anything else in the dock, because it is what decides
+          whether the rest of the dock is for you to use right now. */}
+      <TurnLine holder={holder} canAct={canAct} />
+
       <section className="board__hand" aria-label="Your dice">
         <h2 className="board__mine">Your dice</h2>
         <div className="board__hand-row">

@@ -179,6 +179,45 @@
   gap: var(--space-2);
 }
 
+/*
+ * The way out of the room, on the table.
+ *
+ * It used to be a full-width button in a row under the game, which is seventy
+ * points of every screen spent on the one control a player hopes never to
+ * press — and spent out of the table, because the table is what gives way. Up
+ * here it costs nothing and it is still exactly where a person looks for a way
+ * out: the corner, next to the other switch.
+ *
+ * Quieter than the sound toggle, and it stays quieter. Nothing about ending a
+ * room should invite a thumb, and the confirmation behind it is unchanged.
+ */
+.board__exit {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(10 8 14 / 0.55);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+  color: rgb(255 255 255 / 0.32);
+  cursor: pointer;
+  transition:
+    color var(--t-micro) var(--ease-ui),
+    scale var(--t-micro) var(--ease-ui);
+}
+
+.board__exit svg {
+  width: 18px;
+  height: 18px;
+}
+
+.board__exit:active {
+  scale: 0.9;
+  color: var(--lie);
+}
+
 .board__centre {
   /* Laid over the brass inlay, from the same projection that draws it. */
   position: absolute;

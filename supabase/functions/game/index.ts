@@ -130,10 +130,25 @@ function fail(error: unknown): Response {
   }
 
   console.error('UNHANDLED', error)
-  return new Response(JSON.stringify({ error: 'INTERNAL', message: 'Something broke.' }), {
-    status: 500,
-    headers: { ...cors, 'Content-Type': 'application/json' },
-  })
+  /*
+   * The message stays here; the fault's class goes back.
+   *
+   * A SQLSTATE is five characters that name a category — 42883 undefined
+   * function, 42501 insufficient privilege, 23514 check violation — and it
+   * carries nothing about the statement that produced it or the data it
+   * touched. Returning it costs no secrecy and is the whole difference between
+   * a player saying "it says something broke" and a player saying which of
+   * those it was.
+   */
+  const sqlState = (error as { sqlState?: unknown }).sqlState
+  return new Response(
+    JSON.stringify({
+      error: 'INTERNAL',
+      message: 'Something broke.',
+      ...(typeof sqlState === 'string' ? { fault: sqlState } : {}),
+    }),
+    { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } },
+  )
 }
 
 function asString(value: unknown, name: string): string {

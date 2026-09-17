@@ -1,0 +1,86 @@
+/*
+ * Whose turn it is, at the head of the dock.
+ *
+ * One line, always there. Not a panel and not a banner: it sits between the
+ * table and the player's own dice, in the gap the two already leave, and it is
+ * the width of the dock so the eye finds it without looking for it.
+ */
+.turn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 0;
+  padding: 1px 0 2px;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color var(--t-short) var(--ease-ui);
+}
+
+/* The player's own colour, the one they wear on their cup and at their seat,
+   so the sentence and the lit cup are plainly about the same person. */
+.turn__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--seat-tone, var(--ink-faint));
+  box-shadow: 0 0 8px var(--seat-tone, transparent);
+}
+
+.turn__who {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/*
+ * Your turn, and the line says so in the colour the table uses for exactly
+ * that. The ring under your cup is this blue; so is the ring on your badge.
+ * Three things saying one thing is not repetition here — it is the difference
+ * between a player who knows it is their turn and one who does not.
+ */
+.turn--yours {
+  color: var(--turn);
+}
+
+.turn--yours .turn__dot {
+  background: var(--turn);
+  box-shadow: 0 0 10px var(--turn);
+}
+
+/* A slow breath rather than a blink. It has to be findable in peripheral
+   vision without becoming something to look away from. */
+@media (prefers-reduced-motion: no-preference) {
+  .turn--yours .turn__dot {
+    animation: turn-breathe 1.9s var(--ease-ui) infinite;
+  }
+}
+
+@keyframes turn-breathe {
+  0%, 100% { opacity: 1; scale: 1; }
+  50% { opacity: 0.45; scale: 0.82; }
+}
+
+/*
+ * The half of the rules nobody discovers on their own.
+ *
+ * Somebody else's turn is not a turn to sit out — anybody may bid or doubt at
+ * any moment (§9.1). Said quietly and beside the name rather than as its own
+ * line, because it is a standing fact about the game, not news.
+ */
+.turn__cut {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: rgb(212 162 76 / 0.14);
+  box-shadow: inset 0 0 0 1px rgb(212 162 76 / 0.3);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  color: var(--brass-bright);
+  text-transform: none;
+}

@@ -203,5 +203,18 @@ function nameOf(profiles: unknown): string {
  * its own rather than in the sentence.
  */
 function lift(error: { message: string; code?: string }): Error {
-  return fromPostgres(error) ?? new Error(error.message)
+  const named = fromPostgres(error)
+  if (named !== null) return named
+  /*
+   * Not a refusal, and not something to hand back either — but the five
+   * characters that say which kind of fault it was are worth keeping.
+   *
+   * The message goes to the log and no further: it can carry whatever the
+   * statement was holding, and this server holds dice. The SQLSTATE cannot. It
+   * rides along on the Error so `fail` can put it beside INTERNAL, which is the
+   * difference between "something broke" and a bug report.
+   */
+  const fault = new Error(error.message)
+  if (error.code !== undefined) Object.assign(fault, { sqlState: error.code })
+  return fault
 }
