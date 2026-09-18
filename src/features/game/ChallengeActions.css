@@ -213,3 +213,12 @@
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.22); }
 }
+
+/* The die's place, kept empty. The row has to be exactly as tall with no claim
+   on the table as with one, or the dock changes height the moment somebody
+   bids — which is the jump that put Bull under a thumb. */
+.challenge__blank {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+}

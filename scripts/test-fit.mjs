@@ -259,6 +259,35 @@ try {
       )
     }
 
+    /*
+     * ---- And the dock does not change height when a bid lands.
+     *
+     * Lie and Bull were not on the screen at all until somebody bid, so the
+     * first bid of every round grew the dock by a row and jumped everything
+     * above it upward — the hand, the face rack and the Bid button all moved
+     * about seventy points, and Bull arrived exactly where a thumb had been
+     * heading. Everybody at one table pressed it by accident, on the one move
+     * in the game that cannot be taken back.
+     */
+    // The round's opening, where there is nothing on the table to doubt.
+    await page.getByRole('button', { name: 'Opening the round' }).click()
+    await page.waitForTimeout(300)
+    const before = await page.evaluate(() =>
+      Math.round(document.querySelector('.board__dock').getBoundingClientRect().height),
+    )
+    await page.getByRole('button', { name: 'A bid under Bull' }).click()
+    await page.waitForTimeout(300)
+    const after = await page.evaluate(() =>
+      Math.round(document.querySelector('.board__dock').getBoundingClientRect().height),
+    )
+    report(
+      before === after,
+      'dock holds still',
+      before === after
+        ? `${after}px with a bid and without`
+        : `${before}px before a bid, ${after}px after — everything above it jumps`,
+    )
+
     // ---- The lobby, where a badge once landed on the Start button.
     await page.getByRole('tab', { name: 'Lobby' }).click()
     for (const room of ['Just you', 'Full house']) {

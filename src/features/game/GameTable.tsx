@@ -512,17 +512,25 @@ function TableDock({
           <p className="builder__label">Your bid</p>
           <FaceRack draft={draft} />
           <BidRow draft={draft} burst={burst} busy={busy} pending={pending} onBid={onBid} inline />
-          {bid !== null && (
-            <ChallengeActions
-              bid={bid}
-              burst={burst}
-              ownDiceCount={self.diceCount}
-              busy={busy}
-              pending={pending}
-              onLie={onLie}
-              onBull={onBull}
-            />
-          )}
+          {/*
+            * Always here, spent until there is something to doubt.
+            *
+            * These used to arrive with the first bid, which grew the dock by a
+            * row and jumped everything above it — the hand, the rack and the
+            * Bid button all moved up about seventy points, and Bull landed
+            * exactly where a thumb had been heading. Everybody at one table
+            * pressed it by accident, on the one move in the game that cannot be
+            * taken back.
+            */}
+          <ChallengeActions
+            bid={bid}
+            burst={burst}
+            ownDiceCount={self.diceCount}
+            busy={busy}
+            pending={pending}
+            onLie={onLie}
+            onBull={onBull}
+          />
         </div>
       )}
     </>
