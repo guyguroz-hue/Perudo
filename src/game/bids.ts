@@ -131,3 +131,26 @@ function checkNormalBid(round: RoundState, next: ProposedBid): BidCheck {
   }
   return ok
 }
+
+/**
+ * Whether this round's opening bid is still owed to the player it belongs to.
+ *
+ * True only at the top of a Farewell Round, and it is the one moment in the
+ * game when turn order is binding rather than a suggestion (GAME_RULES §10,
+ * R-013).
+ *
+ * Every other bid in the game is worth the same as any other: a raise, and
+ * nothing more. The opening bid of a Farewell Round is not — it chooses the
+ * face, and that face is then locked for everybody until the round ends. A
+ * Burst landing first takes that choice, and hands the round's compensation to
+ * somebody who did not lose a die, which is the opposite of what the round is
+ * for. It happened at a real table.
+ *
+ * The protection is exactly as wide as the privilege: it ends the moment the
+ * face is locked, because from then on there is nothing left to take. Both the
+ * server and the bid builder ask this, so the button a player is offered and
+ * the answer they get back cannot disagree.
+ */
+export function opensFarewell(round: RoundState): boolean {
+  return round.type === 'farewell' && round.bid === null
+}

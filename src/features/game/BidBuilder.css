@@ -267,3 +267,9 @@
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.15); }
 }
+
+/* Not a refusal: a turn that is somebody else's for one more bid. Said in the
+   voice the table uses for news rather than the one it uses for mistakes. */
+.builder__why--waiting {
+  color: var(--ink-faint);
+}

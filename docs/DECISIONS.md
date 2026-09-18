@@ -253,6 +253,34 @@ kept for the log and for display rather than for computing anything.
 
 ---
 
+### ✅ R-013 — no Burst before the Farewell player has opened (2026-09-18)
+
+**Refused until they have bid.** From their opening bid onward the round is
+ordinary and Burst is permitted in full.
+
+Found at a real table: somebody burst into a Farewell Round before the player it
+was owed to, and the face locked on the burster's bid.
+
+R-008 decided that a Farewell Round "does not change who may act", and recorded
+that the rules were already orthogonal so the engine needed no change. That was
+wrong on one point, and only one. The opening bid of a Farewell Round carries a
+privilege no other bid in the game carries — it chooses the face, and that face
+is then locked for everybody (§10). Bursting before the opener takes that
+choice, which hands the round's compensation to a player who did not lose a die.
+A Farewell Round exists to give something to the player who is nearly out; as it
+stood, it could be taken from them by whoever tapped first.
+
+*Alternatives considered.* Refusing Burst for the whole round was simpler to
+state, but it removes the game's signature move for a round that can run long,
+and it revises R-008 further than the fault requires. Allowing the Burst but
+locking the face on the Farewell player's own bid whenever it came was rejected
+as incoherent: the face would change mid-round, which contradicts "locked for
+the entire Farewell Round".
+
+*Consequence:* the action layer refuses a Burst bid while a Farewell Round has
+no bid on it; the bid builder says so rather than offering a move the server
+will refuse.
+
 ### ✅ R-012 — no Farewell Round head to head (2026-09-13)
 **With two players still holding dice, there is no Farewell Round.** Raised by
 Guy, who plays this game; the specification had not covered it, and the engine

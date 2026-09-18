@@ -24,16 +24,19 @@ function Console({
   round,
   onBid,
   burst = false,
+  barred = false,
 }: {
   round: RoundState
   onBid: (bid: ProposedBid) => void
   burst?: boolean
+  /** The opening bid of a Farewell Round, owed to somebody else (R-013). */
+  barred?: boolean
 }) {
   const draft = useBidDraft(round, 15, HAND)
   return (
     <>
       <FaceRack draft={draft} />
-      <BidRow draft={draft} burst={burst} onBid={onBid} />
+      <BidRow draft={draft} burst={burst} barred={barred} onBid={onBid} />
     </>
   )
 }
@@ -133,5 +136,46 @@ describe('the builder follows the table', () => {
     render(<Console round={normalRound(bid(4, 5))} burst onBid={vi.fn()} />)
     expect(screen.getByRole('button', { name: 'Burst bid' })).toBeTruthy()
     expect(within(document.body).queryByRole('button', { name: 'Bid' })).toBeNull()
+  })
+})
+
+/*
+ * The one moment cutting in is barred (R-013).
+ *
+ * A Farewell Round's opening bid chooses the face for everybody, so it belongs
+ * to the player the round was called for. Found at a real table, where somebody
+ * burst into one first and the face locked on their bid.
+ *
+ * The builder says so rather than letting the press come back as a refusal: a
+ * rule is better learned from a control that is plainly not yours to use than
+ * from an error after the fact.
+ */
+describe('a round that is not yours to open', () => {
+  it('will not send a bid, and says whose it is', async () => {
+    const onBid = vi.fn()
+    render(
+      <Console
+        round={{ type: 'farewell', lockedFace: null, bid: null }}
+        burst
+        barred
+        onBid={onBid}
+      />,
+    )
+
+    const send = screen.getByRole('button', { name: /cannot cut in/i })
+    expect(send.hasAttribute('disabled')).toBe(true)
+    await userEvent.click(send)
+    expect(onBid).not.toHaveBeenCalled()
+    expect(screen.getByText(/opens with their bid/i)).toBeTruthy()
+  })
+
+  it('offers the bid again the moment the face is set', async () => {
+    const onBid = vi.fn()
+    render(
+      <Console round={{ type: 'farewell', lockedFace: null, bid: null }} burst onBid={onBid} />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: /burst bid/i }))
+    expect(onBid).toHaveBeenCalledTimes(1)
   })
 })

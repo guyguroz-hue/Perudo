@@ -433,3 +433,61 @@ describe('a Farewell Round head to head', () => {
     expect(applied.p_next_starter).toBe('alice')
   })
 })
+
+/*
+ * Who may take the opening bid of a Farewell Round (R-013).
+ *
+ * Found at a real table: somebody burst into a Farewell Round before the player
+ * it was owed to, and the face locked on the burster's bid. R-008 had decided a
+ * Farewell Round "does not change who may act" and recorded that the rules were
+ * already orthogonal; they are not, on this one point. That opening bid chooses
+ * the face for everybody, so bursting first hands the round's compensation to
+ * somebody who did not lose a die.
+ */
+describe('the opening bid of a Farewell Round', () => {
+  const farewell = (over: Record<string, unknown> = {}) =>
+    new Fake({
+      round: { type: 'farewell', bid_quantity: null, bid_face: null, bid_player_id: null, ...over },
+    })
+
+  it('is refused to anybody bursting for it', async () => {
+    // Alice holds the turn; Carl reaches for the round she is owed.
+    const store = farewell({ turn_player_id: 'alice' })
+    await expect(placeBid(store, { id: 'carl' }, 'g1', 3, 5)).rejects.toThrow(/opens with their bid/)
+    expect(store.bids).toHaveLength(0)
+  })
+
+  it('is taken by the player whose round it is', async () => {
+    const store = farewell({ turn_player_id: 'alice' })
+    await placeBid(store, { id: 'alice' }, 'g1', 3, 5)
+    // And their bid is what locks the face, which is the whole privilege.
+    expect(store.bids[0]).toMatchObject({ player: 'alice', burst: false, lockFace: true })
+  })
+
+  /*
+   * And the protection is exactly as wide as the privilege.
+   *
+   * Once the face is locked there is nothing left to take: every later bid may
+   * only raise the quantity on a face that is already fixed. R-008 stands for
+   * the rest of the round.
+   */
+  it('stops protecting the round the moment the face is locked', async () => {
+    const store = farewell({
+      turn_player_id: 'alice',
+      bid_quantity: 3,
+      bid_face: 5,
+      bid_player_id: 'alice',
+      locked_face: 5,
+    })
+    await placeBid(store, { id: 'carl' }, 'g1', 4, 5)
+    expect(store.bids[0]).toMatchObject({ player: 'carl', burst: true })
+  })
+
+  it('never protects a normal round, which is what Burst is for', async () => {
+    const store = new Fake({
+      round: { type: 'normal', bid_quantity: null, bid_face: null, turn_player_id: 'alice' },
+    })
+    await placeBid(store, { id: 'carl' }, 'g1', 3, 5)
+    expect(store.bids[0]).toMatchObject({ player: 'carl', burst: true })
+  })
+})

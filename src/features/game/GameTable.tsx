@@ -26,7 +26,7 @@ import { dueDice, placeSeats, sceneSeats } from './seating'
 import { usePrefersReducedMotion } from '../../lib/motion'
 import { useSound, useSoundEffect } from '../../lib/useSound'
 import type { TablePlayer, TableView } from './view'
-import { turnHolder, wouldBurst, you } from './view'
+import { burstBarred, turnHolder, wouldBurst, you } from './view'
 import './GameTable.css'
 
 /**
@@ -129,6 +129,15 @@ export function GameTable({
   const holder = turnHolder(view)
   const self = you(view)
   const burst = wouldBurst(view)
+  /*
+   * The one moment cutting in is barred (R-013).
+   *
+   * A Farewell Round's opening bid chooses the face for everybody, so it
+   * belongs to the player the round is owed to. Asked here rather than left to
+   * the server, so the button says what will happen instead of producing a
+   * refusal after the fact.
+   */
+  const barred = burstBarred(view)
   const yourTurn = holder !== null && holder.isYou
   const canAct = self !== null && !self.isEliminated
   const bid = view.round.bid
@@ -407,6 +416,7 @@ export function GameTable({
             holder={holder}
             bid={bid}
             burst={burst}
+            barred={barred}
             canAct={canAct}
             busy={busy}
             pending={pending}
@@ -434,6 +444,7 @@ function TableDock({
   holder,
   bid,
   burst,
+  barred,
   canAct,
   busy,
   pending,
@@ -448,6 +459,8 @@ function TableDock({
   holder: TablePlayer | null
   bid: ActiveBid | null
   burst: boolean
+  /** True while the opening bid of a Farewell Round is owed to somebody else. */
+  barred: boolean
   canAct: boolean
   busy: boolean
   /** Which action is in flight, so the control that sent it can say so. */
@@ -511,7 +524,15 @@ function TableDock({
               is what you were dealt, the other is what you can say about it. */}
           <p className="builder__label">Your bid</p>
           <FaceRack draft={draft} />
-          <BidRow draft={draft} burst={burst} busy={busy} pending={pending} onBid={onBid} inline />
+          <BidRow
+            draft={draft}
+            burst={burst}
+            barred={barred}
+            busy={busy}
+            pending={pending}
+            onBid={onBid}
+            inline
+          />
           {/*
             * Always here, spent until there is something to doubt.
             *

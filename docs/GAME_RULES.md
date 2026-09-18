@@ -259,12 +259,33 @@ owed their own Farewell Round: they are **queued**, one takes the next round, th
 next follows after that. The order among them is explicitly arbitrary — the
 engine uses seat order, which is deterministic and replayable.
 
-### Burst and Bull during a Farewell Round ✅ (resolved by R-008)
+### Burst and Bull during a Farewell Round ✅ (resolved by R-008, narrowed by R-013)
 
-**Both are fully permitted.** A Farewell Round changes what counts and what may
-be bid — the face is locked and Perudo is not wild — but it does not change who
-may act or how a challenge resolves. Burst, Burst Lie and Bull all behave
-exactly as they do in a normal round.
+**Both are permitted, from the opening bid onward.** A Farewell Round changes
+what counts and what may be bid — the face is locked and Perudo is not wild —
+but it does not change who may act or how a challenge resolves. Burst, Burst
+Lie and Bull all behave exactly as they do in a normal round.
+
+### The opening bid belongs to the player it is owed to ✅ (resolved by R-013)
+
+**No Burst before the Farewell player has opened.** Until they have bid, only
+they may bid; from that bid onward the round is ordinary and Burst is permitted
+in full.
+
+R-008 held that a Farewell Round "does not change who may act", and recorded
+that the rules were already orthogonal. They are not, on exactly one point. The
+opening bid of a Farewell Round carries a privilege no other bid in the game
+carries: **it chooses the face, and that face is then locked for everybody**
+(§10). A Burst landing first takes that choice, which hands the round's
+compensation to somebody who did not lose a die — the opposite of what a
+Farewell Round is for.
+
+So the protection is exactly as wide as the privilege and no wider. It ends the
+moment the face is locked, because from then on there is nothing left to steal:
+every later bid may only raise the quantity on a face that is already fixed.
+
+Nothing else about the round changes. Lie and Bull need a bid to act on, so they
+are unaffected — there is nothing to doubt before the opening bid either way.
 
 ## 11. Elimination ✅
 
@@ -310,9 +331,11 @@ winner**.
 > a correct Bull spares its caller, and a false Bull costs only its caller — so
 > somebody always survives. The rule is implemented regardless.
 
-## 12. ✅ ALL RULES RESOLVED
+## 12. Where the rules stand
 
-Every rule that was deliberately left open has been decided:
+Every rule deliberately left open has been decided except one, which is refused
+rather than guessed — R-010, a second Bull on a bid that has already been
+Bulled. See `DECISIONS.md`.
 
 | ID | Rule | Where |
 |---|---|---|
@@ -325,6 +348,9 @@ Every rule that was deliberately left open has been decided:
 | R-007 | Five dice, never more | §9.3 |
 | R-008 | Burst and Bull are permitted in a Farewell Round | §10 |
 | R-009 | The quantity anchors a bid and may never fall | §4 |
+| R-011 | The first round is opened by a draw | §11 |
+| R-012 | No Farewell Round head to head | §10 |
+| R-013 | No Burst before the Farewell player has opened | §10 |
 
 **The standing instruction still holds.** If play reaches a situation these
 rules do not uniquely determine, **STOP, present options, ask.** Never silently

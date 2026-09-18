@@ -5,6 +5,7 @@ import {
   farewellApplies,
   isBurst,
   nextActive,
+  opensFarewell,
   resolveChallenge,
 } from '../../../src/game'
 import type { ChallengeKind, Face, PlayerId, RoundState, RoundType } from '../../../src/game'
@@ -81,6 +82,26 @@ export async function placeBid(
   }
 
   const burst = isBurst(round.turn_player_id, actor.id)
+
+  /*
+   * The opening bid of a Farewell Round is not up for grabs (R-013).
+   *
+   * It is the only bid in the game worth more than a raise: it chooses the
+   * face, and that face is then locked for everybody until the round ends
+   * (GAME_RULES §10). Bursting before the player it is owed to takes that
+   * choice and hands the round's compensation to somebody who did not lose a
+   * die — the opposite of what the round is for. It happened at a real table.
+   *
+   * Only until the face is locked. From that bid onward the round is ordinary
+   * and Burst is permitted in full, exactly as R-008 says.
+   */
+  if (burst && opensFarewell(state)) {
+    throw new GameError(
+      'FAREWELL_OPENING',
+      'This round opens with their bid. You can cut in once the face is set.',
+      409,
+    )
+  }
 
   await store.applyBid({
     roundId: round.id,

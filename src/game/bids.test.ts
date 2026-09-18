@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkBid, minPerudoQuantity, minQuantityAfterPerudo } from './bids'
+import { checkBid, minPerudoQuantity, minQuantityAfterPerudo, opensFarewell } from './bids'
 import type { BidRejection, Face, RoundState } from './types'
 import { bid, farewellRound, normalRound } from './testing'
 
@@ -138,5 +138,39 @@ describe('Farewell Round bidding (GAME_RULES §10)', () => {
     const round = farewellRound(bid(4, 1), 1)
     expectLegal(round, 5, 1)
     expectRejected(round, 9, 3, 'FACE_LOCKED')
+  })
+})
+
+/*
+ * The one bid in the game that is worth more than a raise.
+ *
+ * A Farewell Round's opening bid chooses the face, and that face is then locked
+ * for everybody until the round ends (GAME_RULES §10). Every other bid is a
+ * raise and nothing more, which is why turn order is a suggestion everywhere
+ * else and binding here (R-013).
+ *
+ * This says only when the privilege exists. Who is allowed to exercise it is
+ * the action layer's question, because only the server knows whose turn it is.
+ */
+describe('the opening bid of a Farewell Round', () => {
+  it('is still owed while the round has no bid on it', () => {
+    expect(opensFarewell({ type: 'farewell', lockedFace: null, bid: null })).toBe(true)
+  })
+
+  it('is spent the moment the face is locked', () => {
+    // From here the round is ordinary: every later bid may only raise the
+    // quantity on a face that is already fixed, so there is nothing to steal.
+    expect(
+      opensFarewell({
+        type: 'farewell',
+        lockedFace: 5,
+        bid: { quantity: 2, face: 5, bidderId: 'a', bull: null },
+      }),
+    ).toBe(false)
+  })
+
+  it('never applies to a normal round, opening bid or not', () => {
+    // Turn order is a suggestion in a normal round — that is what Burst is.
+    expect(opensFarewell({ type: 'normal', lockedFace: null, bid: null })).toBe(false)
   })
 })

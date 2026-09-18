@@ -57,6 +57,7 @@ export function FaceRack({ draft }: { draft: BidDraft }) {
 export function BidRow({
   draft,
   burst,
+  barred = false,
   busy = false,
   pending = null,
   onBid,
@@ -66,6 +67,16 @@ export function BidRow({
   draft: BidDraft
   /** True when this would be a Burst: a bid made out of turn (GAME_RULES §9.1). */
   burst: boolean
+  /**
+   * True while the opening bid of a Farewell Round is owed to somebody else.
+   *
+   * The one moment in this game when turn order is binding rather than a
+   * suggestion (GAME_RULES §10, R-013): that bid chooses the face for everybody,
+   * so it belongs to the player the round was called for. Shown as a spent
+   * button with the reason on it rather than left to come back as a refusal —
+   * a rule is better learned from a control than from an error.
+   */
+  barred?: boolean
   busy?: boolean
   /** Which action is on its way, if any. */
   pending?: PendingAction
@@ -116,17 +127,31 @@ export function BidRow({
           className={`builder__submit${burst ? ' builder__submit--burst' : ''}${
             pending === 'bid' ? ' builder__submit--sending' : ''
           }`}
-          disabled={busy || !verdict.legal}
+          disabled={busy || barred || !verdict.legal}
           onClick={() => onBid(bid)}
           /* Short on the button, whole in the name it is announced by: the dock
              has room for one word and a screen reader has room for the sense. */
-          aria-label={burst ? 'Burst bid' : 'Bid'}
+          aria-label={
+            barred
+              ? 'You cannot cut in until this round has been opened'
+              : burst
+                ? 'Burst bid'
+                : 'Bid'
+          }
         >
-          {pending === 'bid' ? 'Sending' : burst ? 'Burst' : 'Bid'}
+          {pending === 'bid' ? 'Sending' : barred ? 'Theirs' : burst ? 'Burst' : 'Bid'}
         </button>
       </div>
 
-      {!verdict.legal && <p className="builder__why">{verdict.detail}</p>}
+      {/* One reason at a time, and this one outranks a bid's own legality: the
+          bid may be perfectly legal and still not yours to make yet. */}
+      {barred ? (
+        <p className="builder__why builder__why--waiting">
+          This round opens with their bid. You can cut in once the face is set.
+        </p>
+      ) : (
+        !verdict.legal && <p className="builder__why">{verdict.detail}</p>
+      )}
     </>
   )
 }

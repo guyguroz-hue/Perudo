@@ -1,3 +1,4 @@
+import { opensFarewell } from '../../game'
 import type { Face, PlayerId, RoundState } from '../../game'
 
 /**
@@ -68,6 +69,22 @@ export function turnHolder(view: TableView): TablePlayer | null {
 export function wouldBurst(view: TableView): boolean {
   const holder = turnHolder(view)
   return holder !== null && !holder.isYou
+}
+
+/**
+ * Whether cutting in is barred right now, and why.
+ *
+ * Exactly one moment in the game: a Farewell Round that has not been opened
+ * yet (GAME_RULES §10, R-013). The opening bid there chooses the face for
+ * everybody, so it belongs to the player the round is owed to and nobody may
+ * take it from them.
+ *
+ * Asked here so the builder offers the same answer the server will give. A
+ * button that produces a refusal is a worse way to learn a rule than a button
+ * that is plainly not available and says why.
+ */
+export function burstBarred(view: TableView): boolean {
+  return wouldBurst(view) && opensFarewell(view.round)
 }
 
 export function you(view: TableView): TablePlayer | null {

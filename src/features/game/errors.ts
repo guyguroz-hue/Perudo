@@ -36,6 +36,9 @@ const EXPLANATIONS: Record<string, string> = {
     'The game server is not reachable under the name this app calls. ' +
     'Deploy the Edge Function as `game`.',
   NO_ROUND: 'The round has not started yet.',
+  /* R-013. The server's own sentence says it well; this is here so the code is
+     recognised as a rule rather than falling through as an unknown one. */
+  FAREWELL_OPENING: 'This round opens with their bid. You can cut in once the face is set.',
   ROUND_ALREADY_OPEN: 'That round is already under way.',
   GAME_NOT_ACTIVE: 'This game has finished.',
   NOT_A_PLAYER: 'You are not in this game.',
