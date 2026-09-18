@@ -41,7 +41,8 @@ vi.mock('./api', () => ({
 vi.mock('./read', () => ({
   fetchRound: vi.fn(async () => null),
   fetchPlayers: vi.fn(async () => []),
-  fetchRecentMoves: vi.fn(async () => []),
+  fetchRecentEvents: vi.fn(async () => []),
+  movesFromEvents: vi.fn(() => []),
   fetchReveal: vi.fn(async () => null),
   fetchGameStanding: vi.fn(async () => null),
   toTableView: vi.fn(() => null),
@@ -378,5 +379,43 @@ describe('what a re-read asks for', () => {
       for (const fire of listeners) fire()
     })
     await waitFor(() => expect(fetchOwnHand).toHaveBeenCalledTimes(2))
+  })
+})
+
+/*
+ * How deep a re-read is, not just how wide.
+ *
+ * A re-read happens on every event, for every player at the table, so the
+ * number of round trips it takes end to end is the delay between one person
+ * pressing and everybody else seeing it. The log used to wait for the players,
+ * because the function that fetched it also turned "bid" into "Alice bid 4
+ * fives" and needed their names to do that — a formatting dependency that cost
+ * a whole wave of network.
+ */
+describe('how many round trips a re-read takes', () => {
+  it('asks for everything at once', async () => {
+    const read = await import('./read')
+    const order: string[] = []
+    let releasePlayers: () => void = () => {}
+    const playersHeld = new Promise<never[]>((resolve) => {
+      releasePlayers = () => resolve([])
+    })
+
+    vi.mocked(read.fetchPlayers).mockReturnValue(playersHeld as never)
+    vi.mocked(read.fetchRecentEvents).mockImplementation(async () => {
+      order.push('events')
+      return []
+    })
+    vi.mocked(read.toTableView).mockImplementation(() => ({ roundNumber: 1 }) as never)
+
+    renderHook(() => useGame('g1', 'u1'))
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    // The players have not answered yet, and the log has already been asked
+    // for. Before, it could not even have been sent.
+    expect(order).toContain('events')
+    releasePlayers()
   })
 })

@@ -5,7 +5,8 @@ import * as api from './api'
 import { toGameError } from './errors'
 import {
   fetchGameStanding,
-  fetchRecentMoves,
+  fetchRecentEvents,
+  movesFromEvents,
   fetchPlayers,
   fetchReveal,
   fetchRound,
@@ -210,10 +211,20 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
     const mine = ++generation.current
 
     try {
-      const [round, players, standing] = await Promise.all([
+      /*
+       * Everything the table needs, asked for at once.
+       *
+       * The log used to wait for the players, because the function that fetched
+       * it also turned "bid" into "Alice bid 4 fives" and needed their names to
+       * do it. That made every re-read two round trips deep for a reason that
+       * was about formatting rather than about data — and a re-read happens on
+       * every event, for every player at the table.
+       */
+      const [round, players, standing, events] = await Promise.all([
         fetchRound(gameId),
         fetchPlayers(gameId, youId),
         fetchGameStanding(gameId),
+        fetchRecentEvents(gameId),
       ])
       if (generation.current !== mine) return
 
@@ -241,8 +252,7 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
       if (generation.current !== mine) return
       if (round !== null && yours !== null) hand.current = { round: round.id, dice: yours }
 
-      const moves = await fetchRecentMoves(gameId, names)
-      if (generation.current !== mine) return
+      const moves = movesFromEvents(events, names)
 
       seenRound.current = round?.id ?? null
       started.current = true

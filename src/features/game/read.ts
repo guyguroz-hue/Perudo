@@ -312,11 +312,18 @@ export function movesFromEvents(
  * assumed; a dozen rows covers any round a table of six could actually play
  * through, and is still one small query.
  */
-export async function fetchRecentMoves(
-  gameId: string,
-  names: ReadonlyMap<PlayerId, string>,
-  limit = 12,
-): Promise<TableMove[]> {
+/**
+ * The log's rows, unlabelled.
+ *
+ * Split from the labelling because the query does not need the names and the
+ * labelling does. Together they made the whole re-read take two round trips
+ * instead of one: the moves could not be asked for until the players had come
+ * back, for no better reason than that the function which fetched them also
+ * turned "bid" into "Alice bid 4 fives". Apart, this goes out with everything
+ * else and the names catch up with it afterwards, which costs nothing and is a
+ * whole wave off every update on the table.
+ */
+export async function fetchRecentEvents(gameId: string, limit = 12): Promise<EventRow[]> {
   const { data, error } = await supabase
     .from('game_events')
     .select('id, round_id, actor_id, kind, payload')
@@ -325,5 +332,13 @@ export async function fetchRecentMoves(
     .limit(limit)
   if (error !== null) throw new GameActionError('UNKNOWN', error.message, false)
 
-  return movesFromEvents((data ?? []) as EventRow[], names)
+  return (data ?? []) as EventRow[]
+}
+
+export async function fetchRecentMoves(
+  gameId: string,
+  names: ReadonlyMap<PlayerId, string>,
+  limit = 12,
+): Promise<TableMove[]> {
+  return movesFromEvents(await fetchRecentEvents(gameId, limit), names)
 }
