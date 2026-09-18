@@ -232,6 +232,22 @@ Completed items are marked `[x]` and kept, not deleted.
       controls are costing — that last one because the stage gives way to them,
       so "it fits" is otherwise satisfied by a table squeezed to a strip.
 
+      And a fifth, which is the one that covers the screen people actually
+      play on: `npm run test:live`. Every check above runs against `/preview`
+      or `/solo` — fixtures in a tab, bots in a tab — and the real game is
+      `.app > .lobby > .game > .board`, three components deep inside a lobby
+      that is still mounted, with a room around it, a server refusing things
+      and other people acting at the same moment. That difference has already
+      shipped a bug: a rule written against `.app > .game` matched in both
+      harnesses and matched nothing in the game. `scripts/harness/` puts an
+      in-memory table behind the Supabase client and runs the real Edge
+      Function action layer against it, so three browser contexts can sit at
+      one table and play: name, create, join, start, bid, Burst, Bull, doubt,
+      watch the cups come off, take a Farewell Round, finish the game and go
+      back to the lobby — through the code that ships, with only the transport
+      replaced. The SQL is still tested as SQL by `npm run test:db`; this
+      covers the browser's half, which nothing else could see.
+
 - [x] **B-8** ~~Lie described the wrong bet once a bid had been Bulled.~~ Found
       while verifying, at Guy's request, that pressing Bull does not reveal (it
       does not — see below). A Bull re-reads the claim on the table from "at
