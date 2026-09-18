@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
-import type { ProposedBid } from '../../game'
+import type { Face, ProposedBid } from '../../game'
 import * as api from './api'
 import { toGameError } from './errors'
 import {
@@ -189,6 +189,21 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
    * player's whole attention.
    */
   const showing = useRef<string | null>(null)
+  /*
+   * Your own dice, and the round they were dealt for.
+   *
+   * Every re-read used to fetch them again, and every re-read pays for that
+   * twice: the request itself, and the fact that it cannot start until the
+   * round has come back, because it is keyed on the round's id. So the common
+   * case — somebody bid, the round is the same one it was — spent two round
+   * trips end to end where one would do, on every event, for every player.
+   *
+   * Dice are dealt once per round and never change inside it: `deal_round`
+   * writes them and nothing else touches `player_dice`. So they are worth
+   * exactly one fetch per round, and the second wave disappears from every
+   * update that is not a new round.
+   */
+  const hand = useRef<{ round: string; dice: readonly Face[] } | null>(null)
 
   const refresh = useCallback(async () => {
     if (gameId === null || youId === null) return
@@ -207,15 +222,31 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
         started.current && previous !== null && round?.id !== previous
 
       const names = new Map(players.map((player) => [player.id, player.name]))
-      const [hand, moves] = await Promise.all([
-        round === null ? Promise.resolve(null) : api.fetchOwnHand(round.id, youId),
-        fetchRecentMoves(gameId, names),
-      ])
+
+      /*
+       * Only ask for the dice when they can have changed.
+       *
+       * Which is once a round. Everything else — a bid, a Bull, the heartbeat,
+       * the echo of your own move — already has them, and asking again costs a
+       * whole extra round trip that cannot even begin until the round has come
+       * back.
+       */
+      const dealt = round === null ? null : hand.current
+      const yours =
+        round === null
+          ? null
+          : dealt !== null && dealt.round === round.id
+            ? dealt.dice
+            : await api.fetchOwnHand(round.id, youId)
+      if (generation.current !== mine) return
+      if (round !== null && yours !== null) hand.current = { round: round.id, dice: yours }
+
+      const moves = await fetchRecentMoves(gameId, names)
       if (generation.current !== mine) return
 
       seenRound.current = round?.id ?? null
       started.current = true
-      setView((previous) => steady(previous, toTableView(round, players, hand, moves)))
+      setView((previous) => steady(previous, toTableView(round, players, yours, moves)))
       setOver(
         standing.status === 'completed'
           ? {

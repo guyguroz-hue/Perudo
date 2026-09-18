@@ -26,12 +26,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const placeBid = vi.fn()
 const callBull = vi.fn()
 const challenge = vi.fn()
+const fetchOwnHand = vi.fn<(...args: unknown[]) => Promise<readonly number[] | null>>()
 
 vi.mock('./api', () => ({
   placeBid: (...args: unknown[]) => placeBid(...args),
   callBull: (...args: unknown[]) => callBull(...args),
   challenge: (...args: unknown[]) => challenge(...args),
   openRound: vi.fn(),
+  fetchOwnHand: (...args: unknown[]) => fetchOwnHand(...args),
 }))
 
 // The table is read back after every action; none of that is what is under
@@ -84,6 +86,8 @@ beforeEach(() => {
   placeBid.mockReset()
   callBull.mockReset()
   challenge.mockReset()
+  fetchOwnHand.mockReset()
+  fetchOwnHand.mockResolvedValue(null)
 })
 afterEach(cleanup)
 
@@ -318,5 +322,61 @@ describe('holding the table still', () => {
       for (const fire of listeners) fire()
     })
     await waitFor(() => expect(result.current.view).not.toBe(first))
+  })
+})
+
+/*
+ * What a re-read actually costs.
+ *
+ * Every event on the table causes one, and every one of them used to fetch the
+ * player's own dice again — a whole extra round trip, and one that cannot even
+ * begin until the round has come back, because it is keyed on the round's id.
+ * So the common case, somebody bid and the round is the one it already was,
+ * spent two waves end to end where one would do. On a phone that is most of the
+ * delay between a player pressing and everybody else seeing it.
+ *
+ * Dice are dealt once per round and nothing touches them inside it.
+ */
+describe('what a re-read asks for', () => {
+  it('asks for the dice once per round, not once per event', async () => {
+    const read = await import('./read')
+    vi.mocked(read.fetchRound).mockResolvedValue({ id: 'r1' } as never)
+    vi.mocked(read.toTableView).mockImplementation(() => ({ roundNumber: 1 }) as never)
+    fetchOwnHand.mockResolvedValue([1, 2, 3])
+    fetchOwnHand.mockClear()
+
+    const { result } = renderHook(() => useGame('g1', 'u1'))
+    await waitFor(() => expect(result.current.view).not.toBeNull())
+    expect(fetchOwnHand).toHaveBeenCalledTimes(1)
+
+    // Three more events in the same round: a bid, a Bull, the heartbeat.
+    for (let event = 0; event < 3; event += 1) {
+      act(() => {
+        for (const fire of listeners) fire()
+      })
+      await act(async () => {
+        await new Promise((settle) => setTimeout(settle, 220))
+      })
+    }
+    expect(fetchOwnHand).toHaveBeenCalledTimes(1)
+  })
+
+  it('but asks again the moment a new round is dealt', async () => {
+    const read = await import('./read')
+    let round = 'r1'
+    vi.mocked(read.fetchRound).mockImplementation(async () => ({ id: round }) as never)
+    vi.mocked(read.toTableView).mockImplementation(() => ({ roundNumber: 1 }) as never)
+    fetchOwnHand.mockResolvedValue([1, 2, 3])
+    fetchOwnHand.mockClear()
+
+    const { result } = renderHook(() => useGame('g1', 'u1'))
+    await waitFor(() => expect(result.current.view).not.toBeNull())
+    expect(fetchOwnHand).toHaveBeenCalledTimes(1)
+
+    round = 'r2'
+    act(() => {
+      for (const fire of listeners) fire()
+    })
+    await waitFor(() => expect(fetchOwnHand).toHaveBeenCalledTimes(2))
   })
 })
