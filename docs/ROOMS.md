@@ -358,13 +358,24 @@ hands a challenge makes public.
 | `ask_for_seat(room)` | a spectator | seats them outright in a lobby; otherwise puts the question to the host. Refused at a full table |
 | `answer_seat_request(room, user, approve)` | the host | approving takes the lowest free seat |
 
-**An approved player plays from the next game, not this one.** Players and their
-dice are fixed when a game starts, and there is no honest number of dice to hand
-somebody who arrives at round nine — five is a gift and one is a punishment, and
-both change a game other people are in the middle of. So approval is a seat, and
-the seat is taken up when the next game is dealt. The host is told this on the
-card before they answer it, because a host who found out afterwards would
-reasonably think the approval had failed.
+**An approved player joins the game in progress, at the start of the next
+round, with five dice** (R-014). Never inside a round: a round is a set of
+claims about a fixed number of dice, and adding one mid-round would make every
+bid already on the table a claim about something else. So admission happens in
+`deal_round` and nowhere else — the one place in this system that is, by
+construction, between rounds.
+
+Five dice late in a game is a commanding position, and what keeps that fair is
+not the number, it is the host: nobody joins without being admitted, the card
+says exactly what admitting them means before they answer, and "not now" is one
+tap. See DECISIONS R-014 for the alternatives and why they were turned down.
+
+**And the asking must not cost the host their round.** During a game nothing
+opens by itself. A chip appears in the corner the room already owns — beside the
+sound toggle and the way out, where nothing covers the table and nothing sits
+where a thumb is aiming — and the host opens the question when the round is
+over, or leaves it. In a lobby there is nothing to interrupt, so the card simply
+appears.
 
 The request lives as two timestamps on the membership row rather than in a table
 of its own. A request is a fact about a membership — this person, in this room,

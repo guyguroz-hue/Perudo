@@ -331,6 +331,32 @@ winner**.
 > a correct Bull spares its caller, and a false Bull costs only its caller — so
 > somebody always survives. The rule is implemented regardless.
 
+### Somebody joining a game already in progress ✅ (resolved by R-014)
+
+A player the host admits mid-game **joins at the start of the next round, with
+five dice** — a full hand, the same as everybody started with.
+
+Two halves, and both were decided rather than derived.
+
+**When.** Never inside a round. A round is a set of claims about a fixed number
+of dice, and adding one mid-round would make every bid already on the table a
+claim about something else. So the join lands where a round lands: the next deal
+brings them in with everybody else.
+
+**How many.** Five, and the cost is real and was accepted with open eyes: in a
+late round where the table is down to one or two dice each, a full hand is a
+commanding position and quite likely a win. The alternatives — the table's
+average, the smallest stack, one die — each hand the newcomer a number that
+argues about them before they have played a bid. Five is the number this game
+already means by "a player": it is what everybody starts with (§2), it is the
+ceiling a Burst Lie may never take anybody past (§9.3, R-007), and it needs no
+explaining at a table.
+
+What keeps it fair is not the number, it is **the host**. Nobody joins a running
+game without being admitted, the host is told exactly what admitting them means
+before they answer, and "not now" is one tap — a table nine rounds deep can
+simply say no and let them play the next game.
+
 ## 12. Where the rules stand
 
 Every rule deliberately left open has been decided except one, which is refused
@@ -351,6 +377,7 @@ Bulled. See `DECISIONS.md`.
 | R-011 | The first round is opened by a draw | §11 |
 | R-012 | No Farewell Round head to head | §10 |
 | R-013 | No Burst before the Farewell player has opened | §10 |
+| R-014 | A player admitted mid-game joins next round, with five dice | §11 |
 
 **The standing instruction still holds.** If play reaches a situation these
 rules do not uniquely determine, **STOP, present options, ask.** Never silently

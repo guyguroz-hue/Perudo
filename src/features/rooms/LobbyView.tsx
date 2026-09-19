@@ -198,7 +198,7 @@ export function LobbyView({
           <div className="lobby__watching">
             <p className="lobby__muted">
               {youAsked
-                ? 'Asked the host for a seat. Watching until they answer.'
+                ? 'Asked the host to deal you in. Watching until they answer.'
                 : 'Watching. You are not in this game.'}
             </p>
             {onAskForSeat !== null && !youAsked && (

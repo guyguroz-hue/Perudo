@@ -174,34 +174,63 @@ check(
   )
 }
 
+/*
+ * And the host is not interrupted by it.
+ *
+ * The first version put a card over the middle of the host's screen and left it
+ * there until it was answered — three bids into a round, while they were
+ * working out whether the six on the table was a lie. "Make sure the request
+ * does not ruin the host's round" was the note. So during a game nothing opens
+ * by itself: a chip appears in the corner the room already owns, and the host
+ * goes and looks at it when the round is over.
+ */
 {
-  const seatCard = await host.page
-    .waitForSelector('.ask', { timeout: 20_000 })
+  const chip = await host.page
+    .waitForSelector('.askchip', { timeout: 20_000 })
     .then(() => true)
     .catch(() => false)
-  check(seatCard, 'the host is asked, wherever they are')
+  check(chip, 'the host is told, in the corner, wherever they are')
 
-  if (seatCard) {
-    await host.page.click('button:has-text("Give them a seat")')
-    const seated = await host.page
-      .waitForFunction(
-        () => document.querySelector('.ask') === null,
-        null,
-        { timeout: 15_000 },
-      )
+  const uninterrupted = await host.page.evaluate(() => ({
+    card: document.querySelector('.ask') !== null,
+    canBid: document.querySelector('.builder__submit') !== null,
+  }))
+  check(!uninterrupted.card, 'and nothing opens over the table by itself')
+  check(uninterrupted.canBid, 'and the controls are still theirs to use')
+
+  await host.page.click('.askchip')
+  const opened = await host.page
+    .waitForSelector('.ask', { timeout: 10_000 })
+    .then(() => true)
+    .catch(() => false)
+  check(opened, 'the chip opens the question when they are ready')
+
+  if (opened) {
+    // Put away without answering, which is the whole point of Later: the
+    // question keeps, the round does not.
+    await host.page.click('button:has-text("Later")')
+    const away = await host.page.evaluate(() => document.querySelector('.ask') === null)
+    const kept = await host.page.evaluate(() => document.querySelector('.askchip') !== null)
+    check(away && kept, 'and Later puts it away without losing it')
+
+    await host.page.click('.askchip')
+    await host.page.waitForSelector('.ask', { timeout: 10_000 })
+    await host.page.click('button:has-text("Deal them in")')
+    const answered = await host.page
+      .waitForFunction(() => document.querySelector('.ask') === null, null, { timeout: 15_000 })
       .then(() => true)
       .catch(() => false)
-    check(seated, 'and answering puts the question away')
+    check(answered, 'and answering puts the question away')
   }
 }
 
 check(
   db.tables.room_members.filter((m) => m.left_at === null && m.role === 'player').length === 4,
-  'an approved spectator holds a seat for the next game',
+  'an approved spectator holds a seat',
 )
 check(
   db.tables.game_players.filter((p) => p.user_id === idOfName('Dee')).length === 0,
-  'and was not dealt into the game being played',
+  'and is not dealt into the round already being played',
 )
 
 // -----------------------------------------------------------------------------
@@ -540,6 +569,34 @@ pass('the verdict lands on every screen')
 
 check(liveRound().id !== roundBefore, 'the round moved on')
 
+/*
+ * And the newcomer is in it (R-014).
+ *
+ * The next deal is where they arrive — never inside a round, because a round is
+ * a set of claims about a fixed number of dice — and they arrive with a full
+ * hand, which is the part the host was asked to judge.
+ */
+{
+  const dealt = db.tables.game_players.find((p) => p.user_id === idOfName('Dee')) ?? null
+  check(dealt !== null, 'the next round deals the newcomer in')
+  check(dealt?.dice_count === 5, 'with five dice, as R-014 says', `${dealt?.dice_count} dice`)
+
+  const nowPlaying = await latecomer.page
+    .waitForFunction(
+      () => document.querySelectorAll('.board__die').length === 5,
+      null,
+      { timeout: 25_000 },
+    )
+    .then(() => true)
+    .catch(() => false)
+  check(nowPlaying, 'and they are holding them on screen, without reloading')
+
+  const told = await players[0].page.evaluate(() =>
+    /joined with 5 dice/i.test(document.querySelector('.log')?.textContent ?? ''),
+  )
+  check(told, 'and the whole table is told they arrived')
+}
+
 // Everybody back to a playable table, without anybody pressing anything.
 for (const { name, page } of players) {
   const back = await page
@@ -644,9 +701,11 @@ check(
 
 {
   const gameId = db.tables.games[0].id
-  const out = players[2]
+  // Two left holding a die each, everybody else out — including the newcomer,
+  // who is a real player at this table now and has to be accounted for.
+  const survivors = new Set([idOf(players[0]), idOf(players[1])])
   for (const player of db.tables.game_players) {
-    player.dice_count = player.user_id === idOf(out) ? 0 : 1
+    player.dice_count = survivors.has(player.user_id) ? 1 : 0
     if (player.dice_count === 0) player.eliminated_at = new Date().toISOString()
     db.touch('game_players', player)
   }

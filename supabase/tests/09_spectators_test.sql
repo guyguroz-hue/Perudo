@@ -151,9 +151,13 @@ end $$;
 \echo 'PASS  a seat request is recorded, and only the host may answer it'
 
 do $$
-declare v_id uuid; v_role text; v_seat smallint; v_asked timestamptz; v_players int;
+declare
+  v_id uuid; v_role text; v_seat smallint; v_asked timestamptz;
+  v_game uuid; v_before int; v_after int; v_dice int; v_hand int; v_joined int;
+  v_round uuid;
 begin
   select id into v_id from t_room;
+  select g.id into v_game from public.games g where g.room_id = v_id and g.status = 'active';
 
   perform pg_temp.act('c1000000-0000-0000-0000-000000000001');
   set local role authenticated;
@@ -166,16 +170,33 @@ begin
   if v_seat is null then raise exception 'FAIL: approval left them without a seat'; end if;
   if v_asked is not null then raise exception 'FAIL: the request is still outstanding'; end if;
 
-  -- And it did NOT put them in the game that is running. Players and their
-  -- dice are fixed when a game starts; there is no honest number of dice to
-  -- hand somebody who arrives at round nine.
-  select count(*) into v_players from public.game_players gp
-    join public.games g on g.id = gp.game_id
-   where g.room_id = v_id and gp.user_id = 'c1000000-0000-0000-0000-000000000003';
-  if v_players <> 0 then raise exception 'FAIL: an approved player was dealt into a live game'; end if;
+  -- Not yet in the game. A round is a set of claims about a fixed number of
+  -- dice, so nobody arrives in the middle of one (R-014).
+  select count(*) into v_before from public.game_players gp
+   where gp.game_id = v_game and gp.user_id = 'c1000000-0000-0000-0000-000000000003';
+  if v_before <> 0 then raise exception 'FAIL: an approved player appeared mid-round'; end if;
+
+  -- The next round brings them in, with a full hand.
+  v_round := public.deal_round(v_game, 'normal', 'c1000000-0000-0000-0000-000000000001');
+
+  select count(*), max(dice_count) into v_after, v_dice from public.game_players gp
+   where gp.game_id = v_game and gp.user_id = 'c1000000-0000-0000-0000-000000000003';
+  if v_after <> 1 then raise exception 'FAIL: the next round did not admit them'; end if;
+  if v_dice <> 5 then raise exception 'FAIL: they joined with % dice, not five', v_dice; end if;
+
+  select count(*) into v_hand from public.player_dice pd
+   where pd.round_id = v_round and pd.player_id = 'c1000000-0000-0000-0000-000000000003';
+  if v_hand <> 1 then raise exception 'FAIL: the newcomer was dealt no hand'; end if;
+
+  -- And the whole table is told, because a full hand arriving in round nine
+  -- changes the game for everybody else.
+  select count(*) into v_joined from public.game_events e
+   where e.round_id = v_round and e.kind = 'joined'
+     and e.actor_id = 'c1000000-0000-0000-0000-000000000003';
+  if v_joined <> 1 then raise exception 'FAIL: nobody was told they arrived'; end if;
 end $$;
 
-\echo 'PASS  approval seats them for the next game, not the one being played'
+\echo 'PASS  an approved player joins at the next round, with five dice'
 
 -- -----------------------------------------------------------------------------
 -- A full table can still be watched

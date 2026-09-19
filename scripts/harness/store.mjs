@@ -39,6 +39,15 @@ export function createStore(db, fromPostgres) {
         .filter((r) => r.game_id === gameId)
         .reduce((most, r) => Math.max(most, r.round_number), 0) + 1
 
+    /*
+     * Anybody the host has seated who is not in this game yet (R-014).
+     *
+     * Mirrors `deal_round`: after the round exists and before a die is rolled,
+     * so a newcomer is dealt to by the ordinary loop rather than by a special
+     * case. The seat is chosen among the seats this GAME is using, which is not
+     * always the room's — somebody who leaves mid-game keeps their game seat
+     * and their room seat goes to the next person through the door.
+     */
     const round = {
       id: randomUUID(),
       game_id: gameId,
@@ -57,6 +66,32 @@ export function createStore(db, fromPostgres) {
       resolved_at: null,
     }
     tables.rounds.push(round)
+
+    for (const joiner of tables.room_members) {
+      if (joiner.room_id !== game.room_id || joiner.left_at !== null) continue
+      if (joiner.role !== 'player') continue
+      if (tables.game_players.some((p) => p.game_id === gameId && p.user_id === joiner.user_id)) {
+        continue
+      }
+      const used = new Set(
+        tables.game_players.filter((p) => p.game_id === gameId).map((p) => p.seat),
+      )
+      const seat = [0, 1, 2, 3, 4, 5].find((s) => !used.has(s))
+      // A game with six seats already spoken for admits nobody; they keep their
+      // room seat and play the next game.
+      if (seat === undefined) break
+
+      const row = {
+        game_id: gameId,
+        user_id: joiner.user_id,
+        seat,
+        dice_count: game.starting_dice,
+        eliminated_at: null,
+      }
+      tables.game_players.push(row)
+      db.touch('game_players', row)
+      db.logEvent(gameId, round.id, joiner.user_id, 'joined', { dice: game.starting_dice })
+    }
 
     for (const player of tables.game_players) {
       if (player.game_id !== gameId || player.dice_count <= 0) continue

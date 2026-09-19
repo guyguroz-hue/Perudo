@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { GameTable } from './GameTable'
-import { SeatRequest } from '../rooms/SeatRequest'
+import { SeatRequest, SeatRequestChip } from '../rooms/SeatRequest'
 import { Notice } from './Notice'
 import type { NoticeText } from './Notice'
 import { minimalRaise, nextActive } from '../../game'
@@ -89,6 +89,9 @@ export function PreviewLive() {
   // Somebody watching has asked to play. Shown here because the host is almost
   // never in the lobby when it happens — they are at the table, mid-round.
   const [asking, setAsking] = useState(false)
+  // Two states, because they are the point: the chip is what a host mid-round
+  // gets, and the card is what they get when they choose to look.
+  const [openAsk, setOpenAsk] = useState(false)
   // Who bids next when the button is pressed, so it reads like a table going
   // round rather than one opponent shouting.
   const [turnOfOpponent, setTurnOfOpponent] = useState(0)
@@ -191,7 +194,14 @@ export function PreviewLive() {
           <button type="button" className="live__act live__act--loud" onClick={farewell}>
             Farewell Round
           </button>
-          <button type="button" className="live__act" onClick={() => setAsking(true)}>
+          <button
+            type="button"
+            className="live__act"
+            onClick={() => {
+              setAsking(true)
+              setOpenAsk(false)
+            }}
+          >
             Someone asks to play
           </button>
           <button
@@ -218,7 +228,7 @@ export function PreviewLive() {
             with the notice laid over the scene rather than above it. */}
         <div className="game">
           {notice !== null && <Notice notice={notice} onDismiss={dismiss} />}
-          {asking && (
+          {asking && openAsk && (
             <SeatRequest
               asker={{
                 user_id: 'guest',
@@ -229,16 +239,22 @@ export function PreviewLive() {
               busy={false}
               onApprove={() => {
                 setAsking(false)
-                setPressed('Noa takes a seat for the next game')
+                setPressed('Noa joins at the next round, with five dice')
               }}
               onDecline={() => {
                 setAsking(false)
                 setPressed('Noa was turned down')
               }}
+              onLater={() => setOpenAsk(false)}
             />
           )}
           <GameTable
             view={view}
+            /* Where the real screen puts it: the room's own corner, beside the
+               sound toggle and the way out. */
+            roomMenu={
+              asking ? <SeatRequestChip waiting={1} onOpen={() => setOpenAsk(true)} /> : null
+            }
             onBid={(bid) => {
               setPressed(`You bid ${bid.quantity} ${faceWord(bid.face, bid.quantity)}`)
               setView((current) => withBid(current, 'you', bid))

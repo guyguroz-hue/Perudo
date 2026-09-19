@@ -18,7 +18,7 @@ import { Countdown } from './Countdown'
 import { toRoomError } from './errors'
 import { GameScreen } from '../game/GameScreen'
 import { LobbyView } from './LobbyView'
-import { SeatRequest } from './SeatRequest'
+import { SeatRequest, SeatRequestChip } from './SeatRequest'
 import { useRoom } from './useRoom'
 import { SEAT_COUNT } from './types'
 import type { Seat } from './types'
@@ -52,6 +52,15 @@ export function RoomScreen() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [counting, setCounting] = useState(false)
+  /*
+   * Whether the question is on screen, rather than whether there is one.
+   *
+   * During a game it is only ever opened by the host tapping the chip. A card
+   * that appeared on its own three bids into a round would not be a
+   * notification, it would be somebody taking the controls away at the moment
+   * they matter most.
+   */
+  const [openRequest, setOpenRequest] = useState(false)
 
   const status = view.status === 'ready' ? view.room.status : null
   const sawGame = useRef(false)
@@ -172,11 +181,19 @@ export function RoomScreen() {
    * cards over the table is not an answer to it: the host deals with one
    * person, and the next card is the next question.
    */
-  const asking = youAreHost
-    ? (watchers
+  const waiting = youAreHost
+    ? watchers
         .filter((watcher) => watcher.asked_at !== null)
-        .sort((a, b) => (a.asked_at ?? '').localeCompare(b.asked_at ?? ''))[0] ?? null)
-    : null
+        .sort((a, b) => (a.asked_at ?? '').localeCompare(b.asked_at ?? ''))
+    : []
+  const asking = waiting[0] ?? null
+
+  /*
+   * In a lobby there is nothing to interrupt, so the question simply appears.
+   * During a game it waits for the chip to be tapped — see `SeatRequest`.
+   */
+  const playing = room.status === 'in_game' || room.status === 'starting'
+  const showRequest = asking !== null && (!playing || openRequest)
 
   const youAreWatching = watchers.some((watcher) => watcher.is_you)
   // A full table has no seat to give, so there is nothing to ask for. Saying so
@@ -227,6 +244,15 @@ export function RoomScreen() {
                rather than in a row underneath it. Same confirmation sheets
                either way — only where the handle sits has changed. */
             roomMenu={
+              <>
+                {/* Beside the way out, in the corner the room owns. Nothing up
+                    here covers the table or sits where a thumb is aiming. */}
+                {waiting.length > 0 && (
+                  <SeatRequestChip
+                    waiting={waiting.length}
+                    onOpen={() => setOpenRequest(true)}
+                  />
+                )}
               <button
                 type="button"
                 className="board__exit"
@@ -251,13 +277,15 @@ export function RoomScreen() {
                   />
                 </svg>
               </button>
+              </>
             }
           />
         )}
       </LobbyView>
 
       {/*
-        * A request reaches the host wherever they are.
+        * A request reaches the host wherever they are — and, during a game,
+        * only when they go and look at it.
         *
         * Outside `LobbyView` on purpose: during a game that component renders
         * the table and nothing else, and a row added above it would push the
@@ -265,12 +293,19 @@ export function RoomScreen() {
         * question is the same fault the refusal notice was moved out of the
         * flow to avoid.
         */}
-      {asking !== null && (
+      {showRequest && asking !== null && (
         <SeatRequest
           asker={asking}
           busy={busy}
-          onApprove={() => void act(() => answerSeatRequest(room.id, asking.user_id, true))}
-          onDecline={() => void act(() => answerSeatRequest(room.id, asking.user_id, false))}
+          onApprove={() => {
+            setOpenRequest(false)
+            void act(() => answerSeatRequest(room.id, asking.user_id, true))
+          }}
+          onDecline={() => {
+            setOpenRequest(false)
+            void act(() => answerSeatRequest(room.id, asking.user_id, false))
+          }}
+          onLater={playing ? () => setOpenRequest(false) : null}
         />
       )}
 

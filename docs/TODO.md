@@ -206,6 +206,24 @@ Completed items are marked `[x]` and kept, not deleted.
       their dice are fixed when a game starts, and five dice at round nine is a
       gift while one is a punishment. See docs/ROOMS.md §12.
 
+      **Changed a day later, by decision (R-014).** A seat used to be for the
+      *next* game, which is correct and is also, at a table playing a long one,
+      half an hour of sitting still. An approved player now joins the game in
+      progress, at the start of the next round, with five dice. Admission lives
+      in `deal_round` — the one place in the system that is, by construction,
+      between rounds — and it is logged, so the whole table sees them arrive
+      rather than working it out from a cup that was not there before. Five
+      dice late in a game is a commanding position and the trade was made with
+      open eyes: what keeps it fair is the host, not the number.
+
+      And the asking must not cost the host their round. The first version put
+      a card over the middle of their screen and left it there until answered,
+      three bids into a round. During a game nothing opens by itself now: a
+      chip appears in the corner the room already owns, beside the sound toggle
+      and the way out, and the host opens the question when the round is over —
+      or presses Later, which keeps it. In a lobby there is nothing to
+      interrupt, so the card simply appears.
+
       Found on the way: every room refusal the database made was reaching
       players as its own raw text with a Postgres error class stapled to it.
       A plpgsql `raise exception 'ROOM_FULL'` arrives as an object carrying the

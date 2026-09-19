@@ -281,11 +281,13 @@ export function movesFromEvents(
     if (row.round_id !== thisRound) break
     const quantity = row.payload.quantity
     const face = row.payload.face
+    const dice = row.payload.dice
     const text = describeEvent({
       kind: row.kind,
       actorName: (row.actor_id === null ? null : names.get(row.actor_id)) ?? 'Someone',
       quantity: typeof quantity === 'number' ? quantity : undefined,
       face: typeof face === 'number' ? (face as Face) : undefined,
+      dice: typeof dice === 'number' ? dice : undefined,
     })
     if (text === null) continue
     moves.unshift({

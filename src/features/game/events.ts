@@ -17,6 +17,8 @@ export interface GameEvent {
   readonly actorName: string
   readonly quantity?: number
   readonly face?: Face
+  /** How many dice somebody arrived with. Only a `joined` event carries this. */
+  readonly dice?: number
 }
 
 /** How a face is said out loud. The wildcard has a name, not a number. */
@@ -40,7 +42,7 @@ export function faceWord(face: Face, quantity: number): string {
 }
 
 export function describeEvent(event: GameEvent): string | null {
-  const { kind, actorName, quantity, face } = event
+  const { kind, actorName, quantity, face, dice } = event
   const bid =
     quantity !== undefined && face !== undefined
       ? `${quantity} ${faceWord(face, quantity)}`
@@ -59,6 +61,18 @@ export function describeEvent(event: GameEvent): string | null {
       return bid === null
         ? `${actorName} burst in with Bull`
         : `${actorName} burst in with Bull on ${bid} — exactly`
+    /*
+     * Somebody the host let in (R-014).
+     *
+     * Said with the number on it. A player arriving mid-game arrives with a
+     * full hand, which at round nine is the most consequential thing that has
+     * happened in the game — and the alternative to saying so is five people
+     * working it out from a cup that was not there before.
+     */
+    case 'joined':
+      return dice === undefined
+        ? `${actorName} joined the table`
+        : `${actorName} joined with ${dice} dice`
     case 'lie':
       return `${actorName} called Lie`
     case 'burst_lie':

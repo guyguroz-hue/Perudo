@@ -81,7 +81,7 @@ export function JoinChoice({
       <p className="choice__blurb">
         {reason === 'full'
           ? 'Six seats is the limit, so there is nowhere to sit — but you can still watch.'
-          : 'You can watch it, or ask the host for a seat. A seat is for the next game: the players and their dice are fixed once a game begins.'}
+          : 'You can watch it, or ask the host to deal you in. They decide, and you would join at the start of the next round.'}
       </p>
 
       <Button busy={busy === 'watch'} onClick={() => void go(false)}>

@@ -322,6 +322,41 @@ be tested, which uniformity in SQL cannot easily be.
 
 ---
 
+### ✅ R-014 — joining a game in progress (2026-09-19)
+
+**At the start of the next round, with five dice.** Decided by Guy, against a
+recommendation, and worth recording as such.
+
+Asked because a game takes a long time and somebody who turns up ten minutes
+late should not have to watch the whole of it. Until this, an approved player
+took a seat for the *next* game — which is correct and was also, in practice,
+half an hour of sitting still.
+
+**When** was not really in question. A round is a set of claims about a fixed
+number of dice: adding one inside a round makes every bid already on the table a
+claim about something else, so the join lands where a round lands.
+
+**How many** was. The options were the table's average, the smallest stack still
+in play, one die, and five. Average was recommended here: it arrives without an
+argument attached, it cannot be read as a gift or as a punishment, and it is
+derived from the table rather than chosen by anyone. Five was chosen instead,
+and the trade is not hidden: nine rounds in, when the table is down to one or
+two dice each, five dice is a commanding position and quite likely a win.
+
+The case for it is that fairness is not being carried by the number. It is
+carried by the host, who admits nobody without deciding to, is told exactly what
+admitting them means before answering, and can say "not now" in one tap — and
+five is the only number this game already means by "a player": what everybody
+starts with (§2), and the ceiling nobody may be taken past (§9.3, R-007). Every
+other number needs a paragraph before a table will accept it.
+
+*Consequence:* `deal_round` admits room members who hold a seat and are not yet
+in the game, with the game's own `starting_dice`. It happens where the round is
+dealt, which is the only place in the system that can guarantee "between
+rounds", and it is logged so the whole table sees them arrive.
+
+---
+
 ## ❓ STILL OPEN — game rules
 
 One, raised rather than guessed, and reached by building the action layer. It
