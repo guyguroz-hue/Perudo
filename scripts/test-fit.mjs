@@ -140,21 +140,24 @@ async function board(page) {
  * has grown enormous and a table squeezed to a strip, and the useful question
  * is not whether the page fits but what the controls are costing.
  *
- * Three hundred and ten against the 307 they currently use: enough room for a
- * line of type to grow or a button to gain a few points, not enough for another
- * row. The floor under the table is the second guard, for the case where the
- * dock is honest and the window is simply tiny.
+ * Two hundred and forty-five against the 234 they currently use: enough room
+ * for a line of type to grow or a button to gain a few points, not enough for
+ * another row. The floor under the table is the second guard, for the case
+ * where the dock is honest and the window is simply tiny.
  *
- * It was 300, and the twenty-eight points that broke it were spent on purpose:
- * a line at the head of the dock saying whose turn it is, because the table
- * only ever glowed about it and a player reported being unable to follow turns
- * at all. Raising a cap to fit what you just added is how a cap stops meaning
- * anything, so the arithmetic is written down. The same change took the room's
- * End room button off this screen — seventy-odd points for a control nobody
- * wants to press — so the dock is smaller than it was before both, and the
- * table's share went up at every size rather than down.
+ * It has been 300 and then 310, and it comes down now because a table of
+ * friends said the screen was too busy and that more than half of it was not
+ * the game. Seventy-three points came out of the dock and went to the table:
+ * the two captions over the hand and the rack are said to a screen reader
+ * instead of printed ("five dice on timber in front of you" needs no label),
+ * the challenge tiles put their mark beside their name rather than above it and
+ * lost a line each, and the gaps between the slabs came in — they are told
+ * apart by their surfaces, not by the air around them.
+ *
+ * A cap that is raised to fit whatever was just added means nothing, so it
+ * moves in this direction only, and the arithmetic is written down each time.
  */
-const MOST_CONTROLS = 310
+const MOST_CONTROLS = 245
 
 /*
  * How little of the screen the table may be left with.

@@ -27,30 +27,49 @@ import { useEffect, useState } from 'react'
  */
 export const ARM_MS = 400
 
-export function useArmed(ready: boolean, delay = ARM_MS): boolean {
-  const [armed, setArmed] = useState(ready)
+/**
+ * False for a beat after `key` changes, true the rest of the time.
+ *
+ * The general form of the rule above, because the danger is not only a dead
+ * control coming alive. A control whose *meaning* changed under a thumb is the
+ * same accident wearing different clothes, and that is what a table full of
+ * people bursting at each other produces several times a round: the button
+ * that said Burst a moment ago now says Bid and raises a different claim, and
+ * the press already on its way lands on it.
+ *
+ * So callers hand over whatever identifies what the control would do right
+ * now, and get back whether that has been true long enough to be what the
+ * player is answering.
+ */
+export function useSettled(key: unknown, delay = ARM_MS): boolean {
+  const [settled, setSettled] = useState(true)
   /*
-   * What it was last render, so that only a *change* disarms it.
+   * What it was last render, so that only a *change* unsettles it.
    *
    * The table re-renders on every event at it; without this the clock would
    * restart constantly and the control would arm late or never. Held as state
    * rather than a ref because this is React's own way of adjusting state when
    * an input changes, and it belongs in render: the frame on which a control
-   * becomes usable has to be the frame on which it is already inert. An effect
-   * runs after that frame is painted, which is after it can be pressed.
+   * changes meaning has to be the frame on which it is already inert. An
+   * effect runs after that frame is painted, which is after it can be pressed.
    */
-  const [was, setWas] = useState(ready)
-  if (ready !== was) {
-    setWas(ready)
-    setArmed(false)
+  const [was, setWas] = useState(key)
+  if (key !== was) {
+    setWas(key)
+    setSettled(false)
   }
 
   useEffect(() => {
-    if (!ready || armed) return
-    const arms = setTimeout(() => setArmed(true), delay)
-    return () => clearTimeout(arms)
-  }, [ready, armed, delay])
+    if (settled) return
+    const settles = setTimeout(() => setSettled(true), delay)
+    return () => clearTimeout(settles)
+  }, [settled, delay])
 
+  return settled
+}
+
+export function useArmed(ready: boolean, delay = ARM_MS): boolean {
+  const settled = useSettled(ready, delay)
   // Already usable on arrival is already armed: nothing changed under anybody.
-  return ready && armed
+  return ready && settled
 }

@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react'
-import { checkBid, initialBid, legalFacesAt, quantityBounds, withFace } from '../../game'
+import {
+  checkBid,
+  initialBid,
+  legalFacesAt,
+  quantityBounds,
+  raiseKeepingFace,
+  withFace,
+} from '../../game'
 import type { Face, ProposedBid, RoundState } from '../../game'
 
 /**
@@ -32,8 +39,14 @@ export function useBidDraft(
   /** The player's own dice. Read only to choose where an opening bid starts. */
   ownHand: readonly Face[],
 ): BidDraft {
-  // Keyed on the bid being raised, so a new bid from another player resets the
-  // builder to the fresh minimum instead of stranding it on a stale quantity.
+  /*
+   * Keyed on the bid being raised, so the builder follows the table instead of
+   * stranding a player on a quantity the round has already passed.
+   *
+   * What it does NOT do any more is choose a different face for them. See
+   * `raiseKeepingFace`: the die under the thumb stays the die they picked, and
+   * only the number climbs.
+   */
   const anchor = round.bid === null ? 'open' : `${round.bid.quantity}x${round.bid.face}`
   const [draft, setDraft] = useState<ProposedBid | null>(null)
   const [anchoredTo, setAnchoredTo] = useState(anchor)
@@ -46,9 +59,15 @@ export function useBidDraft(
 
   let bid = draft ?? opening
   if (anchoredTo !== anchor) {
-    // Render the reset immediately rather than a frame late.
-    bid = opening
-    setDraft(null)
+    /*
+     * Render the follow immediately rather than a frame late.
+     *
+     * A fresh round opens where `initialBid` says — there is no choice of the
+     * player's to keep, and the hand is new. Inside a round the player's own
+     * face is carried across untouched.
+     */
+    bid = anchor === 'open' ? opening : raiseKeepingFace(round, bid, diceOnTable)
+    setDraft(anchor === 'open' ? null : bid)
     setAnchoredTo(anchor)
   }
 

@@ -495,7 +495,17 @@ function TableDock({
       <TurnLine holder={holder} canAct={canAct} />
 
       <section className="board__hand" aria-label="Your dice">
-        <h2 className="board__mine">Your dice</h2>
+        {/*
+          * Said to a screen reader and not to the screen.
+          *
+          * It was a caption over the dice, and it cost a row of the table to
+          * name the one thing on this screen nobody has ever been confused
+          * about: five dice lying on timber, directly under the table, in front
+          * of you. The separation it was helping with — your hand against the
+          * rack you press — is carried by the material, which is what the two
+          * slabs were given different surfaces for in the first place.
+          */}
+        <h2 className="visually-hidden">Your dice</h2>
         <div className="board__hand-row">
           {view.yourHand === null ? (
             <p className="board__nohand">
@@ -519,13 +529,14 @@ function TableDock({
         */}
       {playing && (
         <div className="builder">
-          {/* The other half of the pair. "Your dice" over timber and "Your bid"
-              over slate is the whole separation stated in two words: one slab
-              is what you were dealt, the other is what you can say about it. */}
-          <p className="builder__label">Your bid</p>
+          {/* The other half of that pair, and hidden for the same reason. A slab
+              of slate with a rack of faces, a stepper and a Bid button on it
+              does not need to be told what it is. */}
+          <p className="visually-hidden">Your bid</p>
           <FaceRack draft={draft} />
           <BidRow
             draft={draft}
+            claim={bid}
             burst={burst}
             barred={barred}
             busy={busy}

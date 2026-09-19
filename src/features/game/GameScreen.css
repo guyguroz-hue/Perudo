@@ -15,36 +15,34 @@
   color: var(--ink-faint);
 }
 
-.game__error,
-.game__aside,
+.game__note,
 .game__blocked {
   margin: 0;
-  padding: var(--space-3);
   border-radius: var(--radius);
   text-align: center;
   font-size: var(--text-sm);
 }
 
 /*
- * Over the table, not above it.
+ * Over the table, not above it, and no wider than what it has to say.
  *
- * Both of these come and go on their own after a few seconds. As rows in the
- * column they pushed the whole game down for as long as they were there and let
- * it spring back after — which on a phone meant the table shrinking by a fifth,
- * the controls sliding under the browser's address bar, and everything jumping
- * back a moment later. A notice that rearranges the game to deliver itself is
- * worse than the news it carries.
+ * It comes and goes on its own. As a row in the column it pushed the whole game
+ * down for as long as it was there and let it spring back after — which on a
+ * phone meant the table shrinking by a fifth, the controls sliding under the
+ * browser's address bar, and everything jumping back a moment later. A notice
+ * that rearranges the game to deliver itself is worse than the news it carries.
  *
- * Laid over the top of the scene instead, where the only things underneath are
- * the round number and the last two moves. It costs no layout at all, so
- * nothing moves when it arrives and nothing moves when it goes.
+ * Laid over the top of the scene instead, centred, sized to its sentence. It
+ * costs no layout at all, so nothing moves when it arrives and nothing moves
+ * when it goes — and being a pill rather than a bar is most of the difference
+ * between "the game is telling me something" and "something is wrong with the
+ * game".
  *
  * `.game__blocked` stays in the flow deliberately: it is not a passing notice
  * but a stop, it carries a button, and it is shown instead of a playable table
  * rather than over one.
  */
-.game__error,
-.game__aside {
+.game__note {
   position: absolute;
   z-index: 10;
   /*
@@ -53,30 +51,57 @@
    * The round number and the sound toggle live up there, and the toggle is a
    * control — the first version of this sat flush against the top edge and
    * covered it, which `test:reach` said so within a minute of the change. A
-   * notice may lie over a label for four seconds; it may never lie over
+   * notice may lie over a label for a few seconds; it may never lie over
    * something a player presses.
-   *
-   * What it does cover is the move log, and that is the right thing to cover:
-   * it is the only thing up there that will still be saying the same thing when
-   * the notice has gone.
    */
-  top: 56px;
-  right: var(--space-2);
-  left: var(--space-2);
-  box-shadow: 0 6px 20px rgb(0 0 0 / 0.5);
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(320px, calc(100% - var(--space-6)));
+  padding: 7px var(--space-3);
+  border: none;
+  border-radius: var(--radius-full);
+  /*
+   * Opaque, because there is a lit table behind it.
+   *
+   * A wash of colour was all it needed to be while it was a row in a column.
+   * Over the scene the same fill let cups and name badges through it, and the
+   * sentence became unreadable at exactly the moment it mattered.
+   *
+   * Grey by default: with Burst in the rules, being beaten to a bid happens
+   * several times a round and is the game being played correctly. Red there
+   * would alarm a player for doing the right thing.
+   */
+  background: linear-gradient(180deg, #2b2935 0%, #1c1b24 100%);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.45);
+  color: var(--ink-dim);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  cursor: pointer;
+  animation: note-in var(--t-micro) var(--ease-ui);
 }
 
-/*
- * Opaque, because there is a lit table behind it now.
- *
- * Both of these were a wash of colour over the page's flat background, which is
- * all they needed to be while they were rows in a column. Over the scene the
- * same fill let six cups and four name badges through it, and the sentence
- * became unreadable at exactly the moment it mattered.
- */
-.game__error {
-  background: linear-gradient(180deg, #5d1f14 0%, #43160f 100%);
+/* A refusal is a different thing from news, and says so with an edge rather
+   than with a slab: the player has to read this one and usually has to do
+   something about it. */
+.game__note--refused {
+  background: linear-gradient(180deg, #46201a 0%, #33160f 100%);
+  box-shadow:
+    0 6px 18px rgb(0 0 0 / 0.45),
+    inset 0 0 0 1px rgb(255 148 120 / 0.28);
   color: #ffd9d2;
+}
+
+@keyframes note-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 /* The refusal's own name, for whoever has to fix it rather than for the player
@@ -96,20 +121,12 @@
   vertical-align: middle;
 }
 
-/* Somebody got there first. That is the game, not a fault, so it is said in
-   the colour everything else uninteresting is said in — red here would alarm a
-   player for playing correctly, and with Burst in the rules it would do so
-   several times a round. */
-.game__aside {
-  background: linear-gradient(180deg, #262430 0%, #1a1922 100%);
-  color: var(--ink-dim);
-}
-
 /* The table did not arrive. Either a rule the house has not decided yet — not
    a fault, and nothing to retry, somebody has to answer it — or a request that
    failed, which is worth pressing again. Both read as "stopped, not broken",
    which is why this is brass rather than the error's red. */
 .game__blocked {
+  padding: var(--space-3);
   display: flex;
   flex-direction: column;
   align-items: center;

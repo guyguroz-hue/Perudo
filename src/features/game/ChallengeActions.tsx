@@ -122,9 +122,14 @@ export function ChallengeActions({
               : ''
         }`}
       >
-        <CrossMark />
-        <span className="challenge__name">
-          {pending === 'lie' ? 'Sending' : burst ? 'Burst Lie' : 'Lie'}
+        {/* The mark beside the word rather than over it. Stacked, these two
+            were a third line in a tile that only ever had two things to say,
+            and three stacked lines in a button is most of a row of table. */}
+        <span className="challenge__head">
+          <CrossMark />
+          <span className="challenge__name">
+            {pending === 'lie' ? 'Sending' : burst ? 'Burst Lie' : 'Lie'}
+          </span>
           {prize !== null && (
             <b
               className={`challenge__prize${prize === 'full' ? ' challenge__prize--full' : ''}`}
@@ -150,9 +155,11 @@ export function ChallengeActions({
               : `Bull: I say there are exactly ${bid.quantity}`
         }
       >
-        <Bullseye />
-        <span className="challenge__name">
-          {pending === 'bull' ? 'Sending' : bulled ? 'Bulled' : 'Bull'}
+        <span className="challenge__head">
+          <Bullseye />
+          <span className="challenge__name">
+            {pending === 'bull' ? 'Sending' : bulled ? 'Bulled' : 'Bull'}
+          </span>
         </span>
         <Claim reading="exactly" bid={bid} />
       </button>

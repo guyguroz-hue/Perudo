@@ -139,6 +139,38 @@ export function initialBid(
 }
 
 /**
+ * The bid you were already holding, lifted to whatever the table now demands.
+ *
+ * What the builder does when somebody else bids, and it exists because of what
+ * it replaced. The builder used to reset to `minimalRaise`, which prefers
+ * raising the face — so a player who had chosen threes and was waiting for
+ * their moment found the highlighted die had become a four while they were
+ * looking at the table, and the bid they made was not the bid they meant. With
+ * Burst in the rules that happens several times a round, under a thumb that is
+ * already moving.
+ *
+ * So the face a player chose is theirs until they change it. Only the quantity
+ * follows the table, and only as far as it has to: if the bid they were holding
+ * is still legal it is left exactly as it was.
+ *
+ * The cost is real and is worth paying. Against four fives this offers five
+ * fives rather than four sixes — a slightly larger claim for the same tap — but
+ * it is the claim the player was already making, and the alternative is a
+ * control that changes its mind for them.
+ *
+ * Falls back to the smallest raise only when the face cannot be kept at all,
+ * which is a Farewell Round locking it to somebody else's choice.
+ */
+export function raiseKeepingFace(
+  round: RoundState,
+  current: ProposedBid,
+  diceOnTable: number,
+): ProposedBid {
+  const kept = withFace(round, current, current.face)
+  return checkBid(round, kept).legal ? kept : minimalRaise(round, diceOnTable)
+}
+
+/**
  * Change the face, keeping the bid legal.
  *
  * Changing a face alone can strand the quantity — switching to Perudo halves

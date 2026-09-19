@@ -187,6 +187,46 @@ Completed items are marked `[x]` and kept, not deleted.
       a software renderer has the page at six frames a second, and reported a
       lift as level with the music when it was three times louder.
 
+- [x] **B-10** ~~Four things an evening with friends found.~~ All reported
+      together, and all of them the same kind of fault: the screen changing
+      under a thumb that was already moving, or refusing to stop saying
+      something.
+
+      *A notice you could not get rid of.* A refusal was a red bar across the
+      top of the table that stayed until the player's next move — so the answer
+      to "how do I clear this" was "make another bid", at a table where what it
+      had just said was that the bid did not take. It is one small pill now,
+      sized to its sentence, gone in a few seconds, and dismissable with a tap
+      before then. It still carries the refusal's code, because a screenshot
+      has to be a bug report.
+
+      *The die under your thumb moved by itself.* "Last turn I bid threes, the
+      bid went up, the highlighted die became a four, and I bid fours without
+      meaning to." The builder reset to `minimalRaise` on every new bid, and
+      that prefers raising the face. The face a player picks is now theirs until
+      they change it (`raiseKeepingFace`): only the quantity follows the table,
+      and only as far as it has to. The cost is that the one-tap raise against
+      four fives is five fives rather than four sixes — a slightly larger claim,
+      and the one the player was already making.
+
+      *The Bid button changed meaning mid-reach.* Two players burst at once, the
+      bid moves twice in a second, and the button that said Burst when a finger
+      set off says Bid by the time it lands. `useArmed` already covered a dead
+      control coming alive; `useSettled` is the general form, and the Bid button
+      now uses it keyed on the claim it would raise. It costs nothing at an
+      ordinary table, because nothing changed while the player was reaching.
+
+      *More than half the screen was not the table.* Seventy-three points came
+      out of the dock: the captions over the hand and the rack are said to a
+      screen reader rather than printed, the challenge tiles put their mark
+      beside their name and lost a line each, the gaps between the slabs came
+      in, and "Your turn" stopped being printed twice — once on your own cup and
+      once at the head of the dock. The move log left the top-left corner, where
+      a taller table had brought the far players' name badges up to exactly the
+      height its third line reached, for the strip of empty floor in front of
+      the near cup. The table went from 53% of the board to 63%, and
+      `test:fit`'s controls budget came down from 310 to 245 to hold it there.
+
 - [x] **B-9** ~~The host could not start a game.~~ Reported from a real room:
       the Start button was on screen, enabled and correctly wired, and pressing
       it did nothing. It was covered. Both the lobby and the table pull their

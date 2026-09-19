@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ARM_MS, useArmed } from './armed'
+import { ARM_MS, useArmed, useSettled } from './armed'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -84,6 +84,45 @@ describe('a control that has just come alive', () => {
     rerender({ ready: true })
     expect(result.current).toBe(false)
     act(() => void vi.advanceTimersByTime(ARM_MS + 1))
+    expect(result.current).toBe(true)
+  })
+})
+
+/*
+ * And the same accident without a dead control anywhere in it.
+ *
+ * Two players burst at once, the bid moves twice inside a second, and the
+ * button a finger is already travelling towards said Burst when the finger set
+ * off and says Bid by the time it lands. It was never disabled; it is raising
+ * a different claim from the one that was read.
+ */
+describe('a control whose meaning changed', () => {
+  it('will not take the press that was already on its way', () => {
+    vi.useFakeTimers()
+    const { result, rerender } = renderHook(({ claim }) => useSettled(claim), {
+      initialProps: { claim: '4x5|true' },
+    })
+    expect(result.current).toBe(true)
+
+    // Somebody bursts. Same button, different bid under it.
+    rerender({ claim: '5x5|false' })
+    expect(result.current).toBe(false)
+
+    act(() => void vi.advanceTimersByTime(ARM_MS - 1))
+    expect(result.current).toBe(false)
+    act(() => void vi.advanceTimersByTime(2))
+    expect(result.current).toBe(true)
+  })
+
+  it('costs nothing at a table where nothing is happening', () => {
+    // The commonest case by far: the turn comes round, the player looks at the
+    // bid for a while and presses. Nothing changed, so nothing waits.
+    vi.useFakeTimers()
+    const { result, rerender } = renderHook(({ claim }) => useSettled(claim), {
+      initialProps: { claim: '4x5|false' },
+    })
+    rerender({ claim: '4x5|false' })
+    rerender({ claim: '4x5|false' })
     expect(result.current).toBe(true)
   })
 })

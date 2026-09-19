@@ -94,40 +94,36 @@ export function GameScreen({
           )}
         </div>
       )}
-      {game.error !== null &&
-        (game.error.stale ? (
-          /*
-           * Not a fault. Burst lets anybody act at any moment, so being
-           * beaten to a bid is the game working — the table has already been
-           * refetched and there is nothing to do but look at it. Said once,
-           * quietly, in the voice used for news rather than for refusals, and
-           * announced politely rather than interrupting a screen reader.
-           */
-          <p className="game__aside" role="status">
-            {game.error.message}
-          </p>
-        ) : (
-          /*
-           * A refusal, with the name of the refusal on it.
-           *
-           * The sentence is for the player and the code is for whoever has to
-           * fix it, and leaving the code off cost a day: "I press Bull and get
-           * an error" is not a bug report, and it cannot be turned into one
-           * without the player being asked to reproduce it while somebody
-           * reads logs. Every refusal here already carries a stable code —
-           * BULL_ALREADY_CALLED, NOT_DEPLOYED, STALE_STATE — and putting it on
-           * screen means a screenshot is the report.
-           *
-           * Quiet and after the sentence, the way `.app__detail` carries the
-           * connection failure's detail on the first screen. Not on the stale
-           * line above: that one is the game working, and a code beside
-           * "somebody got there first" would make ordinary play look broken.
-           */
-          <p className="game__error" role="alert">
-            {game.error.message}
-            <b className="game__code">{game.error.code}</b>
-          </p>
-        ))}
+      {game.error !== null && (
+        /*
+         * One small thing that goes away by itself.
+         *
+         * This was two: a red slab across the table for a refusal, which stayed
+         * until the player's next move, and a quieter one for news. Both were
+         * the width of the screen, and the red one was reported as the worst of
+         * it — "you cannot get it off the screen and it does not move until you
+         * bid again", on a table where what it had just said was that the bid
+         * did not take.
+         *
+         * So: a pill, sized to its sentence, over the scene rather than in it,
+         * gone in a few seconds and dismissable with a tap before then. It
+         * still says which refusal it was — a screenshot has to be a bug report
+         * — but quietly, and it is no longer the thing the eye lands on.
+         *
+         * Politely announced, not interrupting: with Burst in the rules being
+         * beaten to a bid is the game working, and a screen reader saying ALERT
+         * several times a round for correct play is its own kind of noise.
+         */
+        <button
+          type="button"
+          className={`game__note${game.error.stale ? '' : ' game__note--refused'}`}
+          onClick={game.dismissError}
+          aria-live="polite"
+        >
+          {game.error.message}
+          {!game.error.stale && <b className="game__code">{game.error.code}</b>}
+        </button>
+      )}
 
       <GameTable
         connection={game.connection}

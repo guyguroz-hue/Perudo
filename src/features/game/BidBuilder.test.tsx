@@ -116,14 +116,39 @@ describe('illegal bids cannot be expressed', () => {
 })
 
 describe('the builder follows the table', () => {
-  it('resets to the new minimum when somebody else raises', async () => {
+  /*
+   * Follows the quantity, and leaves the face alone.
+   *
+   * Reported from a real table: "last turn I bid threes, the bid went up, the
+   * highlighted die became a four, and I bid fours without meaning to." The
+   * builder used to reset to the smallest raise, which prefers moving the face
+   * — so the die under a waiting thumb changed while the player was looking at
+   * the table. With Burst in the rules that happens several times a round.
+   *
+   * So the face is the player's until they change it, and only the number
+   * climbs, and only as far as the table forces it.
+   */
+  it('keeps the face and lifts the quantity when somebody else raises', async () => {
     const onBid = vi.fn()
     const { rerender } = render(<Console round={normalRound(bid(4, 5))} onBid={onBid} />)
-    await userEvent.click(screen.getByRole('button', { name: 'One more' }))
+    await userEvent.click(face(6))
 
     rerender(<Console round={normalRound(bid(7, 3))} onBid={onBid} />)
     await userEvent.click(submit())
-    expect(onBid).toHaveBeenCalledWith({ quantity: 7, face: 4 })
+    expect(onBid).toHaveBeenCalledWith({ quantity: 7, face: 6 })
+  })
+
+  it('leaves a bid that is still legal exactly where it was', async () => {
+    const onBid = vi.fn()
+    const { rerender } = render(<Console round={normalRound(bid(2, 2))} onBid={onBid} />)
+    await userEvent.click(face(6))
+    await userEvent.click(screen.getByRole('button', { name: 'One more' }))
+
+    // Somebody bids three fours. Three sixes still beats it, so nothing about
+    // the draft has to move — and nothing does.
+    rerender(<Console round={normalRound(bid(3, 4))} onBid={onBid} />)
+    await userEvent.click(submit())
+    expect(onBid).toHaveBeenCalledWith({ quantity: 3, face: 6 })
   })
 
   it('names the bid out loud for a screen reader', () => {

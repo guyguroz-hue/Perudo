@@ -66,10 +66,14 @@ describe('waiting is a state, not a curtain', () => {
     expect(screen.getByRole('button', { name: /Burst Lie/ })).toBeTruthy()
   })
 
-  // Said once, at your seat. Whose turn it is needs no words under the table.
+  // Said once, above the dock, and marked at your seat without words.
   it('says plainly when the turn is yours', () => {
     const { container } = show(BASE)
-    expect(container.querySelector('.badge--you')?.textContent).toBe('Your turn')
+    // Said once, at the head of the dock, and not again on your own cup: the
+    // ring of light there already marks the turn, and two copies of the same
+    // two words a few centimetres apart is most of what a busy screen is.
+    expect(container.querySelector('.badge--you')?.textContent).toBe('You')
+    expect(container.querySelector('.badge--you')?.className).toContain('badge--turn')
     expect(screen.getByRole('button', { name: 'Bid' })).toBeTruthy()
   })
 

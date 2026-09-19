@@ -1,13 +1,19 @@
 /*
- * The round's moves, over the room behind the table.
+ * The round's moves, along the foot of the room behind the table.
  *
- * Top left, under the round number, in the band of empty room above the far
- * cup. It is the one region of this screen with nothing in it at either camera
- * angle: from a seat the far rim is 39% of the way down the stage, and even
- * straight overhead — where the table fills much more of the frame — the
- * nearest die is still 30% down, about 150px on a phone, against three lines
- * of log ending around 93px. So it can stay up through a reveal, which is the
- * whole point of it, without ever covering the thing being counted.
+ * It used to sit top left, under the round number, in what was then the empty
+ * band above the far cup. That band stopped being empty. Making the table
+ * larger brought the far chairs up the frame until their name badges sat at
+ * exactly the height the third line of this reached — so at a full table the
+ * log was drawn across somebody's name, which is the single thing on this
+ * screen it most needs to be legible next to. "Icons on top of each other" was
+ * the report, and this was it.
+ *
+ * The floor in front of the near cup is the region that stays empty at both
+ * camera angles: the table's own front edge is above it, the dock is below it,
+ * and the only thing in it is the near badge, which is centred. So the log runs
+ * along the left of that strip, reading downward to the newest move — which now
+ * also puts the newest line nearest the controls, where the eye already is.
  *
  * Laid over a picture rather than over a surface, so every part of it carries
  * its own shadow. A panel behind it would be a second rectangle on a screen
@@ -15,18 +21,16 @@
  */
 .log {
   position: absolute;
-  top: calc(var(--space-2) + 1.35rem);
-  left: var(--space-4);
+  bottom: 4px;
+  left: var(--space-3);
   /*
-   * Never as far as the badge over the far cup.
+   * Clear of the near badge, which is centred in the same strip.
    *
-   * It used to run to 62% of the stage, which was measured against a taller
-   * picture. The shorter one brings the far chairs up the frame until their
-   * badges sit at exactly this height, and the chair straight across the table
-   * is dead centre — so the end of every long line was drawn under somebody's
-   * name. Half the width clears it at every table size.
+   * "You" is about sixty points wide and sits either side of the midline, so
+   * anything reaching past about two fifths of the stage would be drawn under
+   * it — the same mistake this just moved away from, one badge lower.
    */
-  max-width: min(50%, 15rem);
+  max-width: min(40%, 12rem);
   display: flex;
   flex-direction: column;
   align-items: flex-start;

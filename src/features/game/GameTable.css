@@ -268,7 +268,10 @@
 .board__dock {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  /* Tight. Four things stack in here and every gap between them is a strip of
+     table nobody gets to see; they are told apart by their surfaces, not by
+     the air around them. */
+  gap: 5px;
   /*
    * Right at the foot of the scene, not pulled up into it.
    *
@@ -306,7 +309,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 7px var(--space-2);
+  padding: 5px var(--space-2);
   border-radius: var(--radius-lg);
   /* The timber, in shadow. These dice are lying on the table in front of you,
      and giving the slab the table's own colour says so — it is the one panel

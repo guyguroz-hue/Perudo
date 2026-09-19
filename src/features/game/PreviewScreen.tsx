@@ -245,14 +245,14 @@ export function PreviewScreen() {
               onLeave={() => setActed('Leave room')}
             >
               <div className="game">
-                {/* On half the scenarios, so both states are measured: the one
-                    a player is in most of the time, and the one where a
-                    refusal has just pushed a row in above the table. */}
+                {/* On half the scenarios, so the notice is looked at in place:
+                    over the scene, sized to its sentence, costing the table no
+                    height at all. */}
                 {scenario.id.charCodeAt(0) % 2 === 0 && (
-                  <p className="game__error" role="alert">
+                  <button type="button" className="game__note game__note--refused">
                     Something broke at our end. Try again.
                     <b className="game__code">INTERNAL</b>
-                  </p>
+                  </button>
                 )}
                 <GameTable
                   view={scenario.view}

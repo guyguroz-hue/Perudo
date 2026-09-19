@@ -58,6 +58,15 @@ async function openPlayer(name) {
     const text = message.text()
     // WebGL under SwiftShader complains about things a phone does not.
     if (/WebGL|SwiftShader|GroupMarker/i.test(text)) return
+    /*
+     * A refusal is a 4xx, and the browser logs every one of them.
+     *
+     * Not noise from a fault: the server says no by status code, which is what
+     * "that claim is yours" and "somebody got there first" both are, and both
+     * happen in ordinary play. What a real fault looks like is a pageerror,
+     * which is listened for above and never filtered.
+     */
+    if (/Failed to load resource/i.test(text)) return
     noise.push(`${name}: ${text}`)
   })
   await page.goto(harness.url + '/', { waitUntil: 'domcontentloaded' })
@@ -172,21 +181,46 @@ const before = await dockHeight(watcher.page)
  * caught the thumb already travelling).
  */
 const armWatch = watcher.page.evaluate(() => {
-  const lie = document.querySelector('.challenge__lie')
   const count = () => document.querySelector('.challenge__lie .challenge__count')?.textContent
-  const wasBlank = count() === '–'
+  const lie = () => document.querySelector('.challenge__lie')
+  const row = document.querySelector('.challenge')
+
   return new Promise((resolve) => {
+    if (count() !== '–') {
+      resolve({ sawArrival: false, inertOnArrival: null, armedLater: null })
+      return
+    }
+
+    /*
+     * Read at the instant the claim lands, not a poll later.
+     *
+     * Timing this from the outside does not work here and the attempt is worth
+     * recording: a bid arriving rebuilds the 3D scene, which blocks the main
+     * thread for a few hundred milliseconds, so a poll can first SEE the claim
+     * after the tile has already armed and report that nothing protected
+     * anybody. An observer callback runs as a microtask on the commit that
+     * changed the DOM, so what it reads is what was on screen at that moment,
+     * however long the frame took.
+     */
+    let inertOnArrival = null
+    const observer = new MutationObserver(() => {
+      if (inertOnArrival === null && count() !== '–') {
+        inertOnArrival = lie().hasAttribute('disabled')
+      }
+    })
+    observer.observe(row, { childList: true, subtree: true, characterData: true, attributes: true })
+
     const started = performance.now()
-    let arrived = null
     const timer = setInterval(() => {
-      if (arrived === null && wasBlank && count() !== '–') arrived = performance.now()
-      if (arrived !== null && !lie.hasAttribute('disabled')) {
+      if (inertOnArrival !== null && !lie().hasAttribute('disabled')) {
         clearInterval(timer)
-        resolve({ armedAfter: performance.now() - arrived, sawArrival: true })
+        observer.disconnect()
+        resolve({ sawArrival: true, inertOnArrival, armedLater: true })
       }
       if (performance.now() - started > 8000) {
         clearInterval(timer)
-        resolve({ armedAfter: null, sawArrival: arrived !== null })
+        observer.disconnect()
+        resolve({ sawArrival: inertOnArrival !== null, inertOnArrival, armedLater: false })
       }
     }, 20)
   })
@@ -220,7 +254,7 @@ const bidsLogged = db.tables.game_events.filter((e) => e.kind.endsWith('bid')).l
 check(bidsLogged === 1, 'a double tap places one bid, not two', `${bidsLogged} bids logged`)
 
 const complaint = await opener.page.evaluate(
-  () => document.querySelector('.game__error')?.textContent ?? null,
+  () => document.querySelector('.game__note--refused')?.textContent ?? null,
 )
 check(complaint === null, 'and nobody is told they were beaten by themselves', complaint)
 
@@ -233,10 +267,39 @@ check(
 
 const armed = await armWatch
 check(
-  armed.sawArrival && armed.armedAfter !== null && armed.armedAfter >= 200,
-  'Lie and Bull stay spent for a beat after a bid arrives',
-  armed.armedAfter === null ? 'never armed' : `armed after ${Math.round(armed.armedAfter)}ms`,
+  armed.sawArrival && armed.inertOnArrival === true,
+  'Lie and Bull are spent at the instant a bid arrives',
+  armed.sawArrival ? 'live the moment the claim landed' : 'never saw the claim land',
 )
+check(armed.armedLater === true, 'and come alive a beat later, rather than staying spent')
+
+// -----------------------------------------------------------------------------
+// The die under your thumb does not move by itself
+// -----------------------------------------------------------------------------
+// Reported from a real table: "last turn I bid threes, the bid went up, the
+// highlighted die became a four, and I bid fours without meaning to." The
+// builder used to reset to the smallest raise, which prefers moving the face.
+
+{
+  const watching = someoneElse()
+  const chosen = await watching.page.evaluate(() => {
+    const pick = [...document.querySelectorAll('.builder__face')].find(
+      (b) => !b.hasAttribute('disabled') && b.getAttribute('aria-label') !== 'Joker',
+    )
+    pick.click()
+    return pick.getAttribute('aria-label')
+  })
+
+  await raise(turnHolder())
+
+  const still = await watching.page.evaluate(
+    () =>
+      document
+        .querySelector('.builder__face[aria-pressed="true"]')
+        ?.getAttribute('aria-label') ?? null,
+  )
+  check(still === chosen, 'the face a player picked survives somebody else bidding', `${chosen} became ${still}`)
+}
 
 // -----------------------------------------------------------------------------
 // Bull, pressed on the real table
@@ -272,7 +335,7 @@ check(
   }
 
   const refusal = await caller.page.evaluate(
-    () => document.querySelector('.game__error')?.textContent ?? null,
+    () => document.querySelector('.game__note--refused')?.textContent ?? null,
   )
   check(refusal === null, 'and pressing Bull is not an error', refusal)
 
@@ -280,16 +343,61 @@ check(
     () => document.querySelector('.challenge__lie .challenge__reading')?.textContent,
   )
   check(reading === 'exactly', 'Lie now doubts the Bulled reading of the claim', reading)
+
+  /*
+   * And a notice that takes itself off the screen.
+   *
+   * "You cannot get it off the screen and it does not move until you bid
+   * again" — said about a refusal, on a table where what it had just said was
+   * that the bid did not take.
+   *
+   * Provoked with the one refusal that cannot disturb the game: the claim on
+   * the table now belongs to the player who just Bulled it, and a player may
+   * not doubt their own claim.
+   */
+  await caller.page.evaluate(() => document.querySelector('.challenge__lie').click())
+  const shown = await caller.page
+    .waitForSelector('.game__note', { timeout: 10_000 })
+    .then(() => true)
+    .catch(() => false)
+  check(shown, 'a refusal is said on screen')
+
+  const gone = await caller.page
+    .waitForFunction(() => document.querySelector('.game__note') === null, null, {
+      timeout: 12_000,
+    })
+    .then(() => true)
+    .catch(() => false)
+  check(gone, 'and takes itself off again without anybody bidding')
 }
 
 // -----------------------------------------------------------------------------
 // A round played out, and everybody watching it
 // -----------------------------------------------------------------------------
 
+/**
+ * Make a bid, and do not go on until the table has it.
+ *
+ * Waiting a fixed moment after the click was enough until it was not: a press
+ * that the server refuses looks exactly like a press that worked, and the check
+ * that failed afterwards was several steps away and blamed the wrong thing.
+ */
 async function raise(player) {
+  const before = db.tables.game_events.length
   await player.page.waitForSelector('.builder__submit:not([disabled])', { timeout: 15_000 })
   await player.page.click('.builder__submit')
-  await new Promise((r) => setTimeout(r, 400))
+
+  const deadline = Date.now() + 10_000
+  while (db.tables.game_events.length === before) {
+    if (Date.now() > deadline) {
+      const why = await player.page.evaluate(
+        () => document.querySelector('.game__note')?.textContent ?? 'no answer at all',
+      )
+      throw new Error(`${player.name}'s bid never reached the table: ${why}`)
+    }
+    await new Promise((r) => setTimeout(r, 50))
+  }
+  await new Promise((r) => setTimeout(r, 250))
 }
 
 const roundBefore = liveRound().id
@@ -462,8 +570,19 @@ await raise(turnHolder())
 // The bid has moved the turn on, so the holder now is the one who did not make
 // it — challenging your own claim is refused, and rightly.
 const last = turnHolder()
-await last.page.waitForSelector('.challenge__lie:not([disabled])', { timeout: 20_000 })
-await last.page.click('.challenge__lie')
+const canDoubt = await last.page
+  .waitForSelector('.challenge__lie:not([disabled])', { timeout: 20_000 })
+  .then(() => true)
+  .catch(() => false)
+check(
+  canDoubt,
+  `${last.name} can doubt the last bid of the game`,
+  await last.page.evaluate(() => {
+    const dock = document.querySelector('.board__dock')
+    return dock === null ? 'no dock at all' : dock.textContent?.slice(0, 120)
+  }),
+)
+if (canDoubt) await last.page.click('.challenge__lie')
 
 for (const { name, page } of players) {
   const finished = await page

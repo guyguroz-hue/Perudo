@@ -49,6 +49,18 @@ const COALESCE_MS = 110
 const HEARTBEAT_MS = 15_000
 
 /**
+ * How long a notice stays on the table.
+ *
+ * "Somebody got there first" describes a moment that has already passed, so it
+ * goes almost as soon as it has been read. A refusal is a thing the player has
+ * to do something about, so it is given long enough to read twice — and no
+ * longer, because a table with a permanent label across it is what was reported
+ * as the worst of it.
+ */
+const NEWS_MS = 3200
+const REFUSAL_MS = 7000
+
+/**
  * The view it already had, when the new one says the same thing.
  *
  * Every re-read builds the table from scratch, so it comes back as new objects
@@ -130,6 +142,8 @@ export interface GameHandle {
   bull: () => Promise<void>
   doubt: () => Promise<void>
   dismissReveal: () => void
+  /** Put the notice away now, rather than waiting for it to go. */
+  dismissError: () => void
   refresh: () => Promise<void>
 }
 
@@ -158,17 +172,22 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
   const [error, setError] = useState<GameHandle['error']>(null)
 
   /*
-   * News expires; refusals do not.
+   * Everything said here expires.
    *
-   * "Somebody got there first" describes a moment that has already passed, and
-   * the table it was about was refetched before the words appeared. Left on
-   * screen it becomes a permanent label on a game that has moved several
-   * rounds beyond it. A refusal stays until the player acts again, because it
-   * is still true.
+   * It did not, and that was the complaint from the table: a refusal stayed on
+   * screen until the player's next move, so the answer to "how do I get rid of
+   * this" was "make another bid" — at a table where the thing they had just
+   * been told was that their bid did not take. A notice you cannot dismiss
+   * stops being a notice and becomes part of the furniture.
+   *
+   * News goes quickly because the table it described was refetched before the
+   * words appeared. A refusal is given longer, because it has to be read and
+   * it is usually saying something the player has to act on — but it still
+   * goes, and it can be dismissed with a tap before then.
    */
   useEffect(() => {
-    if (error === null || !error.stale) return
-    const fades = setTimeout(() => setError(null), 4000)
+    if (error === null) return
+    const fades = setTimeout(() => setError(null), error.stale ? NEWS_MS : REFUSAL_MS)
     return () => clearTimeout(fades)
   }, [error])
 
@@ -518,6 +537,7 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
   }, [gameId, refresh])
 
   const dismissReveal = useCallback(() => setReveal(null), [])
+  const dismissError = useCallback(() => setError(null), [])
 
   return {
     view,
@@ -531,6 +551,7 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
     bull,
     doubt,
     dismissReveal,
+    dismissError,
     refresh,
   }
 }

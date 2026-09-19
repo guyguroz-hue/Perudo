@@ -1,6 +1,7 @@
 import { Die } from '../../components/Die'
-import type { ProposedBid } from '../../game'
+import type { ActiveBid, ProposedBid } from '../../game'
 import { FACES } from '../../game'
+import { useSettled } from './armed'
 import type { BidDraft } from './bidDraft'
 import type { PendingAction } from './useGame'
 import './BidBuilder.css'
@@ -56,6 +57,7 @@ export function FaceRack({ draft }: { draft: BidDraft }) {
 /** How many, and the button that says it. */
 export function BidRow({
   draft,
+  claim = null,
   burst,
   barred = false,
   busy = false,
@@ -65,6 +67,14 @@ export function BidRow({
   inline = false,
 }: {
   draft: BidDraft
+  /**
+   * The claim on the table, read only to know when it changed.
+   *
+   * Not to render anything — the bid being built is what this row shows. This
+   * is what the button is raising, and when it becomes a different claim the
+   * button becomes a different button.
+   */
+  claim?: ActiveBid | null
   /** True when this would be a Burst: a bid made out of turn (GAME_RULES §9.1). */
   burst: boolean
   /**
@@ -84,6 +94,21 @@ export function BidRow({
   inline?: boolean
 }) {
   const { bid, bounds, verdict } = draft
+
+  /*
+   * A beat after the claim under this button changes.
+   *
+   * The same rule the challenge tiles follow, and it is here for the case that
+   * made a table of six people ask for it: two players burst at once, the bid
+   * moves twice in a second, and the second burster's finger is already on its
+   * way to a button that said Burst and now says Bid — raising a claim they
+   * never read. Nothing on screen moved; what the press means did.
+   *
+   * Keyed on the claim and on whether this would be a Burst, so it costs
+   * nothing at an ordinary table: a player whose turn comes round to them finds
+   * the button live, because nothing about it changed while they were reaching.
+   */
+  const settled = useSettled(`${claim === null ? 'open' : `${claim.quantity}x${claim.face}`}|${burst}`)
 
   return (
     <>
@@ -127,7 +152,7 @@ export function BidRow({
           className={`builder__submit${burst ? ' builder__submit--burst' : ''}${
             pending === 'bid' ? ' builder__submit--sending' : ''
           }`}
-          disabled={busy || barred || !verdict.legal}
+          disabled={busy || barred || !verdict.legal || !settled}
           onClick={() => onBid(bid)}
           /* Short on the button, whole in the name it is announced by: the dock
              has room for one word and a screen reader has room for the sense. */

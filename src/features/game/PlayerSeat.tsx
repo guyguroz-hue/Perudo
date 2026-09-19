@@ -67,8 +67,16 @@ export function PlayerSeat({
    */
   const aerial = overhead > 0.5
 
-  // You are not a face across the table from yourself. Your seat says what the
-  // table is waiting for; your dice are in your hand below.
+  /*
+   * You are not a face across the table from yourself.
+   *
+   * It used to say "Your turn" here as well, which put the same two words on
+   * the screen twice a few centimetres apart — the badge on your own cup and
+   * the line at the head of the dock, which exists to say exactly that. The
+   * ring of light around your cup already marks the turn, and saying it twice
+   * in words is most of what "the screen is busy" means. Your dice are in your
+   * hand below; this is just where you are sitting.
+   */
   if (player.isYou) {
     return (
       <li
@@ -76,7 +84,7 @@ export function PlayerSeat({
         style={style}
       >
         <span className="badge__status">
-          {player.isEliminated ? 'Out' : player.hasTurn ? 'Your turn' : 'You'}
+          {player.isEliminated ? 'Out' : 'You'}
         </span>
       </li>
     )

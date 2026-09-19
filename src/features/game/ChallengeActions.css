@@ -36,11 +36,11 @@
   justify-items: center;
   align-content: center;
   gap: 1px;
-  /* Well over the 44px a thumb needs, and every pixel past that is a pixel the
-     table does not get. Three short lines fit in it because the mark is small
-     and the two lines of type are small; nothing here wants to be big. */
-  min-height: 56px;
-  padding: 5px;
+  /* The 44px a thumb needs, and every pixel past that is a pixel the table
+     does not get. Two short lines fit in it because the mark sits beside the
+     name rather than above it; nothing here wants to be big. */
+  min-height: 44px;
+  padding: 4px;
   border: 0;
   border-radius: var(--radius);
   text-align: center;
@@ -80,6 +80,14 @@
   width: 16px;
   height: 16px;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.45));
+}
+
+/* The mark, the word and the prize, on one line. */
+.challenge__head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.1;
 }
 
 .challenge__name {
