@@ -32,6 +32,9 @@ import { burstBarred, turnHolder, wouldBurst, you } from './view'
 import type { TableMove } from './view'
 import './GameTable.css'
 
+/** Nobody, and the same nobody every render, so this can be a default. */
+const EMPTY: ReadonlySet<string> = new Set()
+
 /**
  * The table, and the screen a player spends most of the game looking at.
  *
@@ -72,6 +75,7 @@ export function GameTable({
   finish = null,
   connection = 'live',
   roomMenu = null,
+  speaking = EMPTY,
   onBid,
   onLie,
   onBull,
@@ -108,6 +112,13 @@ export function GameTable({
    * never to press — taken, of course, out of the table.
    */
   roomMenu?: ReactNode
+  /**
+   * Whoever is audible right now, if a voice call is running.
+   *
+   * A set of player ids rather than a flag per seat, because it changes on its
+   * own rhythm and the table must not be rebuilt for it.
+   */
+  speaking?: ReadonlySet<string>
   /**
    * A challenge being resolved, from the moment it is made.
    *
@@ -418,6 +429,7 @@ export function GameTable({
               key={placement.player.id}
               placement={placement}
               cutIn={cutIn !== null && cutIn.actorId === placement.player.id}
+              talking={speaking.has(placement.player.id)}
               lifted={eye}
               overhead={eye}
             />

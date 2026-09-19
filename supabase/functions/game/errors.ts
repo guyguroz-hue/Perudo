@@ -23,6 +23,7 @@ export type GameErrorCode =
   | 'DB_OUT_OF_DATE'
   | 'DB_AMBIGUOUS'
   | 'DB_FORBIDDEN'
+  | 'VOICE_UNAVAILABLE'
 
 export class GameError extends Error {
   readonly code: GameErrorCode

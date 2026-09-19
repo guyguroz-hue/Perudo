@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { GameTable } from './GameTable'
 import { SeatRequest, SeatRequestChip } from '../rooms/SeatRequest'
+import { MicButton } from '../voice/MicButton'
+import type { VoiceHandle, VoiceState } from '../voice/useVoice'
 import { Notice } from './Notice'
 import type { NoticeText } from './Notice'
 import { minimalRaise, nextActive } from '../../game'
@@ -100,6 +102,17 @@ export function PreviewLive() {
   // Two states, because they are the point: the chip is what a host mid-round
   // gets, and the card is what they get when they choose to look.
   const [openAsk, setOpenAsk] = useState(false)
+  /*
+   * The voice call, with nobody on the other end.
+   *
+   * A real call needs a second phone, which is the one thing this tab cannot
+   * conjure. What it can show is the button in each of its states and the ring
+   * on the face of whoever is talking — which is the whole of the interface,
+   * and the half that is easy to get wrong.
+   */
+  const [voiceState, setVoiceState] = useState<VoiceState>('off')
+  const [voiceMuted, setVoiceMuted] = useState(false)
+  const [talking, setTalking] = useState(false)
   // Who bids next when the button is pressed, so it reads like a table going
   // round rather than one opponent shouting.
   const [turnOfOpponent, setTurnOfOpponent] = useState(0)
@@ -163,6 +176,20 @@ export function PreviewLive() {
       moves: [],
     }))
 
+  const voice: VoiceHandle = {
+    state: voiceState,
+    muted: voiceMuted,
+    speaking: talking ? new Set(['alice', 'you']) : new Set(),
+    others: voiceState === 'live' ? 2 : 0,
+    error: null,
+    join: () => {
+      setVoiceState('joining')
+      setTimeout(() => setVoiceState('live'), 700)
+    },
+    leave: () => setVoiceState('off'),
+    toggleMute: () => setVoiceMuted((was) => !was),
+  }
+
   return (
     <>
       <div className="live__panel">
@@ -206,6 +233,13 @@ export function PreviewLive() {
           </button>
           <button type="button" className="live__act live__act--loud" onClick={farewell}>
             Farewell Round
+          </button>
+          <button
+            type="button"
+            className="live__act"
+            onClick={() => setTalking((was) => !was)}
+          >
+            {talking ? 'Stop the voices' : 'Someone is talking'}
           </button>
           <button
             type="button"
@@ -265,8 +299,12 @@ export function PreviewLive() {
             view={view}
             /* Where the real screen puts it: the room's own corner, beside the
                sound toggle and the way out. */
+            speaking={voice.speaking}
             roomMenu={
-              asking ? <SeatRequestChip waiting={1} onOpen={() => setOpenAsk(true)} /> : null
+              <>
+                <MicButton voice={voice} />
+                {asking && <SeatRequestChip waiting={1} onOpen={() => setOpenAsk(true)} />}
+              </>
             }
             onBid={(bid) => {
               setPressed(`You bid ${bid.quantity} ${faceWord(bid.face, bid.quantity)}`)
