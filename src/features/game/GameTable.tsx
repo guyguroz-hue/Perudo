@@ -10,6 +10,8 @@ import { INLAY_RADIUS, STAGE_ASPECT, centreAnchor, inlayWidth } from '../../thre
 import { BidRow, FaceRack } from './BidBuilder'
 import { useBidDraft } from './bidDraft'
 import { ChallengeActions } from './ChallengeActions'
+import { FarewellFanfare } from './Fanfare'
+import { useFanfare } from './fanfare'
 import { CurrentBid } from './CurrentBid'
 import type { ClaimOwner } from './CurrentBid'
 import { MoveLog } from './MoveLog'
@@ -139,6 +141,23 @@ export function GameTable({
    */
   const barred = burstBarred(view)
   const yourTurn = holder !== null && holder.isYou
+
+  /*
+   * A Farewell Round, said out loud once.
+   *
+   * It changes every rule at the table for one round and it was announced by a
+   * small word in the corner, which is where this screen keeps facts nobody
+   * acts on. A table that had played several of them reported never noticing
+   * one. The name is captured when the round arrives rather than read live: the
+   * turn moves off the player it is owed to the instant they bid, and a banner
+   * that renamed itself halfway through being read would be worse than none.
+   */
+  const [fanfare, hushFanfare] = useFanfare(
+    view.roundNumber,
+    view.round.type === 'farewell'
+      ? { name: holder?.name ?? null, yours: holder?.isYou === true }
+      : null,
+  )
   const canAct = self !== null && !self.isEliminated
   const bid = view.round.bid
   // Every bid is a claim about this number, so it belongs beside the bid rather
@@ -383,6 +402,13 @@ export function GameTable({
             {/* The claim's owner, which a Bull changes hands (§8.3). */}
             <CurrentBid bid={bid} owner={claimOwner(view, bid)} />
           </div>
+        )}
+
+        {/* Over the table and never over the dock: this arrives without
+            warning, and a panel that can land on Bid or Bull is a panel that
+            can take a press meant for one of them. */}
+        {fanfare !== null && (
+          <FarewellFanfare name={fanfare.name} yours={fanfare.yours} onDismiss={hushFanfare} />
         )}
 
         <ul className="board__seats">

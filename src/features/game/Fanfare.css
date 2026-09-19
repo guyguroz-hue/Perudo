@@ -1,0 +1,92 @@
+/*
+ * Across the table, once.
+ *
+ * Over the stage and never over the dock: this appears without warning, and a
+ * panel that can land on top of Bid or Bull is a panel that can take a press
+ * meant for them. The stage is the part of the screen nobody is aiming at.
+ */
+.fanfare {
+  position: absolute;
+  z-index: 12;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  width: min(300px, calc(100% - var(--space-6)));
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  border-radius: var(--radius-lg);
+  /*
+   * The table's own metal, lit from above.
+   *
+   * Brass rather than a warning colour: a Farewell Round is not a fault and not
+   * a penalty on the player it names — it is compensation, owed to somebody who
+   * has just been knocked down to their last die.
+   */
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(255 214 140 / 0.2), transparent 70%),
+    linear-gradient(180deg, #3a2a10 0%, #1b1408 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 226 170 / 0.4),
+    inset 0 0 0 1px rgb(212 162 76 / 0.55),
+    0 14px 40px rgb(0 0 0 / 0.6);
+  text-align: center;
+  cursor: pointer;
+  animation: fanfare-in 320ms var(--ease-arrive) both;
+}
+
+/* Yours is a different fact from somebody else's: you are about to choose the
+   face the whole table plays on. */
+.fanfare--yours {
+  box-shadow:
+    inset 0 1px 0 rgb(255 226 170 / 0.5),
+    inset 0 0 0 1px rgb(240 205 135 / 0.85),
+    0 14px 46px rgb(180 130 30 / 0.4);
+}
+
+.fanfare__kicker {
+  font-family: var(--font-ui);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--brass-bright);
+}
+
+.fanfare__who {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  letter-spacing: var(--track-display);
+  line-height: 1.1;
+  color: #ffeccd;
+}
+
+.fanfare__rule {
+  max-width: 24ch;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  color: rgb(255 236 205 / 0.78);
+}
+
+@keyframes fanfare-in {
+  from {
+    opacity: 0;
+    scale: 0.88;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* It leaves on its own, so it must not also be a thing that moves under a
+   thumb: no exit animation, nothing to chase. */
+@media (prefers-reduced-motion: reduce) {
+  .fanfare {
+    animation: none;
+  }
+}

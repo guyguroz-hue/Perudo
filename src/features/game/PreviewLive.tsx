@@ -126,13 +126,22 @@ export function PreviewLive() {
     })
   }
 
+  /*
+   * A Farewell Round, dealt the way one actually arrives: as a new round.
+   *
+   * The round number matters and is not decoration here — it is what tells the
+   * table this is a round it has not announced yet. A farewell state pasted on
+   * to the same round number would be the one case the announcement is supposed
+   * to catch and the one case this tab could not show.
+   */
   const farewell = () =>
-    setView({
+    setView((current) => ({
       ...START,
+      roundNumber: current.roundNumber + 1,
       round: { type: 'farewell', lockedFace: null, bid: null },
       players: PLAYERS.map((player) => ({ ...player, hasTurn: player.id === 'carl' })),
       moves: [],
-    })
+    }))
 
   return (
     <>
@@ -175,14 +184,14 @@ export function PreviewLive() {
           >
             Refusal
           </button>
-          <button type="button" className="live__act" onClick={farewell}>
+          <button type="button" className="live__act live__act--loud" onClick={farewell}>
             Farewell Round
           </button>
           <button
             type="button"
             className="live__act"
             onClick={() => {
-              setView(START)
+              setView((current) => ({ ...START, roundNumber: current.roundNumber + 1 }))
               setNotice(null)
               setTurnOfOpponent(0)
             }}
