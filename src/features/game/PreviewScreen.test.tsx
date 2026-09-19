@@ -13,6 +13,7 @@ afterEach(cleanup)
 describe('the preview screen', () => {
   it('renders every table scenario', async () => {
     render(<PreviewScreen />)
+    await userEvent.click(screen.getByRole('tab', { name: 'Table' }))
     for (const label of [
       'Waiting',
       'Opening the round',
@@ -28,6 +29,7 @@ describe('the preview screen', () => {
 
   it('reports an action rather than interrupting with an alert', async () => {
     render(<PreviewScreen />)
+    await userEvent.click(screen.getByRole('tab', { name: 'Table' }))
     await userEvent.click(screen.getByRole('button', { name: 'Bid' }))
     expect(screen.getByRole('status').textContent).toContain('Bid 4')
   })
@@ -63,5 +65,44 @@ describe('the preview screen', () => {
     expect(document.querySelector('.verdict')).toBeTruthy()
     // The claim under trial is public, so it is there from the first frame.
     expect(screen.getAllByText(/at least|exactly/).length).toBeGreaterThan(0)
+  })
+
+  /*
+   * The tab that moves.
+   *
+   * Every other scenario is a still, and every fault a real table reported was
+   * about the moment the screen changed: a control that meant something else by
+   * the time a thumb landed, a die that moved on its own, a notice that would
+   * not leave. None of those can be looked at in a still, so this tab is where
+   * they are looked at — and it is worth a test of its own, because a preview
+   * that silently stops working costs the only review loop these screens have.
+   */
+  describe('the live tab', () => {
+    it('opens on a table nobody has bid at yet', () => {
+      render(<PreviewScreen />)
+      expect(screen.getByRole('button', { name: 'Somebody bids' })).toBeTruthy()
+      expect(document.querySelector('.board__dock')).toBeTruthy()
+      expect(document.querySelector('.challenge__lie')).toBeTruthy()
+    })
+
+    it('moves the table when somebody else bids', async () => {
+      render(<PreviewScreen />)
+      await userEvent.click(screen.getByRole('button', { name: 'Somebody bids' }))
+      // The claim reaches the challenge tiles, which is what the whole tab is
+      // for: they are live, spent or armed against whatever is on the table.
+      expect(document.querySelector('.challenge__lie .challenge__count')?.textContent).not.toBe(
+        '–',
+      )
+    })
+
+    it('shows a notice that can be dismissed with a tap', async () => {
+      render(<PreviewScreen />)
+      await userEvent.click(screen.getByRole('button', { name: 'Refusal' }))
+      const note = document.querySelector('.note--refused')
+      expect(note?.textContent).toContain('BULL_ALREADY_CALLED')
+
+      await userEvent.click(note as HTMLElement)
+      expect(document.querySelector('.note')).toBeNull()
+    })
   })
 })

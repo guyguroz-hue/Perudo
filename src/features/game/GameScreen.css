@@ -15,110 +15,18 @@
   color: var(--ink-faint);
 }
 
-.game__note,
+/*
+ * A stop rather than a passing notice.
+ *
+ * `.note` is laid over the scene and takes itself away; this one stays in the
+ * flow deliberately — it carries a button, and it is shown instead of a
+ * playable table rather than over one.
+ */
 .game__blocked {
   margin: 0;
   border-radius: var(--radius);
   text-align: center;
   font-size: var(--text-sm);
-}
-
-/*
- * Over the table, not above it, and no wider than what it has to say.
- *
- * It comes and goes on its own. As a row in the column it pushed the whole game
- * down for as long as it was there and let it spring back after — which on a
- * phone meant the table shrinking by a fifth, the controls sliding under the
- * browser's address bar, and everything jumping back a moment later. A notice
- * that rearranges the game to deliver itself is worse than the news it carries.
- *
- * Laid over the top of the scene instead, centred, sized to its sentence. It
- * costs no layout at all, so nothing moves when it arrives and nothing moves
- * when it goes — and being a pill rather than a bar is most of the difference
- * between "the game is telling me something" and "something is wrong with the
- * game".
- *
- * `.game__blocked` stays in the flow deliberately: it is not a passing notice
- * but a stop, it carries a button, and it is shown instead of a playable table
- * rather than over one.
- */
-.game__note {
-  position: absolute;
-  z-index: 10;
-  /*
-   * Below the two things in the top corners of the scene.
-   *
-   * The round number and the sound toggle live up there, and the toggle is a
-   * control — the first version of this sat flush against the top edge and
-   * covered it, which `test:reach` said so within a minute of the change. A
-   * notice may lie over a label for a few seconds; it may never lie over
-   * something a player presses.
-   */
-  top: 52px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: min(320px, calc(100% - var(--space-6)));
-  padding: 7px var(--space-3);
-  border: none;
-  border-radius: var(--radius-full);
-  /*
-   * Opaque, because there is a lit table behind it.
-   *
-   * A wash of colour was all it needed to be while it was a row in a column.
-   * Over the scene the same fill let cups and name badges through it, and the
-   * sentence became unreadable at exactly the moment it mattered.
-   *
-   * Grey by default: with Burst in the rules, being beaten to a bid happens
-   * several times a round and is the game being played correctly. Red there
-   * would alarm a player for doing the right thing.
-   */
-  background: linear-gradient(180deg, #2b2935 0%, #1c1b24 100%);
-  box-shadow: 0 6px 18px rgb(0 0 0 / 0.45);
-  color: var(--ink-dim);
-  font-family: var(--font-ui);
-  font-size: var(--text-xs);
-  line-height: 1.35;
-  cursor: pointer;
-  animation: note-in var(--t-micro) var(--ease-ui);
-}
-
-/* A refusal is a different thing from news, and says so with an edge rather
-   than with a slab: the player has to read this one and usually has to do
-   something about it. */
-.game__note--refused {
-  background: linear-gradient(180deg, #46201a 0%, #33160f 100%);
-  box-shadow:
-    0 6px 18px rgb(0 0 0 / 0.45),
-    inset 0 0 0 1px rgb(255 148 120 / 0.28);
-  color: #ffd9d2;
-}
-
-@keyframes note-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -4px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
-/* The refusal's own name, for whoever has to fix it rather than for the player
-   reading the sentence in front of it. Small, dim and on the same line: it has
-   to survive a screenshot, and it must not be the thing the eye lands on. */
-.game__code {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 5px;
-  border-radius: var(--radius-full);
-  background: rgb(255 255 255 / 0.08);
-  font-family: var(--font-ui);
-  font-size: var(--text-2xs);
-  font-weight: 600;
-  letter-spacing: var(--track-label);
-  color: var(--ink-faint);
-  vertical-align: middle;
 }
 
 /* The table did not arrive. Either a rule the house has not decided yet — not

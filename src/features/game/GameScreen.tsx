@@ -5,6 +5,7 @@ import { Finish } from './Finish'
 import { PERUDO } from '../../game'
 import { openRound } from './api'
 import { toGameError } from './errors'
+import { Notice } from './Notice'
 import { claimFor } from './reveal'
 import type { RevealClaim } from './reveal'
 import { useGame } from './useGame'
@@ -105,24 +106,10 @@ export function GameScreen({
          * bid again", on a table where what it had just said was that the bid
          * did not take.
          *
-         * So: a pill, sized to its sentence, over the scene rather than in it,
-         * gone in a few seconds and dismissable with a tap before then. It
-         * still says which refusal it was — a screenshot has to be a bug report
-         * — but quietly, and it is no longer the thing the eye lands on.
-         *
-         * Politely announced, not interrupting: with Burst in the rules being
-         * beaten to a bid is the game working, and a screen reader saying ALERT
-         * several times a round for correct play is its own kind of noise.
+         * The clock lives inside `Notice`, so the preview shows the same
+         * element behaving the same way rather than a picture of it.
          */
-        <button
-          type="button"
-          className={`game__note${game.error.stale ? '' : ' game__note--refused'}`}
-          onClick={game.dismissError}
-          aria-live="polite"
-        >
-          {game.error.message}
-          {!game.error.stale && <b className="game__code">{game.error.code}</b>}
-        </button>
+        <Notice notice={game.error} onDismiss={game.dismissError} />
       )}
 
       <GameTable

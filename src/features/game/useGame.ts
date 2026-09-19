@@ -12,6 +12,7 @@ import {
   fetchRound,
   toTableView,
 } from './read'
+import type { NoticeText } from './Notice'
 import type { RevealData } from './reveal'
 import type { Connection } from '../rooms/useRoom'
 import type { TableView } from './view'
@@ -48,17 +49,6 @@ const COALESCE_MS = 110
  */
 const HEARTBEAT_MS = 15_000
 
-/**
- * How long a notice stays on the table.
- *
- * "Somebody got there first" describes a moment that has already passed, so it
- * goes almost as soon as it has been read. A refusal is a thing the player has
- * to do something about, so it is given long enough to read twice — and no
- * longer, because a table with a permanent label across it is what was reported
- * as the worst of it.
- */
-const NEWS_MS = 3200
-const REFUSAL_MS = 7000
 
 /**
  * The view it already had, when the new one says the same thing.
@@ -132,12 +122,7 @@ export interface GameHandle {
    * sentence, which is the half written for the player rather than the half
    * that says where to look.
    */
-  readonly error: {
-    readonly message: string
-    /** Stable identifier: 'BULL_ALREADY_CALLED', 'NOT_DEPLOYED', … */
-    readonly code: string
-    readonly stale: boolean
-  } | null
+  readonly error: NoticeText | null
   bid: (bid: ProposedBid) => Promise<void>
   bull: () => Promise<void>
   doubt: () => Promise<void>
@@ -170,26 +155,6 @@ export function useGame(gameId: string | null, youId: string | null): GameHandle
   const [reveal, setReveal] = useState<GameHandle['reveal']>(null)
   const [over, setOver] = useState<GameHandle['over']>(null)
   const [error, setError] = useState<GameHandle['error']>(null)
-
-  /*
-   * Everything said here expires.
-   *
-   * It did not, and that was the complaint from the table: a refusal stayed on
-   * screen until the player's next move, so the answer to "how do I get rid of
-   * this" was "make another bid" — at a table where the thing they had just
-   * been told was that their bid did not take. A notice you cannot dismiss
-   * stops being a notice and becomes part of the furniture.
-   *
-   * News goes quickly because the table it described was refetched before the
-   * words appeared. A refusal is given longer, because it has to be read and
-   * it is usually saying something the player has to act on — but it still
-   * goes, and it can be dismissed with a tap before then.
-   */
-  useEffect(() => {
-    if (error === null) return
-    const fades = setTimeout(() => setError(null), error.stale ? NEWS_MS : REFUSAL_MS)
-    return () => clearTimeout(fades)
-  }, [error])
 
   const generation = useRef(0)
   // The round we last rendered. A change in it is how every player who did not

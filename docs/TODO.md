@@ -216,6 +216,17 @@ Completed items are marked `[x]` and kept, not deleted.
       now uses it keyed on the claim it would raise. It costs nothing at an
       ordinary table, because nothing changed while the player was reaching.
 
+      And a place to look at all of it without gathering four people. Every
+      preview scenario was a still, which is exactly right for asking what a
+      screen looks like and useless for asking what it does when it changes —
+      and all four of these are about the moment it changes. `/preview` opens on
+      a **Live** tab now: the real `GameTable`, with the other players on a
+      button. Press *Somebody bids* and watch the face you picked stay where it
+      is, the dock not move, and Bid, Lie and Bull all go inert for a beat.
+      Press *Refusal* and watch the notice take itself away. The notice is one
+      component shared with the game, clock included, so what is looked at here
+      cannot drift from what a player gets.
+
       *More than half the screen was not the table.* Seventy-three points came
       out of the dock: the captions over the hand and the rack are said to a
       screen reader rather than printed, the challenge tiles put their mark

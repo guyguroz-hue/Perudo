@@ -254,7 +254,7 @@ const bidsLogged = db.tables.game_events.filter((e) => e.kind.endsWith('bid')).l
 check(bidsLogged === 1, 'a double tap places one bid, not two', `${bidsLogged} bids logged`)
 
 const complaint = await opener.page.evaluate(
-  () => document.querySelector('.game__note--refused')?.textContent ?? null,
+  () => document.querySelector('.note--refused')?.textContent ?? null,
 )
 check(complaint === null, 'and nobody is told they were beaten by themselves', complaint)
 
@@ -335,7 +335,7 @@ check(armed.armedLater === true, 'and come alive a beat later, rather than stayi
   }
 
   const refusal = await caller.page.evaluate(
-    () => document.querySelector('.game__note--refused')?.textContent ?? null,
+    () => document.querySelector('.note--refused')?.textContent ?? null,
   )
   check(refusal === null, 'and pressing Bull is not an error', refusal)
 
@@ -357,13 +357,13 @@ check(armed.armedLater === true, 'and come alive a beat later, rather than stayi
    */
   await caller.page.evaluate(() => document.querySelector('.challenge__lie').click())
   const shown = await caller.page
-    .waitForSelector('.game__note', { timeout: 10_000 })
+    .waitForSelector('.note', { timeout: 10_000 })
     .then(() => true)
     .catch(() => false)
   check(shown, 'a refusal is said on screen')
 
   const gone = await caller.page
-    .waitForFunction(() => document.querySelector('.game__note') === null, null, {
+    .waitForFunction(() => document.querySelector('.note') === null, null, {
       timeout: 12_000,
     })
     .then(() => true)
@@ -391,7 +391,7 @@ async function raise(player) {
   while (db.tables.game_events.length === before) {
     if (Date.now() > deadline) {
       const why = await player.page.evaluate(
-        () => document.querySelector('.game__note')?.textContent ?? 'no answer at all',
+        () => document.querySelector('.note')?.textContent ?? 'no answer at all',
       )
       throw new Error(`${player.name}'s bid never reached the table: ${why}`)
     }

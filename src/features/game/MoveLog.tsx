@@ -60,17 +60,19 @@ export function MoveLog({
           >
             <span className="log__who" aria-hidden="true" />
             {/*
-              * Before the sentence, not after it.
+              * Said in brass rather than in a word.
               *
-              * Out of turn is not a detail: it is why the player sitting next
-              * never got to speak, and the reason the table is where it is. At
-              * the end of the line it was the first thing to go when a long
-              * move ran out of room — so the one line that most needed marking
-              * was the one that lost its mark. Ahead of the text it cannot be
-              * truncated away, and it reads in the order the thing happened:
-              * somebody cut in, and then said this.
+              * Out of turn is not a detail — it is why the player sitting next
+              * never got to speak — so it is marked, and it used to be marked
+              * with a chip reading BURST ahead of the sentence. In a strip this
+              * narrow that chip cost a third of the line, and what it bought was
+              * a second copy of something the line already says: a Burst line
+              * carries the table's own metal along its edge and an ordinary one
+              * does not. So the edge does the marking, the word is kept for
+              * anybody listening rather than looking, and the sentence gets the
+              * room back.
               */}
-            {move.burst && <span className="log__burst">Burst</span>}
+            {move.burst && <span className="visually-hidden">Burst: </span>}
             <span className="log__text">{move.text}</span>
           </li>
         )

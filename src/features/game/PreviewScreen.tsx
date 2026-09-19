@@ -3,10 +3,12 @@ import { Atoms } from './Atoms'
 import { Finish } from './Finish'
 import { RenderPreview } from './RenderPreview'
 import { GameTable } from './GameTable'
+import { PreviewLive } from './PreviewLive'
 import { LobbyView } from '../rooms/LobbyView'
 import { ENDINGS, LOBBIES, REVEALS, SCENARIOS, claimFor, tableFor } from './fixtures'
 import type { RevealData } from './reveal'
 import '../game/GameScreen.css'
+import './Notice.css'
 import './PreviewScreen.css'
 
 /**
@@ -23,9 +25,9 @@ import './PreviewScreen.css'
  * checked against it in one place.
  */
 export function PreviewScreen() {
-  const [tab, setTab] = useState<'table' | 'reveal' | 'end' | 'lobby' | 'atoms' | 'render'>(
-    'table',
-  )
+  const [tab, setTab] = useState<
+    'live' | 'table' | 'reveal' | 'end' | 'lobby' | 'atoms' | 'render'
+  >('live')
   const [lobby, setLobby] = useState(0)
   const [ending, setEnding] = useState(0)
   const [scenario, setScenario] = useState(SCENARIOS[0])
@@ -59,6 +61,17 @@ export function PreviewScreen() {
           The real components, driven by fixtures. Nothing here touches a game.
         </p>
         <div className="preview__tabs" role="tablist">
+          {/* First, and the tab this opens on: it is the only one where the
+              screen changes while you are looking at it, which is where every
+              fault reported from a real table lived. */}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'live'}
+            onClick={() => setTab('live')}
+          >
+            Live
+          </button>
           <button
             type="button"
             role="tab"
@@ -113,7 +126,9 @@ export function PreviewScreen() {
         </div>
       </header>
 
-      {tab === 'lobby' ? (
+      {tab === 'live' ? (
+        <PreviewLive />
+      ) : tab === 'lobby' ? (
         <>
           <nav className="preview__picks">
             {LOBBIES.map((option, index) => (
@@ -247,11 +262,13 @@ export function PreviewScreen() {
               <div className="game">
                 {/* On half the scenarios, so the notice is looked at in place:
                     over the scene, sized to its sentence, costing the table no
-                    height at all. */}
+                    height at all. It does not fade here — this tab is stills,
+                    and a notice that removed itself could not be looked at.
+                    The Live tab is where its clock is watched. */}
                 {scenario.id.charCodeAt(0) % 2 === 0 && (
-                  <button type="button" className="game__note game__note--refused">
+                  <button type="button" className="note note--refused">
                     Something broke at our end. Try again.
-                    <b className="game__code">INTERNAL</b>
+                    <b className="note__code">INTERNAL</b>
                   </button>
                 )}
                 <GameTable
