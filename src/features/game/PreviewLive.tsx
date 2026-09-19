@@ -113,6 +113,9 @@ export function PreviewLive() {
   const [voiceState, setVoiceState] = useState<VoiceState>('off')
   const [voiceMuted, setVoiceMuted] = useState(false)
   const [talking, setTalking] = useState(false)
+  // The state a table without a relay will actually meet: somebody in the call
+  // whose connection could not be made.
+  const [unheard, setUnheard] = useState(false)
   // Who bids next when the button is pressed, so it reads like a table going
   // round rather than one opponent shouting.
   const [turnOfOpponent, setTurnOfOpponent] = useState(0)
@@ -181,6 +184,7 @@ export function PreviewLive() {
     muted: voiceMuted,
     speaking: talking ? new Set(['alice', 'you']) : new Set(),
     others: voiceState === 'live' ? 2 : 0,
+    unreachable: unheard ? ['carl'] : [],
     error: null,
     join: () => {
       setVoiceState('joining')
@@ -244,6 +248,13 @@ export function PreviewLive() {
           <button
             type="button"
             className="live__act"
+            onClick={() => setUnheard((was) => !was)}
+          >
+            {unheard ? 'Everyone audible' : 'Someone unreachable'}
+          </button>
+          <button
+            type="button"
+            className="live__act"
             onClick={() => {
               setAsking(true)
               setOpenAsk(false)
@@ -300,6 +311,7 @@ export function PreviewLive() {
             /* Where the real screen puts it: the room's own corner, beside the
                sound toggle and the way out. */
             speaking={voice.speaking}
+            unreachable={voice.unreachable}
             roomMenu={
               <>
                 <MicButton voice={voice} />

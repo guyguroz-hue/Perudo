@@ -32,7 +32,7 @@ over a microphone or start playing audio, so the button is load-bearing twice.
 |---|---|---|
 | **Signalling** | the back-and-forth two browsers have before they can hear each other | Supabase Realtime broadcast + presence, `voice:{gameId}` |
 | **STUN** | tells a browser its own public address | public, free |
-| **TURN** | relays the audio for pairs that cannot reach each other | Cloudflare, minted server-side |
+| **TURN** | relays the audio for pairs that cannot reach each other | any provider, by environment — see §3 |
 | **Mesh** | one `RTCPeerConnection` per other player | `src/features/voice/useVoice.ts` |
 | **The decisions** | who gives way in a collision; what changed in the room; who counts as speaking | `src/features/voice/peers.ts` |
 
@@ -51,33 +51,46 @@ game.
 ## 3. Setting up the relay
 
 Most pairs connect directly or over STUN. The ones that cannot are both behind
-carrier-grade NAT — common on mobile networks — and for those the audio has to
+carrier-grade NAT — ordinary on mobile networks — and for those the audio has to
 be relayed.
 
-1. Cloudflare dashboard → **Realtime** → **TURN** → create a key. Keep the
-   **Key ID** and the **API token**.
-2. Supabase → **Edge Functions** → **Secrets**, add:
-   - `CLOUDFLARE_TURN_KEY_ID`
-   - `CLOUDFLARE_TURN_API_TOKEN`
-3. Redeploy the `game` function.
+**The relay is configured by environment, not by provider.** The `voice_ice`
+action reads whichever of these it finds, in this order:
 
-**Why server-side.** The key is permanent and mints unlimited credentials, so a
-browser holding it could hand strangers a relay to use at our expense forever.
-The `voice_ice` action mints credentials good for a few hours, behind the same
-membership check as every other action — relay bandwidth costs money, and the
-people entitled to it are exactly the people playing this game.
+```
+TURN_URLS          turn:relay.example.com:80,turns:relay.example.com:443
+TURN_USERNAME      whatever the provider gave you
+TURN_CREDENTIAL    whatever the provider gave you
+```
 
-**Cost.** Cloudflare's TURN service is 1,000 GB/month free, then $0.05/GB. Six
-players talking with *every* pair relayed is roughly 430 MB an hour, so the free
-allowance is over two thousand hours of play a month. In practice only a
-fraction of pairs are relayed at all.
+That is what every free TURN provider hands out, and it is also what a coturn on
+a box of your own hands out. The password is long-lived and reaches the browser,
+which is the honest trade: it is a relay account, not a key that mints relay
+accounts.
 
-**Without it** the call still runs, on public STUN. Some pairs will fail to
-connect; everyone else is unaffected. That is deliberate: a table where two
-people cannot hear each other is a better outcome than a table where nobody can
-press the button.
+```
+CLOUDFLARE_TURN_KEY_ID
+CLOUDFLARE_TURN_API_TOKEN
+```
 
----
+The better shape, if you ever want it: a key that mints credentials good for a
+few hours, so nothing long-lived leaves the function. It wants a card on file,
+which is precisely why it is not the only way in.
+
+Either goes in Supabase → **Edge Functions** → **Secrets**, then redeploy the
+`game` function.
+
+### Without any of it
+
+The call still runs, on public STUN. Some pairs will fail to connect; everyone
+else is unaffected. That is deliberate — a table where two people cannot hear
+each other is a better outcome than a table where nobody can press the button —
+and it is **not presented as silence**: a connection that fails twice marks that
+player's badge with a dashed amber edge, because the alternative is a player
+spending the evening thinking somebody is being unusually quiet.
+
+Expect it to matter most when two people are both on mobile data. Two players on
+home wifi almost always reach each other without help.
 
 ## 4. What is tested, and what is not
 

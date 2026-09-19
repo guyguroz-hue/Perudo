@@ -32,8 +32,9 @@ import { burstBarred, turnHolder, wouldBurst, you } from './view'
 import type { TableMove } from './view'
 import './GameTable.css'
 
-/** Nobody, and the same nobody every render, so this can be a default. */
+/** Nobody, and the same nobody every render, so these can be defaults. */
 const EMPTY: ReadonlySet<string> = new Set()
+const NOBODY: readonly string[] = []
 
 /**
  * The table, and the screen a player spends most of the game looking at.
@@ -76,6 +77,7 @@ export function GameTable({
   connection = 'live',
   roomMenu = null,
   speaking = EMPTY,
+  unreachable = NOBODY,
   onBid,
   onLie,
   onBull,
@@ -119,6 +121,14 @@ export function GameTable({
    * own rhythm and the table must not be rebuilt for it.
    */
   speaking?: ReadonlySet<string>
+  /**
+   * In the call and not audible, because their connection could not be made.
+   *
+   * Named on the table rather than left as silence. Two phones on mobile data
+   * with no relay between them simply cannot reach each other, and a player who
+   * is not told spends the evening thinking somebody is being quiet.
+   */
+  unreachable?: readonly string[]
   /**
    * A challenge being resolved, from the moment it is made.
    *
@@ -430,6 +440,7 @@ export function GameTable({
               placement={placement}
               cutIn={cutIn !== null && cutIn.actorId === placement.player.id}
               talking={speaking.has(placement.player.id)}
+              unheard={unreachable.includes(placement.player.id)}
               lifted={eye}
               overhead={eye}
             />

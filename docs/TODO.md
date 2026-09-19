@@ -242,6 +242,18 @@ Completed items are marked `[x]` and kept, not deleted.
       is Safari on a phone. See docs/VOICE.md for the traps that were handled
       blind, and for the relay setup.
 
+      The relay is configured by environment rather than by provider, which it
+      was not at first: the original version was written against one company's
+      API and that company wants a card on file — a fact nobody checked before
+      recommending it. `TURN_URLS`/`TURN_USERNAME`/`TURN_CREDENTIAL` is what
+      every free provider and every self-hosted coturn hands out, and the
+      minted-credentials path is kept as the better option for anybody who
+      wants it. With neither, the call runs on public STUN and a pair that
+      cannot connect is **named** — a dashed amber edge on that player's badge
+      — because the alternative is presenting a failure as silence, and a
+      player who is not told spends the evening thinking somebody is being
+      quiet.
+
 - [x] **F-1** Watching a table, and asking to sit at one. A room that had
       started was a closed door: somebody who tapped the invite link a minute
       late got "that game is already under way" and a Back button, and a

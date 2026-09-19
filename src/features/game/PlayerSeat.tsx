@@ -27,6 +27,7 @@ export function PlayerSeat({
   overhead = 0,
   cutIn = false,
   talking = false,
+  unheard = false,
 }: {
   placement: SeatPlacement
   /**
@@ -46,6 +47,15 @@ export function PlayerSeat({
    * what reading a table is.
    */
   talking?: boolean
+  /**
+   * In the voice call, and their audio never arrived.
+   *
+   * Said out loud rather than left as quiet. Without a relay, two ends that are
+   * both behind carrier-grade NAT cannot reach each other at all — ordinary on
+   * mobile data — and the failure is indistinguishable from somebody choosing
+   * not to talk.
+   */
+  unheard?: boolean
   /** How far the cups are off the table, 0 to 1, which the badges follow. */
   lifted?: number
   /**
@@ -99,7 +109,7 @@ export function PlayerSeat({
   if (player.isYou) {
     return (
       <li
-        className={`badge badge--you ${near ? 'badge--near' : 'badge--far'}${player.hasTurn ? ' badge--turn' : ''}${aerial ? ' badge--aerial' : ''}${cutIn ? ' badge--cut' : ''}${talking ? ' badge--talking' : ''}`}
+        className={`badge badge--you ${near ? 'badge--near' : 'badge--far'}${player.hasTurn ? ' badge--turn' : ''}${aerial ? ' badge--aerial' : ''}${cutIn ? ' badge--cut' : ''}${talking ? ' badge--talking' : ''}${unheard ? ' badge--unheard' : ''}`}
         style={style}
       >
         <span className="badge__status">
@@ -119,6 +129,7 @@ export function PlayerSeat({
         aerial ? 'badge--aerial' : '',
         cutIn ? 'badge--cut' : '',
         talking ? 'badge--talking' : '',
+        unheard ? 'badge--unheard' : '',
       ]
         .filter(Boolean)
         .join(' ')}

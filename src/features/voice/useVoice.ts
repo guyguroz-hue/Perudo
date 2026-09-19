@@ -35,6 +35,8 @@ export interface VoiceHandle {
   readonly speaking: ReadonlySet<string>
   /** How many others are in the call. */
   readonly others: number
+  /** In the call, and not audible: their connection could not be made. */
+  readonly unreachable: readonly string[]
   readonly error: string | null
   join: () => void
   leave: () => void
@@ -54,6 +56,10 @@ const PUBLIC_STUN = [{ urls: 'stun:stun.cloudflare.com:3478' }]
 /** How often the levels are read. Slower than speech, faster than a sentence. */
 const LEVEL_MS = 120
 
+/** Without the entry, and the same array when it was not there. */
+const without = (list: readonly string[], id: string): readonly string[] =>
+  list.includes(id) ? list.filter((other) => other !== id) : list
+
 /** One line of the conversation two browsers have before they can talk. */
 interface Signal {
   readonly to?: string
@@ -69,6 +75,8 @@ interface Peer {
   /** Perfect negotiation: guards against both sides offering at once. */
   makingOffer: boolean
   ignoring: boolean
+  /** One free retry before a failure counts as one. */
+  retried: boolean
 }
 
 export function useVoice(gameId: string | null, youId: string | null): VoiceHandle {
@@ -77,6 +85,15 @@ export function useVoice(gameId: string | null, youId: string | null): VoiceHand
   const [speaking, setSpeaking] = useState<ReadonlySet<string>>(new Set())
   const [others, setOthers] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  /*
+   * The people in the call you cannot hear, which is not the same as silence.
+   *
+   * Without a relay configured some pairs simply cannot reach each other — both
+   * ends behind carrier-grade NAT, which is ordinary on mobile data. That is a
+   * real state and the worst possible way to present it is as quiet: a player
+   * spends the evening thinking somebody is not talking. So it is named.
+   */
+  const [unreachable, setUnreachable] = useState<readonly string[]>([])
 
   const peers = useRef(new Map<string, Peer>())
   const mine = useRef<MediaStream | null>(null)
@@ -104,6 +121,7 @@ export function useVoice(gameId: string | null, youId: string | null): VoiceHand
     loud.current.clear()
     setSpeaking(new Set())
     setOthers(0)
+    setUnreachable([])
     setState('off')
   }, [])
 
@@ -173,7 +191,14 @@ export function useVoice(gameId: string | null, youId: string | null): VoiceHand
       audio.style.display = 'none'
       document.body.append(audio)
 
-      const peer: Peer = { pc, audio, analyser: null, makingOffer: false, ignoring: false }
+      const peer: Peer = {
+        pc,
+        audio,
+        analyser: null,
+        makingOffer: false,
+        ignoring: false,
+        retried: false,
+      }
       peers.current.set(peerId, peer)
 
       const polite = politeToward(youId, peerId)
@@ -212,14 +237,30 @@ export function useVoice(gameId: string | null, youId: string | null): VoiceHand
       }
 
       pc.onconnectionstatechange = () => {
+        if (pc.connectionState !== 'failed') {
+          if (pc.connectionState === 'connected') {
+            peer.retried = false
+            setUnreachable((was) => without(was, peerId))
+          }
+          return
+        }
+
         /*
-         * Failed is recoverable and closed is not.
+         * Once is a tunnel. Twice is a wall.
          *
-         * A phone going through a tunnel fails and comes back; restarting ICE
-         * is what lets it, and tearing the peer down instead would mean a lost
-         * signal ends the conversation for good.
+         * A phone going through a tunnel fails and comes back, and restarting
+         * ICE is what lets it — tearing the peer down instead would mean a
+         * lost signal ends the conversation for good. A second failure after a
+         * restart is the other thing: two ends that cannot reach each other at
+         * all, which is what a relay exists to fix and what its absence looks
+         * like.
          */
-        if (pc.connectionState === 'failed') pc.restartIce()
+        if (!peer.retried) {
+          peer.retried = true
+          pc.restartIce()
+          return
+        }
+        setUnreachable((was) => (was.includes(peerId) ? was : [...was, peerId]))
       }
 
       // Somebody has to speak first, and both sides doing it is what the
@@ -237,6 +278,7 @@ export function useVoice(gameId: string | null, youId: string | null): VoiceHand
     peer.audio.remove()
     peers.current.delete(peerId)
     loud.current.delete(peerId)
+    setUnreachable((was) => without(was, peerId))
   }, [])
 
   const answer = useCallback(
@@ -402,5 +444,5 @@ export function useVoice(gameId: string | null, youId: string | null): VoiceHand
     return () => clearInterval(timer)
   }, [muted, state, youId])
 
-  return { state, muted, speaking, others, error, join, leave: stop, toggleMute }
+  return { state, muted, speaking, others, unreachable, error, join, leave: stop, toggleMute }
 }

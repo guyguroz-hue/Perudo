@@ -135,6 +135,7 @@ export function GameScreen({
       <GameTable
         connection={game.connection}
         speaking={voice.speaking}
+        unreachable={voice.unreachable}
         roomMenu={
           <>
             {/* First in the corner cluster, because it is the only one of them
