@@ -332,3 +332,41 @@ the real project rather than the harness.
 - **QR code** — after the MVP. Sharing a link and a code covers the need.
 - **Room titles** — the code, the host's name and the faces around the table are
   identity enough.
+
+---
+
+## 12. Watching, and asking to sit down
+
+Added after a real evening, where two things went wrong that the model above
+has no answer for: somebody tapped the invite link a minute after the host
+pressed Start, and a seventh friend turned up at a table of six. Both were told
+to come back later by a screen, which is not what you say to somebody standing
+in the room.
+
+**A spectator is a room member with no seat.** That single decision is what
+keeps this small. Every read policy in the schema is written against
+`is_room_member`, so watching needed no new policy and — more to the point — no
+new way for anybody to read anything. The one table that matters is
+`player_dice`, whose policy names a single player rather than a room, so a
+spectator sees no hand at all. What they see is exactly what every player
+already sees about everyone else: seats, dice counts, bids, the log, and the
+hands a challenge makes public.
+
+| Action | Who | When |
+|---|---|---|
+| `spectate_room(code)` | anybody with the code | any room that is not closed — full or playing, it makes no difference |
+| `ask_for_seat(room)` | a spectator | seats them outright in a lobby; otherwise puts the question to the host. Refused at a full table |
+| `answer_seat_request(room, user, approve)` | the host | approving takes the lowest free seat |
+
+**An approved player plays from the next game, not this one.** Players and their
+dice are fixed when a game starts, and there is no honest number of dice to hand
+somebody who arrives at round nine — five is a gift and one is a punishment, and
+both change a game other people are in the middle of. So approval is a seat, and
+the seat is taken up when the next game is dealt. The host is told this on the
+card before they answer it, because a host who found out afterwards would
+reasonably think the approval had failed.
+
+The request lives as two timestamps on the membership row rather than in a table
+of its own. A request is a fact about a membership — this person, in this room,
+would like to sit down — and it is delivered live for free, because every client
+already watches `room_members` for the seat list.

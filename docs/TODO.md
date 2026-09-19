@@ -187,6 +187,33 @@ Completed items are marked `[x]` and kept, not deleted.
       a software renderer has the page at six frames a second, and reported a
       lift as level with the music when it was three times louder.
 
+- [x] **F-1** Watching a table, and asking to sit at one. A room that had
+      started was a closed door: somebody who tapped the invite link a minute
+      late got "that game is already under way" and a Back button, and a
+      seventh friend at a table of six had no way to follow along at all.
+      Both of those are people who were invited and are standing there.
+
+      A spectator is now a room member with no seat, which is the decision the
+      whole feature rests on: every read policy in this schema is written
+      against `is_room_member`, so watching needed no new policy and no new way
+      for anybody to read anything — and `player_dice` names a single player
+      rather than a room, so a spectator sees no hand. Asking for a seat is two
+      timestamps on the same row, delivered live because clients already watch
+      `room_members`. In a lobby the ask seats you outright; during a game it
+      goes to the host, wherever they are — the card is rendered outside
+      `LobbyView` for that reason, since a row added above the table would push
+      the whole board down. Approval takes a seat for the NEXT game: players and
+      their dice are fixed when a game starts, and five dice at round nine is a
+      gift while one is a punishment. See docs/ROOMS.md §12.
+
+      Found on the way: every room refusal the database made was reaching
+      players as its own raw text with a Postgres error class stapled to it.
+      A plpgsql `raise exception 'ROOM_FULL'` arrives as an object carrying the
+      message and SQLSTATE P0001, the detail line joins them, and the lookup
+      was being done on the joined string — so it missed every time. Every test
+      that covered it handed over a bare `new Error('ROOM_FULL')`, which is the
+      one shape PostgREST never sends.
+
 - [x] **B-10** ~~Four things an evening with friends found.~~ All reported
       together, and all of them the same kind of fault: the screen changing
       under a thumb that was already moving, or refusing to stop saying

@@ -18,6 +18,23 @@ export interface Seat {
   readonly is_you: boolean
 }
 
+/**
+ * Somebody in the room who is not playing.
+ *
+ * Kept apart from `Seat` rather than folded into it with a nullable seat. Every
+ * count, every pip and every badge position on this screen is derived from the
+ * seat list, and a list that sometimes contains people without seats would have
+ * to be filtered at each of those places — which is the kind of thing that is
+ * right in five of them and wrong in the sixth.
+ */
+export interface Watcher {
+  readonly user_id: string
+  readonly display_name: string
+  readonly is_you: boolean
+  /** Set while they are waiting on the host for a seat. */
+  readonly asked_at: string | null
+}
+
 /** Every seat position the table has, occupied or not. */
 export const SEAT_COUNT = 6
 

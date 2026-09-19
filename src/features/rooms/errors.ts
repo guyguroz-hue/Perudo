@@ -56,9 +56,10 @@ export function toRoomError(error: unknown): RoomError {
   if (error instanceof RoomError) return error
 
   const raw = readMessage(error)
-  const known = EXPLANATIONS[raw.trim()]
-  if (known !== undefined) {
-    return new RoomError(raw.trim(), known.message, known.retryable ?? false, raw)
+  const code = named(raw)
+  if (code !== null) {
+    const known = EXPLANATIONS[code]
+    return new RoomError(code, known.message, known.retryable ?? false, raw)
   }
 
   const lower = raw.toLowerCase()
@@ -87,6 +88,30 @@ export function toRoomError(error: unknown): RoomError {
   }
 
   return new RoomError('UNKNOWN', raw, true, raw)
+}
+
+/**
+ * Which refusal this is, found inside whatever text carried it.
+ *
+ * An exact match is not enough, and the gap was live for a long time. A
+ * plpgsql `raise exception 'ROOM_FULL'` reaches the browser as a PostgREST
+ * object carrying the message AND a SQLSTATE — P0001, for a raised exception —
+ * and `readMessage` joins everything it can find into one string for the
+ * detail line. So the thing being looked up was "ROOM_FULL — P0001", every
+ * lookup missed, and every room refusal the database made reached the player as
+ * its own raw text with a Postgres error class stapled to it. Every test that
+ * covered this handed it a bare `new Error('ROOM_FULL')`, which is the one
+ * shape the database never sends.
+ *
+ * Whole words, so a code cannot be found inside a longer one.
+ */
+function named(raw: string): string | null {
+  const exact = raw.trim()
+  if (EXPLANATIONS[exact] !== undefined) return exact
+  for (const code of Object.keys(EXPLANATIONS)) {
+    if (new RegExp(`\\b${code}\\b`).test(raw)) return code
+  }
+  return null
 }
 
 /**

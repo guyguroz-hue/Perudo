@@ -7,6 +7,7 @@ import { Die } from '../../components/Die'
 import { useAuth } from '../auth/useAuth'
 import { createRoom, fetchMyRoom, joinRoom } from './api'
 import { toRoomError } from './errors'
+import { JoinChoice } from './JoinChoice'
 import './HomeScreen.css'
 
 /**
@@ -21,6 +22,9 @@ export function HomeScreen({ name }: { name: string }) {
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<'create' | 'join' | null>(null)
+  // A room that has started, or is full, is not a room you cannot enter — it is
+  // a room you cannot sit down in. See `JoinChoice`.
+  const [choice, setChoice] = useState<'started' | 'full' | null>(null)
 
   // Coming back should not mean typing a code you no longer have in front of
   // you. If a seat is still held somewhere, offer the way back to it.
@@ -60,9 +64,25 @@ export function HomeScreen({ name }: { name: string }) {
       const { roomId } = await joinRoom(code)
       navigate(`/room/${roomId}`)
     } catch (caught) {
-      setError(toRoomError(caught).message)
+      const failure = toRoomError(caught)
       setBusy(null)
+      if (failure.code === 'GAME_ALREADY_STARTED' || failure.code === 'ROOM_FULL') {
+        setChoice(failure.code === 'ROOM_FULL' ? 'full' : 'started')
+        return
+      }
+      setError(failure.message)
     }
+  }
+
+  if (choice !== null) {
+    return (
+      <JoinChoice
+        code={code}
+        reason={choice}
+        onEntered={(roomId) => navigate(`/room/${roomId}`)}
+        onBack={() => setChoice(null)}
+      />
+    )
   }
 
   return (

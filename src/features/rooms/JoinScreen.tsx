@@ -4,6 +4,7 @@ import { Button } from '../../components/Button'
 import { Die } from '../../components/Die'
 import { joinRoom } from './api'
 import { toRoomError } from './errors'
+import { JoinChoice } from './JoinChoice'
 
 /**
  * What an invite link lands on.
@@ -16,6 +17,14 @@ export function JoinScreen() {
   const { code = '' } = useParams()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
+  /*
+   * Not a failure, a fork.
+   *
+   * A room that has started, or is full, is not a room you cannot enter — it is
+   * a room you cannot sit down in. Those two refusals stop being errors here
+   * and become the two things you can actually do about them.
+   */
+  const [choice, setChoice] = useState<'started' | 'full' | null>(null)
   const attempted = useRef(false)
 
   useEffect(() => {
@@ -26,8 +35,24 @@ export function JoinScreen() {
 
     joinRoom(code)
       .then(({ roomId }) => navigate(`/room/${roomId}`, { replace: true }))
-      .catch((caught: unknown) => setError(toRoomError(caught).message))
+      .catch((caught: unknown) => {
+        const failure = toRoomError(caught)
+        if (failure.code === 'GAME_ALREADY_STARTED') return setChoice('started')
+        if (failure.code === 'ROOM_FULL') return setChoice('full')
+        setError(failure.message)
+      })
   }, [code, navigate])
+
+  if (choice !== null) {
+    return (
+      <JoinChoice
+        code={code}
+        reason={choice}
+        onEntered={(roomId) => navigate(`/room/${roomId}`, { replace: true })}
+        onBack={() => navigate('/', { replace: true })}
+      />
+    )
+  }
 
   if (error !== null) {
     return (

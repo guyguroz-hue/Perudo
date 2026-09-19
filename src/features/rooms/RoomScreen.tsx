@@ -3,13 +3,24 @@ import { useNavigate, useParams } from 'react-router-dom'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Die } from '../../components/Die'
 import { useAuth } from '../auth/useAuth'
-import { endRoom, fetchGame, kickPlayer, leaveRoom, returnToLobby, startGame } from './api'
+import {
+  answerSeatRequest,
+  askForSeat,
+  endRoom,
+  fetchGame,
+  kickPlayer,
+  leaveRoom,
+  returnToLobby,
+  startGame,
+} from './api'
 import { Button } from '../../components/Button'
 import { Countdown } from './Countdown'
 import { toRoomError } from './errors'
 import { GameScreen } from '../game/GameScreen'
 import { LobbyView } from './LobbyView'
+import { SeatRequest } from './SeatRequest'
 import { useRoom } from './useRoom'
+import { SEAT_COUNT } from './types'
 import type { Seat } from './types'
 import './RoomScreen.css'
 
@@ -151,8 +162,26 @@ export function RoomScreen() {
     )
   }
 
-  const { room, seats } = view
+  const { room, seats, watchers } = view
   const youAreHost = room.host_id === youId
+
+  /*
+   * Whoever has been waiting longest, and only one of them.
+   *
+   * Two friends turning up at once is a real thing at a party and a stack of
+   * cards over the table is not an answer to it: the host deals with one
+   * person, and the next card is the next question.
+   */
+  const asking = youAreHost
+    ? (watchers
+        .filter((watcher) => watcher.asked_at !== null)
+        .sort((a, b) => (a.asked_at ?? '').localeCompare(b.asked_at ?? ''))[0] ?? null)
+    : null
+
+  const youAreWatching = watchers.some((watcher) => watcher.is_you)
+  // A full table has no seat to give, so there is nothing to ask for. Saying so
+  // with a button that cannot work would be worse than not offering it.
+  const seatFree = seats.length < SEAT_COUNT
 
   if (counting) {
     return (
@@ -185,6 +214,8 @@ export function RoomScreen() {
       onManage={setPendingKick}
       onEnd={() => setConfirmEnd(true)}
       onLeave={leave}
+      watchers={watchers}
+      onAskForSeat={youAreWatching && seatFree ? () => void act(() => askForSeat(room.id)) : null}
     >
         {gameId === null ? (
           <p className="lobby__muted">Finding the game…</p>
@@ -224,6 +255,24 @@ export function RoomScreen() {
           />
         )}
       </LobbyView>
+
+      {/*
+        * A request reaches the host wherever they are.
+        *
+        * Outside `LobbyView` on purpose: during a game that component renders
+        * the table and nothing else, and a row added above it would push the
+        * whole board down — the table shrinking by a fifth to deliver a
+        * question is the same fault the refusal notice was moved out of the
+        * flow to avoid.
+        */}
+      {asking !== null && (
+        <SeatRequest
+          asker={asking}
+          busy={busy}
+          onApprove={() => void act(() => answerSeatRequest(room.id, asking.user_id, true))}
+          onDecline={() => void act(() => answerSeatRequest(room.id, asking.user_id, false))}
+        />
+      )}
 
         <Dialog.Root
           open={pendingKick !== null}

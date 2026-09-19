@@ -4,6 +4,7 @@ import { Finish } from './Finish'
 import { RenderPreview } from './RenderPreview'
 import { GameTable } from './GameTable'
 import { PreviewLive } from './PreviewLive'
+import { JoinChoice } from '../rooms/JoinChoice'
 import { LobbyView } from '../rooms/LobbyView'
 import { ENDINGS, LOBBIES, REVEALS, SCENARIOS, claimFor, tableFor } from './fixtures'
 import type { RevealData } from './reveal'
@@ -26,8 +27,11 @@ import './PreviewScreen.css'
  */
 export function PreviewScreen() {
   const [tab, setTab] = useState<
-    'live' | 'table' | 'reveal' | 'end' | 'lobby' | 'atoms' | 'render'
+    'live' | 'table' | 'reveal' | 'end' | 'lobby' | 'doors' | 'atoms' | 'render'
   >('live')
+  // Which refusal the door is answering. Both are worth looking at: they say
+  // different things and offer a different number of ways in.
+  const [door, setDoor] = useState<'started' | 'full'>('started')
   const [lobby, setLobby] = useState(0)
   const [ending, setEnding] = useState(0)
   const [scenario, setScenario] = useState(SCENARIOS[0])
@@ -107,6 +111,15 @@ export function PreviewScreen() {
           >
             Lobby
           </button>
+          {/* What somebody who turns up late or finds a full table is shown. */}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'doors'}
+            onClick={() => setTab('doors')}
+          >
+            Doors
+          </button>
           <button
             type="button"
             role="tab"
@@ -128,6 +141,44 @@ export function PreviewScreen() {
 
       {tab === 'live' ? (
         <PreviewLive />
+      ) : tab === 'doors' ? (
+        <>
+          <nav className="preview__picks">
+            {(['started', 'full'] as const).map((which) => (
+              <button
+                key={which}
+                type="button"
+                aria-pressed={door === which}
+                onClick={() => setDoor(which)}
+              >
+                {which === 'started' ? 'Already playing' : 'Table full'}
+              </button>
+            ))}
+          </nav>
+          <p className="preview__note">
+            {door === 'started'
+              ? 'Two ways in: watch, or ask the host for a seat in the next game.'
+              : 'Six seats is the limit, so only one of them is on offer.'}
+          </p>
+          {/* The real screen, with the door opening on to nothing: this tab
+              reaches no database, and the seam exists so there is not a second
+              copy of these two buttons to keep in step. */}
+          <JoinChoice
+            code="4821"
+            reason={door}
+            enter={(_code, andAsk) => {
+              setActed(andAsk ? 'Asked the host for a seat' : 'Watching')
+              return Promise.resolve('preview')
+            }}
+            onEntered={() => {}}
+            onBack={() => setActed('Back')}
+          />
+          {acted !== null && (
+            <p className="preview__acted" role="status">
+              {acted}
+            </p>
+          )}
+        </>
       ) : tab === 'lobby' ? (
         <>
           <nav className="preview__picks">

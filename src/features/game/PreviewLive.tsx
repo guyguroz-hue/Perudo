@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { GameTable } from './GameTable'
+import { SeatRequest } from '../rooms/SeatRequest'
 import { Notice } from './Notice'
 import type { NoticeText } from './Notice'
 import { minimalRaise, nextActive } from '../../game'
@@ -85,6 +86,9 @@ export function PreviewLive() {
   const [view, setView] = useState<TableView>(START)
   const [notice, setNotice] = useState<NoticeText | null>(null)
   const [pressed, setPressed] = useState<string | null>(null)
+  // Somebody watching has asked to play. Shown here because the host is almost
+  // never in the lobby when it happens — they are at the table, mid-round.
+  const [asking, setAsking] = useState(false)
   // Who bids next when the button is pressed, so it reads like a table going
   // round rather than one opponent shouting.
   const [turnOfOpponent, setTurnOfOpponent] = useState(0)
@@ -187,6 +191,9 @@ export function PreviewLive() {
           <button type="button" className="live__act live__act--loud" onClick={farewell}>
             Farewell Round
           </button>
+          <button type="button" className="live__act" onClick={() => setAsking(true)}>
+            Someone asks to play
+          </button>
           <button
             type="button"
             className="live__act"
@@ -211,6 +218,25 @@ export function PreviewLive() {
             with the notice laid over the scene rather than above it. */}
         <div className="game">
           {notice !== null && <Notice notice={notice} onDismiss={dismiss} />}
+          {asking && (
+            <SeatRequest
+              asker={{
+                user_id: 'guest',
+                display_name: 'Noa',
+                is_you: false,
+                asked_at: new Date().toISOString(),
+              }}
+              busy={false}
+              onApprove={() => {
+                setAsking(false)
+                setPressed('Noa takes a seat for the next game')
+              }}
+              onDecline={() => {
+                setAsking(false)
+                setPressed('Noa was turned down')
+              }}
+            />
+          )}
           <GameTable
             view={view}
             onBid={(bid) => {

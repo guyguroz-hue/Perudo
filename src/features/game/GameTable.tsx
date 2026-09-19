@@ -535,7 +535,17 @@ function TableDock({
         <div className="board__hand-row">
           {view.yourHand === null ? (
             <p className="board__nohand">
-              {self?.isEliminated === true ? 'You are out. Watching.' : 'Waiting for dice'}
+              {/*
+                * Three different reasons to hold no dice, and they are not the
+                * same news. Out is the end of your game; watching is somebody
+                * else's game that you are following; waiting is a hand on its
+                * way.
+                */}
+              {self === null
+                ? 'Watching. You are not in this game.'
+                : self.isEliminated
+                  ? 'You are out. Watching.'
+                  : 'Waiting for dice'}
             </p>
           ) : (
             view.yourHand.map((face, i) => <Die key={i} className="board__die" face={face} />)

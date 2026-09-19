@@ -55,6 +55,15 @@ export function GameScreen({
   useEffect(() => {
     if (game.view === null || game.view.roundNumber !== 0) return
     if (game.over !== null || asked.current) return
+    /*
+     * And not if you are only watching.
+     *
+     * Opening a round is a player's request and the server refuses it from
+     * anybody else — rightly. Asked by a spectator it would come back as
+     * NOT_A_PLAYER and be put on screen as a game that would not start, which
+     * is a confusing thing to tell somebody who is not trying to start one.
+     */
+    if (!game.view.players.some((player) => player.isYou)) return
     asked.current = true
 
     openRound(gameId)

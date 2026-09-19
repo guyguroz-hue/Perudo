@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
-import { fetchRoom, fetchSeats, touchRoom } from './api'
+import { fetchRoom, fetchRoster, touchRoom } from './api'
 import { toRoomError } from './errors'
-import type { Room, Seat } from './types'
+import type { Room, Seat, Watcher } from './types'
 
 /**
  * How well we are hearing from the server.
@@ -36,7 +36,13 @@ export type RoomView =
       /** True when this looks like a blip rather than a room that has ended. */
       readonly retryable: boolean
     }
-  | { readonly status: 'ready'; readonly room: Room; readonly seats: Seat[] }
+  | {
+      readonly status: 'ready'
+      readonly room: Room
+      readonly seats: Seat[]
+      /** In the room, not in the game. Possibly waiting on the host for a seat. */
+      readonly watchers: Watcher[]
+    }
 
 /**
  * Live view of one room.
@@ -72,10 +78,10 @@ export function useRoom(roomId: string | null, youId: string | null): RoomHandle
         return
       }
 
-      const seats = await fetchSeats(roomId, room.host_id, youId)
+      const { seats, watchers } = await fetchRoster(roomId, room.host_id, youId)
       if (generation.current !== mine) return
 
-      setView({ status: 'ready', room, seats })
+      setView({ status: 'ready', room, seats, watchers })
     } catch (error) {
       if (generation.current !== mine) return
       const failure = toRoomError(error)

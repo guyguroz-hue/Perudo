@@ -81,6 +81,11 @@ const players = []
 for (const name of NAMES) players.push(await openPlayer(name))
 const [host, ...guests] = players
 
+/** Whoever is sitting behind a display name, for checks that read the table. */
+const idOfName = (name) =>
+  db.tables.profiles.find((row) => row.display_name === name)?.id ?? null
+
+
 await host.page.click('button:has-text("Create room")')
 await host.page.waitForSelector('.lobby', { timeout: 15_000 })
 const code = db.tables.rooms[0].code
@@ -108,6 +113,96 @@ for (const { page } of players) {
   await page.waitForSelector('.board', { timeout: 25_000 })
 }
 pass('every client reached the table')
+
+// -----------------------------------------------------------------------------
+// A fourth friend, who turned up a minute late
+// -----------------------------------------------------------------------------
+// The door that used to be shut. Tapping the link after the host pressed Start
+// produced "that game is already under way" and a Back button — to somebody who
+// had been invited and was standing there.
+
+const latecomer = await openPlayer('Dee')
+await latecomer.page.fill('input[aria-label="Room code"]', code)
+await latecomer.page.click('button:has-text("Join")')
+
+const offered = await latecomer.page
+  .waitForSelector('.choice', { timeout: 15_000 })
+  .then(() => true)
+  .catch(() => false)
+check(offered, 'a game already under way offers a way in rather than a wall')
+
+await latecomer.page.click('button:has-text("Ask for a seat")')
+await latecomer.page.waitForSelector('.board', { timeout: 25_000 })
+pass('and watching starts at the table itself')
+
+const watching = await latecomer.page.evaluate(() => ({
+  dock: document.querySelector('.board__dock')?.textContent ?? '',
+  canBid: document.querySelector('.builder__submit') !== null,
+  canDoubt: document.querySelector('.challenge__lie') !== null,
+}))
+check(/Watching/i.test(watching.dock), 'a spectator is told they are watching', watching.dock)
+check(
+  !watching.canBid && !watching.canDoubt,
+  'and is offered no move to make',
+  JSON.stringify(watching),
+)
+
+/*
+ * Nobody asks for a hand that is not theirs.
+ *
+ * The other half of that question — whether the database would REFUSE such a
+ * read — is not this harness's to answer and it does not pretend to: RLS is
+ * proved against a real Postgres by `npm run test:db`, where a spectator
+ * selects `player_dice` and gets nothing. What is checked here is the thing a
+ * policy cannot check for you, which is what the client actually sends. A
+ * browser that asks for the whole table and leans on a policy to trim it is one
+ * policy change away from dealing everybody else's hand on to the screen.
+ */
+{
+  const hands = harness.asked.filter((query) => query.table === 'player_dice')
+  const overreaching = hands.filter(
+    (query) =>
+      !query.filters.some(
+        (filter) => filter.op === 'eq' && filter.col === 'player_id' && filter.val === query.actor,
+      ),
+  )
+  check(hands.length > 0, 'somebody did ask for their own dice, so this proves something')
+  check(
+    overreaching.length === 0,
+    'and no client ever asks for a hand that is not its own',
+    `${overreaching.length} of ${hands.length} reads were unscoped`,
+  )
+}
+
+{
+  const seatCard = await host.page
+    .waitForSelector('.ask', { timeout: 20_000 })
+    .then(() => true)
+    .catch(() => false)
+  check(seatCard, 'the host is asked, wherever they are')
+
+  if (seatCard) {
+    await host.page.click('button:has-text("Give them a seat")')
+    const seated = await host.page
+      .waitForFunction(
+        () => document.querySelector('.ask') === null,
+        null,
+        { timeout: 15_000 },
+      )
+      .then(() => true)
+      .catch(() => false)
+    check(seated, 'and answering puts the question away')
+  }
+}
+
+check(
+  db.tables.room_members.filter((m) => m.left_at === null && m.role === 'player').length === 4,
+  'an approved spectator holds a seat for the next game',
+)
+check(
+  db.tables.game_players.filter((p) => p.user_id === idOfName('Dee')).length === 0,
+  'and was not dealt into the game being played',
+)
 
 // -----------------------------------------------------------------------------
 // The shape of the real screen

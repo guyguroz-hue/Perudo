@@ -23,6 +23,8 @@ const ROOT = join(HERE, '../..')
 
 export async function startHarness({ port = 5199 } = {}) {
   const db = createDb()
+  /** Every query the browsers made, in order. See `/fake/query`. */
+  const asked = []
 
   const vite = await createServer({
     root: ROOT,
@@ -77,6 +79,17 @@ export async function startHarness({ port = 5199 } = {}) {
 
     if (url.pathname === '/fake/query') {
       const { spec, write } = body
+      /*
+       * Every read, kept.
+       *
+       * This harness does not model row-level security and must not pretend to
+       * — that is proved against a real Postgres by `npm run test:db`. What it
+       * can answer is the question RLS cannot: what the browser actually asks
+       * for. A client that asks for the whole of `player_dice` and relies on a
+       * policy to trim it is one policy change away from dealing everybody
+       * else's hand to the screen.
+       */
+      asked.push({ actor, table: spec.table, filters: spec.filters ?? [] })
       if (write !== null && write !== undefined) {
         if (spec.table !== 'profiles') return send(400, { message: 'no such write' })
         // An upsert answers with the row it wrote, not with the table.
@@ -143,6 +156,7 @@ export async function startHarness({ port = 5199 } = {}) {
   return {
     url: `http://localhost:${port}`,
     db,
+    asked,
     // The one server capability a test needs to reach directly: setting up a
     // position that would otherwise take a dozen played rounds to arrive at.
     store,

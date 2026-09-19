@@ -34,6 +34,29 @@ describe('room errors', () => {
     expect(result.message).not.toContain('[object Object]')
   })
 
+  /*
+   * The shape the database actually sends.
+   *
+   * Every other test here hands over `new Error('ROOM_FULL')`, which is the one
+   * shape PostgREST never produces: a raised plpgsql exception arrives as an
+   * object carrying the message and SQLSTATE P0001, and the detail line joins
+   * them. So the lookup was being done on "ROOM_FULL — P0001", it missed every
+   * time, and every room refusal the database made reached the player as its
+   * own raw text with a Postgres error class stapled to the end.
+   */
+  it('reads a refusal raised by plpgsql, SQLSTATE and all', () => {
+    const result = toRoomError({ message: 'ROOM_FULL', code: 'P0001' })
+    expect(result.code).toBe('ROOM_FULL')
+    expect(result.message).toContain('six players')
+    // The raw text survives for whoever has to diagnose it.
+    expect(result.detail).toContain('P0001')
+  })
+
+  it('does not find a refusal inside a longer word', () => {
+    const result = toRoomError(new Error('SOMETHING_NOT_HOSTILE'))
+    expect(result.code).toBe('UNKNOWN')
+  })
+
   it('recognises a database that has not caught up with the app', () => {
     const result = toRoomError({
       message: 'Could not find the function public.create_room without parameters',

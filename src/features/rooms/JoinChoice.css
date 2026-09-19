@@ -1,0 +1,33 @@
+/* The same shape as every other centred screen in this product: one column,
+   the heading, the sentence, then what you can do about it. */
+.choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.choice__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  letter-spacing: var(--track-display);
+  color: var(--ink);
+}
+
+.choice__blurb {
+  margin: 0;
+  max-width: 34ch;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+
+.choice__error {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: #ff9c86;
+}

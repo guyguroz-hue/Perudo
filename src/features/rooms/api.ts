@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabaseClient'
 import { toRoomError } from './errors'
-import type { Game, GamePlayer, Room, Seat } from './types'
+import type { Game, GamePlayer, Room, Seat, Watcher } from './types'
 
 /**
  * Thin wrappers over the room RPCs.
@@ -57,17 +57,21 @@ export async function fetchRoom(roomId: string): Promise<Room | null> {
 }
 
 /**
- * The people currently at the table, in seat order.
+ * Everybody in the room: the people playing and the people watching.
  *
  * Names come from `profiles`, which RLS only exposes for players who share a
  * room with the caller — so this query returning a name is itself proof of
  * co-membership.
+ *
+ * One query for both, because they are one table: a spectator is a member with
+ * no seat, which is what lets every read policy in the schema stay exactly as
+ * it was when watching was added. They are split apart here rather than there.
  */
-export async function fetchSeats(
+export async function fetchRoster(
   roomId: string,
   hostId: string | null,
   youId: string,
-): Promise<Seat[]> {
+): Promise<{ seats: Seat[]; watchers: Watcher[] }> {
   const { data, error } = await supabase
     .from('room_members')
     // The foreign key is named explicitly, and must stay that way.
@@ -77,7 +81,7 @@ export async function fetchSeats(
     // which relationship an embed means when there is more than one, and
     // refuses the query outright (PGRST201) rather than picking. Naming the
     // constraint is the only thing that makes this unambiguous.
-    .select('user_id, seat, profiles!room_members_user_id_fkey(display_name)')
+    .select('user_id, seat, role, asked_at, profiles!room_members_user_id_fkey(display_name)')
     .eq('room_id', roomId)
     .is('left_at', null)
     .order('seat')
@@ -85,17 +89,74 @@ export async function fetchSeats(
 
   type Row = {
     user_id: string
-    seat: number
+    seat: number | null
+    role: string
+    asked_at: string | null
     profiles: { display_name: string } | { display_name: string }[] | null
   }
 
-  return ((data ?? []) as Row[]).map((row) => ({
-    user_id: row.user_id,
-    seat: row.seat,
-    display_name: nameOf(row.profiles),
-    is_host: row.user_id === hostId,
-    is_you: row.user_id === youId,
-  }))
+  const rows = (data ?? []) as Row[]
+  return {
+    seats: rows
+      .filter((row) => row.role !== 'spectator' && row.seat !== null)
+      .map((row) => ({
+        user_id: row.user_id,
+        seat: row.seat as number,
+        display_name: nameOf(row.profiles),
+        is_host: row.user_id === hostId,
+        is_you: row.user_id === youId,
+      })),
+    watchers: rows
+      .filter((row) => row.role === 'spectator')
+      .map((row) => ({
+        user_id: row.user_id,
+        display_name: nameOf(row.profiles),
+        is_you: row.user_id === youId,
+        asked_at: row.asked_at,
+      })),
+  }
+}
+
+/**
+ * Watch a table you cannot sit at.
+ *
+ * The way in to a room that is full, or already playing, or both. It needs no
+ * approval because it takes nothing from anybody: a spectator holds no seat and
+ * can read no hand.
+ */
+export async function spectateRoom(code: string): Promise<{ roomId: string }> {
+  const { data, error } = await supabase.rpc('spectate_room', { p_code: code })
+  if (error) throw toRoomError(error)
+
+  const row = firstRow<{ room_id: string }>(data)
+  if (row === null) throw toRoomError(new Error('INVALID_ROOM'))
+  return { roomId: row.room_id }
+}
+
+/**
+ * Ask to play.
+ *
+ * Two situations and one button: in a lobby anybody with the code may walk in,
+ * so a free seat is taken on the spot; during a game the host decides. The
+ * answer says which happened.
+ */
+export async function askForSeat(roomId: string): Promise<'seated' | 'asked'> {
+  const { data, error } = await supabase.rpc('ask_for_seat', { p_room_id: roomId })
+  if (error) throw toRoomError(error)
+  return data === 'seated' ? 'seated' : 'asked'
+}
+
+export async function answerSeatRequest(
+  roomId: string,
+  userId: string,
+  approve: boolean,
+): Promise<void> {
+  const { error } = await supabase.rpc('answer_seat_request', {
+    p_room_id: roomId,
+    p_user_id: userId,
+    p_approve: approve,
+  })
+  if (error) throw toRoomError(error)
 }
 
 // PostgREST returns an embedded row as an object or, depending on how it infers

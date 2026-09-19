@@ -182,6 +182,16 @@ export function createDb() {
   /** One fair die, the way roll_die() makes one. */
   const rollDie = () => randomInt(1, 7)
 
+  /** The lowest seat nobody is sitting in, or undefined at a full table. */
+  function freeSeat(roomId) {
+    const taken = new Set(
+      tables.room_members
+        .filter((m) => m.room_id === roomId && m.left_at === null)
+        .map((m) => m.seat),
+    )
+    return [0, 1, 2, 3, 4, 5].find((s) => !taken.has(s))
+  }
+
   // ------------------------------------------------------------------- RPCs
   // Mirrors of the functions the browser is allowed to call. The apply_* and
   // deal_round family are NOT here: those are server capabilities, and they are
@@ -203,6 +213,9 @@ export function createDb() {
         room_id: room.id,
         user_id: actor,
         seat: 0,
+        role: 'player',
+        asked_at: null,
+        answered_at: null,
         left_at: null,
         removed_at: null,
         joined_at: new Date().toISOString(),
@@ -239,6 +252,7 @@ export function createDb() {
 
       if (member !== undefined) {
         member.seat = seat
+        member.role = 'player'
         member.left_at = null
         touch('room_members', member)
       } else {
@@ -246,6 +260,9 @@ export function createDb() {
           room_id: room.id,
           user_id: actor,
           seat,
+          role: 'player',
+          asked_at: null,
+          answered_at: null,
           left_at: null,
           removed_at: null,
           joined_at: new Date().toISOString(),
@@ -295,8 +312,10 @@ export function createDb() {
       if (room.host_id !== actor) throw new Error('NOT_HOST')
       if (room.status !== 'lobby') throw new Error('GAME_ALREADY_STARTED')
 
+      // Spectators are left out by role, not by seat: they have no seat to
+      // leave them out by.
       const seated = tables.room_members.filter(
-        (m) => m.room_id === p_room_id && m.left_at === null,
+        (m) => m.room_id === p_room_id && m.left_at === null && m.role === 'player',
       )
       if (seated.length < 2) throw new Error('NOT_ENOUGH_PLAYERS')
 
@@ -326,6 +345,105 @@ export function createDb() {
       touch('games', game)
       touch('rooms', room)
       return game.id
+    },
+
+    /** A member with no seat. Works on a table that is full, or playing, or both. */
+    spectate_room(actor, { p_code }) {
+      const code = String(p_code ?? '').trim().toUpperCase()
+      const room = tables.rooms.find((r) => r.code === code)
+      if (room === undefined) throw new Error('INVALID_ROOM')
+      if (room.status === 'closed') throw new Error('ROOM_EXPIRED')
+
+      const member = tables.room_members.find(
+        (m) => m.room_id === room.id && m.user_id === actor,
+      )
+      if (member !== undefined && member.removed_at !== null) throw new Error('REMOVED_FROM_ROOM')
+      // Already here, in whatever capacity. Watching is not a demotion.
+      if (member !== undefined && member.left_at === null) return [{ room_id: room.id }]
+
+      if (member !== undefined) {
+        Object.assign(member, {
+          role: 'spectator',
+          seat: null,
+          left_at: null,
+          asked_at: null,
+          answered_at: null,
+        })
+        touch('room_members', member)
+      } else {
+        const row = {
+          room_id: room.id,
+          user_id: actor,
+          seat: null,
+          role: 'spectator',
+          asked_at: null,
+          answered_at: null,
+          left_at: null,
+          removed_at: null,
+          joined_at: new Date().toISOString(),
+          last_seen_at: new Date().toISOString(),
+        }
+        tables.room_members.push(row)
+        touch('room_members', row)
+      }
+      return [{ room_id: room.id }]
+    },
+
+    ask_for_seat(actor, { p_room_id }) {
+      const room = tables.rooms.find((r) => r.id === p_room_id)
+      if (room === undefined) throw new Error('INVALID_ROOM')
+      if (room.status === 'closed') throw new Error('ROOM_EXPIRED')
+
+      const member = tables.room_members.find(
+        (m) => m.room_id === p_room_id && m.user_id === actor && m.left_at === null,
+      )
+      if (member === undefined) throw new Error('NOT_IN_ROOM')
+      if (member.role === 'player') return 'seated'
+
+      const seat = freeSeat(p_room_id)
+      if (seat === undefined) throw new Error('ROOM_FULL')
+
+      if (room.status === 'lobby') {
+        Object.assign(member, { role: 'player', seat, asked_at: null, answered_at: new Date().toISOString() })
+        touch('room_members', member)
+        return 'seated'
+      }
+      Object.assign(member, { asked_at: new Date().toISOString(), answered_at: null })
+      touch('room_members', member)
+      return 'asked'
+    },
+
+    answer_seat_request(actor, { p_room_id, p_user_id, p_approve }) {
+      const room = tables.rooms.find((r) => r.id === p_room_id)
+      if (room === undefined) throw new Error('INVALID_ROOM')
+      if (room.host_id !== actor) throw new Error('NOT_HOST')
+
+      const member = tables.room_members.find(
+        (m) =>
+          m.room_id === p_room_id &&
+          m.user_id === p_user_id &&
+          m.left_at === null &&
+          m.asked_at !== null,
+      )
+      // Answered twice, or withdrawn between the tap and the write.
+      if (member === undefined) return null
+
+      if (!p_approve) {
+        Object.assign(member, { asked_at: null, answered_at: new Date().toISOString() })
+        touch('room_members', member)
+        return null
+      }
+
+      const seat = freeSeat(p_room_id)
+      if (seat === undefined) throw new Error('ROOM_FULL')
+      Object.assign(member, {
+        role: 'player',
+        seat,
+        asked_at: null,
+        answered_at: new Date().toISOString(),
+      })
+      touch('room_members', member)
+      return null
     },
 
     return_to_lobby(actor, { p_room_id }) {

@@ -4,7 +4,7 @@ import { ConnectionDot } from '../../components/ConnectionDot'
 import { RoomCode } from './RoomCode'
 import { RoomTable } from './RoomTable'
 import { MIN_PLAYERS, SEAT_COUNT } from './types'
-import type { RoomStatus, Seat } from './types'
+import type { RoomStatus, Seat, Watcher } from './types'
 import type { Connection } from './useRoom'
 import { useSound } from '../../lib/useSound'
 import type { ReactNode } from 'react'
@@ -28,6 +28,8 @@ export interface LobbyViewProps {
   readonly code: string
   readonly status: RoomStatus
   readonly seats: readonly Seat[]
+  /** In the room without a seat. Empty at almost every table. */
+  readonly watchers?: readonly Watcher[]
   readonly connection: Connection
   readonly youAreHost: boolean
   readonly busy: boolean
@@ -37,6 +39,14 @@ export interface LobbyViewProps {
   onManage: (seat: Seat) => void
   onEnd: () => void
   onLeave: () => void
+  /**
+   * Asking to play, for somebody who is only watching.
+   *
+   * Absent when there is nothing to ask for — a full table has no seat to give,
+   * and saying so with a button that cannot work would be worse than not
+   * offering it.
+   */
+  onAskForSeat?: (() => void) | null
   /** The game, once there is one. The lobby does not know how to make one. */
   readonly children?: ReactNode
 }
@@ -45,6 +55,7 @@ export function LobbyView({
   code,
   status,
   seats,
+  watchers = [],
   connection,
   youAreHost,
   busy,
@@ -54,8 +65,11 @@ export function LobbyView({
   onManage,
   onEnd,
   onLeave,
+  onAskForSeat = null,
   children,
 }: LobbyViewProps) {
+  const youAreWatching = watchers.some((watcher) => watcher.is_you)
+  const youAsked = watchers.some((watcher) => watcher.is_you && watcher.asked_at !== null)
   const inLobby = status === 'lobby'
   /*
    * A game is on the table.
@@ -115,6 +129,14 @@ export function LobbyView({
             </span>
             <p className="lobby__count">
               {seats.length} / {SEAT_COUNT} players
+              {/* Only when there is one. A room with nobody watching should not
+                  carry a label saying so. */}
+              {watchers.length > 0 && (
+                <span className="lobby__watchers">
+                  {' · '}
+                  {watchers.length} watching
+                </span>
+              )}
             </p>
             <ConnectionDot connection={connection} />
           </div>
@@ -165,7 +187,34 @@ export function LobbyView({
           </Button>
         )}
 
-        {!youAreHost && inLobby && <p className="lobby__muted">Waiting for the host to start</p>}
+        {/*
+          * What somebody who is only watching gets.
+          *
+          * Ahead of the ordinary waiting lines, because it is a different kind
+          * of waiting: a player in a lobby is waiting for a game, and this
+          * person is waiting to be let into one.
+          */}
+        {youAreWatching && (
+          <div className="lobby__watching">
+            <p className="lobby__muted">
+              {youAsked
+                ? 'Asked the host for a seat. Watching until they answer.'
+                : 'Watching. You are not in this game.'}
+            </p>
+            {onAskForSeat !== null && !youAsked && (
+              <Button busy={busy} onClick={onAskForSeat}>
+                {inLobby ? 'Take a seat' : 'Ask for a seat'}
+              </Button>
+            )}
+            {onAskForSeat === null && !youAsked && (
+              <p className="lobby__muted">The table is full — six seats is the limit.</p>
+            )}
+          </div>
+        )}
+
+        {!youAreHost && inLobby && !youAreWatching && (
+          <p className="lobby__muted">Waiting for the host to start</p>
+        )}
         {!youAreHost && status === 'finished' && (
           <p className="lobby__muted">Waiting for the host to set up another game</p>
         )}
@@ -177,7 +226,7 @@ export function LobbyView({
         )}
         {!youAreHost && (
           <button type="button" className="lobby__leave" onClick={onLeave}>
-            Leave room
+            {youAreWatching ? 'Stop watching' : 'Leave room'}
           </button>
         )}
       </div>
