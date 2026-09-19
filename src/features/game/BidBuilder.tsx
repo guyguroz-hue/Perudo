@@ -1,7 +1,8 @@
+import type { CSSProperties } from 'react'
 import { Die } from '../../components/Die'
 import type { ActiveBid, ProposedBid } from '../../game'
 import { FACES } from '../../game'
-import { useSettled } from './armed'
+import { ARM_MS, useSettled } from './armed'
 import type { BidDraft } from './bidDraft'
 import type { PendingAction } from './useGame'
 import './BidBuilder.css'
@@ -151,7 +152,8 @@ export function BidRow({
           type="button"
           className={`builder__submit${burst ? ' builder__submit--burst' : ''}${
             pending === 'bid' ? ' builder__submit--sending' : ''
-          }`}
+          }${!settled && !barred ? ' builder__submit--arming' : ''}`}
+          style={{ '--arm-ms': `${ARM_MS}ms` } as CSSProperties}
           disabled={busy || barred || !verdict.legal || !settled}
           onClick={() => onBid(bid)}
           /* Short on the button, whole in the name it is announced by: the dock

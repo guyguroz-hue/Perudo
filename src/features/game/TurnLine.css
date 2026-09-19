@@ -84,3 +84,44 @@
   color: var(--brass-bright);
   text-transform: none;
 }
+
+/*
+ * Somebody cut in, and the line says so for a couple of seconds.
+ *
+ * In their colour, which is the colour on their cup and at their seat, so the
+ * sentence and the flash of light are plainly about the same person. The brass
+ * edge is the table's own metal and this table's own move — a Burst is legal,
+ * not a fault, so it is never the colour of a warning.
+ */
+/*
+ * The same vertical padding as the line it replaces, and only the horizontal
+ * changes. A pill that was two points taller would move the whole dock every
+ * time somebody cut in — which is the fault that put Bull under a thumb aiming
+ * at Bid in the first place, arriving again by the back door.
+ */
+.turn--cutting {
+  padding: 1px var(--space-2) 2px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, rgb(48 33 12 / 0.9), rgb(24 20 14 / 0.6));
+  box-shadow: inset 0 0 0 1px rgb(212 162 76 / 0.4);
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Lands rather than fades in, the way the thing it is reporting did. Same
+   length as the flash across the table, because they are one event. */
+@media (prefers-reduced-motion: no-preference) {
+  .turn--cutting {
+    animation: turn-cut-in 420ms var(--ease-arrive) both;
+  }
+}
+
+@keyframes turn-cut-in {
+  0% { opacity: 0; scale: 0.94; }
+  55% { opacity: 1; scale: 1; }
+}
+
+.turn--cutting .turn__dot {
+  box-shadow: 0 0 10px var(--seat-tone, transparent);
+}

@@ -24,8 +24,20 @@ import { useEffect, useState } from 'react'
  * So a control that has just come alive stays inert for a moment longer than a
  * thumb takes. The cost is that a player who was genuinely waiting to pounce
  * has to wait a beat; the alternative is a move they did not make.
+ *
+ * Four hundred was not enough, and the way it failed is worth writing down: it
+ * "felt like a normal press with a tiny bit of latency". That is two faults in
+ * one sentence. It was too short — a thumb takes about a fifth of a second to
+ * land, but *reading a bid that has just changed and deciding again* takes far
+ * longer than that, and the window has to cover the deciding, not the
+ * travelling. And it was invisible, so the only thing a player could tell about
+ * it was that the app had been slow.
+ *
+ * Seven hundred, and the controls now show it happening — see the sweep on
+ * `.challenge__lie` and `.builder__submit`. A wait you can see is a rule; the
+ * same wait you cannot see is a bug in the network.
  */
-export const ARM_MS = 400
+export const ARM_MS = 700
 
 /**
  * False for a beat after `key` changes, true the rest of the time.

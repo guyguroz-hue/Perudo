@@ -178,3 +178,42 @@
     --die-size: 8px !important;
   }
 }
+
+/*
+ * Whoever just cut in, for as long as the line above the dock is saying so.
+ *
+ * Three things about one event, each answering a different question: the flash
+ * across the timber says something happened, the line says who and what, and
+ * this says where to look. Brass, because a Burst is this table's own move and
+ * never a fault — and a ring rather than a fill, so a name stays readable while
+ * it is marked.
+ */
+.badge--cut {
+  box-shadow:
+    0 0 0 1.5px rgb(240 205 135 / 0.9),
+    0 0 18px rgb(212 162 76 / 0.55);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .badge--cut {
+    animation: badge-cut 2.6s var(--ease-ui) both;
+  }
+}
+
+@keyframes badge-cut {
+  0% {
+    box-shadow:
+      0 0 0 3px rgb(255 226 170 / 1),
+      0 0 28px rgb(240 205 135 / 0.8);
+  }
+  22% {
+    box-shadow:
+      0 0 0 1.5px rgb(240 205 135 / 0.9),
+      0 0 18px rgb(212 162 76 / 0.55);
+  }
+  100% {
+    box-shadow:
+      0 0 0 1.5px rgb(240 205 135 / 0.45),
+      0 0 10px rgb(212 162 76 / 0.25);
+  }
+}

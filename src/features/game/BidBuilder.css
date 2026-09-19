@@ -273,3 +273,35 @@
 .builder__why--waiting {
   color: var(--ink-faint);
 }
+
+/* The same beat, on the button that raises the bid. See `.challenge--arming`:
+   the wait is a rule, and a rule nobody can see is indistinguishable from the
+   network being slow. */
+.builder__submit {
+  position: relative;
+  overflow: hidden;
+}
+
+.builder__submit--arming::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 0.7);
+  transform-origin: left center;
+  animation: submit-arm var(--arm-ms, 700ms) linear both;
+}
+
+@keyframes submit-arm {
+  from { scale: 0 1; opacity: 0.8; }
+  to { scale: 1 1; opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .builder__submit--arming::after {
+    display: none;
+  }
+}

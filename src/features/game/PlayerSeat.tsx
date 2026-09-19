@@ -25,8 +25,18 @@ export function PlayerSeat({
   placement,
   lifted = 0,
   overhead = 0,
+  cutIn = false,
 }: {
   placement: SeatPlacement
+  /**
+   * True for the couple of seconds after this player cut in.
+   *
+   * The flash of light across the timber says somebody did; the line above the
+   * dock says who. This is the third thing, and the one that answers "where" —
+   * a player reading the line should be able to look up and find them without
+   * matching a colour to six cups.
+   */
+  cutIn?: boolean
   /** How far the cups are off the table, 0 to 1, which the badges follow. */
   lifted?: number
   /**
@@ -80,7 +90,7 @@ export function PlayerSeat({
   if (player.isYou) {
     return (
       <li
-        className={`badge badge--you ${near ? 'badge--near' : 'badge--far'}${player.hasTurn ? ' badge--turn' : ''}${aerial ? ' badge--aerial' : ''}`}
+        className={`badge badge--you ${near ? 'badge--near' : 'badge--far'}${player.hasTurn ? ' badge--turn' : ''}${aerial ? ' badge--aerial' : ''}${cutIn ? ' badge--cut' : ''}`}
         style={style}
       >
         <span className="badge__status">
@@ -98,6 +108,7 @@ export function PlayerSeat({
         player.hasTurn && !player.isEliminated ? 'badge--turn' : '',
         player.isEliminated ? 'badge--out' : '',
         aerial ? 'badge--aerial' : '',
+        cutIn ? 'badge--cut' : '',
       ]
         .filter(Boolean)
         .join(' ')}

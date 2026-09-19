@@ -6,7 +6,7 @@ import type { NoticeText } from './Notice'
 import { minimalRaise, nextActive } from '../../game'
 import type { Face, ProposedBid } from '../../game'
 import type { TableMove, TablePlayer, TableView } from './view'
-import { faceWord } from './events'
+import { describeEvent, faceWord } from './events'
 import './PreviewLive.css'
 
 /**
@@ -73,10 +73,18 @@ function withBid(view: TableView, actorId: string, bid: ProposedBid): TableView 
       bid: { quantity: bid.quantity, face: bid.face, bidderId: actorId, bull: null },
     },
     players: view.players.map((player) => ({ ...player, hasTurn: player.id === turn })),
+    // Worded by the same function the game words it with, so the line above the
+    // dock says here exactly what it says at a table. A preview that phrases
+    // its own moves is a preview of a screen nobody gets.
     moves: said(
       view,
       actorId,
-      `${name(actorId)} bid ${bid.quantity} ${faceWord(bid.face as Face, bid.quantity)}`,
+      describeEvent({
+        kind: burst ? 'burst_bid' : 'bid',
+        actorName: name(actorId),
+        quantity: bid.quantity,
+        face: bid.face as Face,
+      }) ?? '',
       burst,
     ),
   }
@@ -128,7 +136,12 @@ export function PreviewLive() {
           bid: { ...current.round.bid, bull: { callerId: actor.id } },
         },
         players: current.players.map((player) => ({ ...player, hasTurn: player.id === turn })),
-        moves: said(current, actor.id, `${name(actor.id)} called Bull`, true),
+        moves: said(
+          current,
+          actor.id,
+          describeEvent({ kind: 'burst_bull', actorName: name(actor.id) }) ?? '',
+          true,
+        ),
       }
     })
   }

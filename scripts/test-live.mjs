@@ -469,6 +469,32 @@ check(armed.armedLater === true, 'and come alive a beat later, rather than stayi
   check(reading === 'exactly', 'Lie now doubts the Bulled reading of the claim', reading)
 
   /*
+   * A Bull out of turn is a Burst, so the line above the dock gives itself over
+   * to saying who — and the dock must not move an inch while it does. A pill
+   * two points taller than the line it replaces would shift every control under
+   * it every time somebody cut in, which is the fault that put Bull under a
+   * thumb aiming at Bid arriving again by the back door.
+   */
+  const watcher2 = players.find((p) => p !== caller)
+  const cut = await watcher2.page.evaluate(() => {
+    const line = document.querySelector('.turn')
+    const dock = document.querySelector('.board__dock')
+    return {
+      saying: line?.className.includes('turn--cutting') === true,
+      text: line?.textContent ?? '',
+      dock: Math.round((dock?.getBoundingClientRect().height ?? 0) * 10) / 10,
+      marked: document.querySelectorAll('.badge--cut').length,
+    }
+  })
+  check(cut.saying, 'the line above the dock says who cut in', cut.text)
+  check(cut.marked === 1, 'and their seat is marked, so you can find them', `${cut.marked} marked`)
+  check(
+    Math.abs(cut.dock - after) < 1,
+    'and the dock does not move to say it',
+    `${after}px then ${cut.dock}px`,
+  )
+
+  /*
    * And a notice that takes itself off the screen.
    *
    * "You cannot get it off the screen and it does not move until you bid

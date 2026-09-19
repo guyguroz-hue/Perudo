@@ -29,6 +29,7 @@ import { usePrefersReducedMotion } from '../../lib/motion'
 import { useSound, useSoundEffect } from '../../lib/useSound'
 import type { TablePlayer, TableView } from './view'
 import { burstBarred, turnHolder, wouldBurst, you } from './view'
+import type { TableMove } from './view'
 import './GameTable.css'
 
 /**
@@ -179,7 +180,7 @@ export function GameTable({
    * the screen: a line in the log, in the corner, while the player was looking
    * at the middle of the table.
    */
-  const jolting = useBurst(view.moves)
+  const { jolting, cutIn } = useBurst(view.moves)
   const { stage, counted } = useRevealStage(reveal?.data ?? null, reveal !== null)
   const lifting = reveal !== null && stage !== 'held'
   const mood = lifting ? 'revealing' : shaking ? 'dealing' : 'still'
@@ -416,6 +417,7 @@ export function GameTable({
             <PlayerSeat
               key={placement.player.id}
               placement={placement}
+              cutIn={cutIn !== null && cutIn.actorId === placement.player.id}
               lifted={eye}
               overhead={eye}
             />
@@ -444,6 +446,7 @@ export function GameTable({
             burst={burst}
             barred={barred}
             canAct={canAct}
+            cutIn={cutIn}
             busy={busy}
             pending={pending}
             onTable={onTable}
@@ -472,6 +475,7 @@ function TableDock({
   burst,
   barred,
   canAct,
+  cutIn,
   busy,
   pending,
   onTable,
@@ -488,6 +492,8 @@ function TableDock({
   /** True while the opening bid of a Farewell Round is owed to somebody else. */
   barred: boolean
   canAct: boolean
+  /** The Burst just made, while the line above the dock is still saying it. */
+  cutIn: TableMove | null
   busy: boolean
   /** Which action is in flight, so the control that sent it can say so. */
   pending: PendingAction
@@ -518,7 +524,21 @@ function TableDock({
         */}
       {/* Said before anything else in the dock, because it is what decides
           whether the rest of the dock is for you to use right now. */}
-      <TurnLine holder={holder} canAct={canAct} />
+      <TurnLine
+        holder={holder}
+        canAct={canAct}
+        cutIn={
+          cutIn === null
+            ? null
+            : {
+                text: cutIn.text,
+                // Their colour, which is the colour on their cup and at their
+                // seat. Null only for something the table did to itself.
+                seatIndex:
+                  view.players.find((player) => player.id === cutIn.actorId)?.seatIndex ?? null,
+              }
+        }
+      />
 
       <section className="board__hand" aria-label="Your dice">
         {/*

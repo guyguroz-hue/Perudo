@@ -230,3 +230,48 @@
   width: 18px;
   height: 18px;
 }
+
+/*
+ * The beat after a bid lands, made visible.
+ *
+ * `disabled` on these two means one of two opposite things — "nothing to doubt
+ * yet" or "a bid just landed, give it a moment" — and they looked identical.
+ * The second one reported as latency: the press did nothing, nothing said why,
+ * and the only available explanation was that the app was slow.
+ *
+ * A line that fills across the foot of the tile over exactly the arming time.
+ * It is the smallest thing that turns a wait into a rule, and it is deliberately
+ * not a countdown in numbers: this is a fifth of a second of information, not a
+ * timer somebody should be watching.
+ */
+.challenge--arming::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 0.75);
+  transform-origin: left center;
+  animation: challenge-arm var(--arm-ms, 700ms) linear both;
+}
+
+.challenge__lie,
+.challenge__bull {
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes challenge-arm {
+  from { scale: 0 1; opacity: 0.85; }
+  to { scale: 1 1; opacity: 0.35; }
+}
+
+/* With motion off the bar would appear full and stay, which says the opposite
+   of what it means. The tile simply stays spent. */
+@media (prefers-reduced-motion: reduce) {
+  .challenge--arming::after {
+    display: none;
+  }
+}

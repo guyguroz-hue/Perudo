@@ -1,7 +1,8 @@
+import type { CSSProperties } from 'react'
 import { Die } from '../../components/Die'
 import type { ActiveBid } from '../../game'
 import { MAX_DICE } from '../../game'
-import { useArmed } from './armed'
+import { ARM_MS, useArmed } from './armed'
 import type { PendingAction } from './useGame'
 import './ChallengeActions.css'
 
@@ -77,6 +78,15 @@ export function ChallengeActions({
    * never deciding about it.
    */
   const live = useArmed(bid !== null)
+  /*
+   * Spent because a bid has just landed, as opposed to spent because there is
+   * nothing to doubt. The two look identical and mean opposite things: one is
+   * "not yet" and the other is "not ever, until somebody bids". Without
+   * something to see, the first reads as the app being slow — which is exactly
+   * how it was reported.
+   */
+  const arming = bid !== null && !live
+  const sweep = { '--arm-ms': `${ARM_MS}ms` } as CSSProperties
 
   /*
    * A bid can only be Bulled once.
@@ -111,7 +121,10 @@ export function ChallengeActions({
     <div className="challenge">
       <button
         type="button"
-        className={`challenge__lie${pending === 'lie' ? ' challenge--sending' : ''}`}
+        className={`challenge__lie${pending === 'lie' ? ' challenge--sending' : ''}${
+          arming ? ' challenge--arming' : ''
+        }`}
+        style={sweep}
         disabled={busy || !live}
         onClick={onLie}
         aria-label={`${burst ? 'Burst Lie' : 'Lie'}: ${doubting}${
@@ -144,7 +157,10 @@ export function ChallengeActions({
 
       <button
         type="button"
-        className={`challenge__bull${pending === 'bull' ? ' challenge--sending' : ''}`}
+        className={`challenge__bull${pending === 'bull' ? ' challenge--sending' : ''}${
+          arming && !bulled ? ' challenge--arming' : ''
+        }`}
+        style={sweep}
         disabled={busy || bulled || !live}
         onClick={onBull}
         aria-label={

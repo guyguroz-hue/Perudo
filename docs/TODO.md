@@ -187,6 +187,40 @@ Completed items are marked `[x]` and kept, not deleted.
       a software renderer has the page at six frames a second, and reported a
       lift as level with the music when it was three times louder.
 
+- [x] **B-11** ~~Two things from the same evening, both about not being able to
+      tell what just happened.~~
+
+      *The beat before a control answers was too short, and invisible.* Four
+      hundred milliseconds "felt like a normal press with a tiny bit of
+      latency", which is two faults in one sentence. Too short: a thumb takes
+      about a fifth of a second to land, but reading a bid that has just changed
+      and deciding again takes far longer, and the window has to cover the
+      deciding. And invisible: the only thing a player could tell was that the
+      app had been slow. It is 700ms now, and Bid, Lie and Bull each draw a line
+      across their foot while they arm. A wait you can see is a rule; the same
+      wait you cannot see is a bug in the network.
+
+      *And a Burst was impossible to follow.* "The cup lights up a little and
+      then suddenly jumps, and the logs are not convenient to follow." The flash
+      across the timber says only that something happened — it cannot say who,
+      or what they said, and a player who looked up a moment late has missed it
+      entirely. Three things now answer three different questions: the flash
+      says something happened, the line at the head of the dock gives itself
+      over for two and a half seconds to who cut in and what they said, in their
+      own colour, and their seat wears a brass ring for the same period so the
+      line can be looked up from. The line's pill keeps the vertical padding of
+      the line it replaces, because a pill two points taller would move every
+      control under it every time somebody cut in.
+
+      Found while reading it: the flash could get stuck on for good. Its timers
+      were cleared by the cleanup of an effect that depends on the move list, so
+      any move arriving inside the flash cancelled the timer that ends it, and
+      the next run returned early without setting a new one. The board kept the
+      class, and since the flash is a one-shot animation on that class, no later
+      Burst ever flashed again. The window is a fifth of a second, which sounds
+      unreachable until you remember the case the feature exists for: two people
+      cutting in at once.
+
 - [x] **F-1** Watching a table, and asking to sit at one. A room that had
       started was a closed door: somebody who tapped the invite link a minute
       late got "that game is already under way" and a Back button, and a
