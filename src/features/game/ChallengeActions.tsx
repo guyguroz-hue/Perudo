@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { Die } from '../../components/Die'
 import type { ActiveBid } from '../../game'
 import { MAX_DICE } from '../../game'
-import { ARM_MS, useArmed } from './armed'
+import { ARM_MS, useSettled } from './armed'
 import type { PendingAction } from './useGame'
 import './ChallengeActions.css'
 
@@ -70,14 +70,28 @@ export function ChallengeActions({
   const prize = bid === null || !burst ? null : ownDiceCount < MAX_DICE ? 'win' : 'full'
 
   /*
-   * And a beat before they answer to anything.
+   * And a beat before they answer to anything — after EVERY bid, not the first.
    *
    * A thumb is already travelling when a bid lands, and a press is committed
    * before it arrives. See `armed.ts`: nothing moves on the screen any more,
-   * but a tile can still change from spent to live underneath a finger that was
-   * never deciding about it.
+   * but what the tile would do changes underneath a finger that was never
+   * deciding about it.
+   *
+   * This was keyed on whether there was a bid at all, which is a boolean that
+   * goes true once a round and then stays true. So the beat happened on the
+   * opening bid and never again — and every bid after it, which is every bid
+   * anybody bursts in with, armed these tiles instantly. Reported exactly as it
+   * behaved: "I meant to call Lie on that bid, somebody cut in a hundredth of a
+   * second before I pressed, and my Lie went against theirs."
+   *
+   * Keyed on the claim itself now. The Bull is part of it, because a Bull
+   * changes what Lie means — from "fewer than seven" to "not exactly seven" —
+   * which is the same accident wearing different clothes.
    */
-  const live = useArmed(bid !== null)
+  const claim =
+    bid === null ? 'none' : `${bid.quantity}x${bid.face}|${bid.bull?.callerId ?? ''}`
+  const settled = useSettled(claim)
+  const live = bid !== null && settled
   /*
    * Spent because a bid has just landed, as opposed to spent because there is
    * nothing to doubt. The two look identical and mean opposite things: one is

@@ -170,7 +170,9 @@ check(
   check(
     overreaching.length === 0,
     'and no client ever asks for a hand that is not its own',
-    `${overreaching.length} of ${hands.length} reads were unscoped`,
+    `${overreaching.length} of ${hands.length} reads were unscoped: ${JSON.stringify(
+      overreaching.slice(0, 3),
+    )}`,
   )
 }
 
@@ -532,9 +534,12 @@ check(armed.armedLater === true, 'and come alive a beat later, rather than stayi
  * that the server refuses looks exactly like a press that worked, and the check
  * that failed afterwards was several steps away and blamed the wrong thing.
  */
-async function raise(player) {
+async function raise(player, bump = false) {
   const before = db.tables.game_events.length
   await player.page.waitForSelector('.builder__submit:not([disabled])', { timeout: 15_000 })
+  // Raising the quantity rather than the face, when a check needs the number on
+  // the tiles to visibly change.
+  if (bump) await player.page.click('button[aria-label="One more"]')
   await player.page.click('.builder__submit')
 
   const deadline = Date.now() + 10_000
@@ -551,6 +556,64 @@ async function raise(player) {
 }
 
 const roundBefore = liveRound().id
+
+/*
+ * And inert again on the SECOND bid, which is the one that was broken.
+ *
+ * The tiles were keyed on whether there was a bid at all — true once a round
+ * and true ever after — so the beat happened on the opening bid and never
+ * again. Every bid after it, which is every bid anybody bursts in with, armed
+ * them instantly. The check above passed against that the whole time, because
+ * it only ever watched the first.
+ */
+{
+  const watching = someoneElse()
+  const secondWatch = watching.page.evaluate(() => {
+    const count = () => document.querySelector('.challenge__lie .challenge__count')?.textContent
+    const lie = () => document.querySelector('.challenge__lie')
+    const row = document.querySelector('.challenge')
+    const was = count()
+
+    return new Promise((resolve) => {
+      let inertOnArrival = null
+      const observer = new MutationObserver(() => {
+        if (inertOnArrival === null && count() !== was) {
+          inertOnArrival = lie().hasAttribute('disabled')
+        }
+      })
+      observer.observe(row, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+      })
+
+      const started = performance.now()
+      const timer = setInterval(() => {
+        if (inertOnArrival !== null && !lie().hasAttribute('disabled')) {
+          clearInterval(timer)
+          observer.disconnect()
+          resolve({ sawArrival: true, inertOnArrival, armedLater: true })
+        }
+        if (performance.now() - started > 9000) {
+          clearInterval(timer)
+          observer.disconnect()
+          resolve({ sawArrival: inertOnArrival !== null, inertOnArrival, armedLater: false })
+        }
+      }, 20)
+    })
+  })
+
+  await raise(turnHolder(), true)
+  const again = await secondWatch
+  check(
+    again.sawArrival && again.inertOnArrival === true,
+    'Lie and Bull go spent again on the next bid, not only the first',
+    again.sawArrival ? 'live the moment the new claim landed' : 'never saw the claim change',
+  )
+  check(again.armedLater === true, 'and come back after that one too')
+}
+
 await raise(turnHolder())
 
 // A new bid supersedes the Bull entirely (GAME_RULES §8.2), so the tile comes
@@ -574,24 +637,45 @@ await doubter.page.waitForFunction(
   null,
   { timeout: 15_000 },
 )
+/*
+ * Watched from before the press, not after it.
+ *
+ * A reveal is a sequence that ends on its own, and the player who doubted sees
+ * it start about a second before everybody else — their screen opens the cups
+ * on the pause, before the server has answered. Checking the three screens one
+ * after another therefore asked the last one about something that had already
+ * finished and been put away, and reported a reveal nobody missed as a reveal
+ * that never arrived.
+ *
+ * So each screen is given a watcher first, and they all answer about the same
+ * moment.
+ */
+const watchingReveal = players.map(({ name, page }) => ({
+  name,
+  seen: page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const seen = { cups: false, result: false }
+        const started = performance.now()
+        const timer = setInterval(() => {
+          if (document.querySelector('.verdict') !== null) seen.cups = true
+          if (document.querySelector('.verdict__result') !== null) seen.result = true
+          if ((seen.cups && seen.result) || performance.now() - started > 30_000) {
+            clearInterval(timer)
+            resolve(seen)
+          }
+        }, 40)
+      }),
+  ),
+}))
+
 await doubter.page.click('.challenge__lie')
 
-for (const { name, page } of players) {
-  const sawReveal = await page
-    .waitForSelector('.verdict', { timeout: 20_000 })
-    .then(() => true)
-    .catch(() => false)
-  check(sawReveal, `${name}: sees the cups come off`)
+for (const { name, seen } of watchingReveal) {
+  const what = await seen
+  check(what.cups, `${name}: sees the cups come off`)
+  check(what.result, `${name}: and the verdict land`)
 }
-
-await Promise.all(
-  players.map(({ page }) =>
-    page.waitForFunction(() => document.querySelector('.verdict__result') !== null, null, {
-      timeout: 25_000,
-    }),
-  ),
-)
-pass('the verdict lands on every screen')
 
 check(liveRound().id !== roundBefore, 'the round moved on')
 

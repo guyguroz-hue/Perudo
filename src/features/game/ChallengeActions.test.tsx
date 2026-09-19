@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ChallengeActions } from './ChallengeActions'
 import { MAX_DICE } from '../../game'
 import { bid } from '../../game/testing'
+import { ARM_MS } from './armed'
 
 /**
  * The two ways of doubting, and the one of them that can pay.
@@ -77,5 +78,63 @@ describe('what a Burst Lie is worth', () => {
     )
     expect(screen.queryByRole('button', { name: /win a die/i })).toBeNull()
     expect(screen.getByRole('button', { name: /already holding five/i })).toBeTruthy()
+  })
+})
+
+/*
+ * The beat after a bid lands — after EVERY bid.
+ *
+ * This is the wiring and not the clock: `armed.ts` has always done the waiting
+ * correctly, and it was handed the wrong thing to wait on. The tiles were keyed
+ * on whether there was a bid at all, a boolean that goes true once a round and
+ * then stays true, so the beat happened on the opening bid and never again —
+ * and every bid after it, which is every bid anybody bursts in with, armed them
+ * instantly.
+ *
+ * Reported exactly as it behaved: "I meant to call Lie on that bid, somebody
+ * cut in a hundredth of a second before I pressed, and my Lie went against
+ * theirs." Every unit test in `armed.test.tsx` passed against it, because none
+ * of them could see what this component was passing.
+ */
+describe('going inert when the claim changes', () => {
+  const tiles = () => ({
+    lie: document.querySelector('.challenge__lie') as HTMLButtonElement,
+    bull: document.querySelector('.challenge__bull') as HTMLButtonElement,
+  })
+
+  const table = (claim: ReturnType<typeof bid>) => (
+    <ChallengeActions bid={claim} burst ownDiceCount={3} onLie={vi.fn()} onBull={vi.fn()} />
+  )
+
+  it('is spent the moment a second bid lands, not only the first', () => {
+    vi.useFakeTimers()
+    const { rerender } = render(table(bid(3, 5, 'alice')))
+    act(() => void vi.advanceTimersByTime(ARM_MS + 1))
+    expect(tiles().lie.disabled).toBe(false)
+
+    // Somebody cuts in. This is the press that was already on its way.
+    rerender(table(bid(4, 5, 'carl')))
+    expect(tiles().lie.disabled).toBe(true)
+    expect(tiles().bull.disabled).toBe(true)
+
+    act(() => void vi.advanceTimersByTime(ARM_MS + 1))
+    expect(tiles().lie.disabled).toBe(false)
+    vi.useRealTimers()
+  })
+
+  /*
+   * A Bull is the same accident wearing different clothes: it changes what Lie
+   * means, from "fewer than four" to "not exactly four", without the quantity
+   * or the face moving at all.
+   */
+  it('is spent when a Bull re-reads the bid under it', () => {
+    vi.useFakeTimers()
+    const { rerender } = render(table(bid(4, 5, 'alice')))
+    act(() => void vi.advanceTimersByTime(ARM_MS + 1))
+    expect(tiles().lie.disabled).toBe(false)
+
+    rerender(table({ ...bid(4, 5, 'alice'), bull: { callerId: 'carl' } }))
+    expect(tiles().lie.disabled).toBe(true)
+    vi.useRealTimers()
   })
 })

@@ -187,6 +187,35 @@ Completed items are marked `[x]` and kept, not deleted.
       a software renderer has the page at six frames a second, and reported a
       lift as level with the music when it was three times louder.
 
+- [x] **B-12** ~~The beat after a bid only ever happened once a round.~~
+      Reported from a real table: "I meant to call Lie on that bid, somebody
+      cut in a hundredth of a second before I pressed, and my Lie went against
+      theirs." Read as a missing feature and it was a shipped bug: the
+      challenge tiles were keyed on whether there was a bid *at all* — a
+      boolean that goes true once a round and then stays true — so the guard
+      fired on the opening bid and never again. Every bid after it, which is
+      every bid anybody bursts in with, armed Lie and Bull instantly.
+
+      Keyed on the claim now, the Bull included, because a Bull changes what
+      Lie means — "fewer than seven" to "not exactly seven" — without the
+      quantity or the face moving. `useArmed` is gone: a boolean was the wrong
+      question and keeping it around invited the same mistake again.
+
+      **Every unit test in `armed.test.tsx` passed against the bug**, because
+      they tested the clock and the clock was always right; what was wrong was
+      what the component handed it. So the new tests are at the component and
+      at the table: `ChallengeActions.test.tsx` re-renders with a second bid,
+      and `test:live` watches a real second bid land on a real phone-sized
+      screen. Both fail against the shipped code.
+
+      Found while fixing it: the reveal check in `test:live` was itself
+      timing-dependent. The player who doubted sees the cups come off about a
+      second before everybody else — their screen opens on the pause, before
+      the server answers — so checking three screens one after another asked
+      the last one about something already finished and put away. Each screen
+      gets a watcher before the press now, and they all answer about the same
+      moment.
+
 - [x] **B-11** ~~Two things from the same evening, both about not being able to
       tell what just happened.~~
 
@@ -220,6 +249,14 @@ Completed items are marked `[x]` and kept, not deleted.
       Burst ever flashed again. The window is a fifth of a second, which sounds
       unreachable until you remember the case the feature exists for: two people
       cutting in at once.
+
+- [x] **P-1** A Burst is a bid, and the button now says so. It was slate where
+      an ordinary bid is brass, which made the two read as different kinds of
+      move — and on this screen everything that is not brass is a control that
+      acts *against* a bid, so players read it that way. It keeps the brass and
+      is marked by a dark inner edge instead: a difference in trim rather than
+      in kind. The word is "Burst bid" rather than "Burst", which fits the same
+      96px box at every phone width and moves the dock not at all.
 
 - [x] **F-1** Watching a table, and asking to sit at one. A room that had
       started was a closed door: somebody who tapped the invite link a minute

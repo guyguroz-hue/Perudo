@@ -166,7 +166,10 @@ export function BidRow({
                 : 'Bid'
           }
         >
-          {pending === 'bid' ? 'Sending' : barred ? 'Theirs' : burst ? 'Burst' : 'Bid'}
+          {/* "Burst bid" rather than "Burst": the word on its own read as a
+              different kind of move, and it is not one — it is this bid, made
+              out of turn. */}
+          {pending === 'bid' ? 'Sending' : barred ? 'Theirs' : burst ? 'Burst bid' : 'Bid'}
         </button>
       </div>
 

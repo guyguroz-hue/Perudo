@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ARM_MS, useArmed, useSettled } from './armed'
+import { ARM_MS, useSettled } from './armed'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -27,13 +27,13 @@ afterEach(() => {
 describe('a control that has just come alive', () => {
   it('is inert for longer than a thumb takes to land', () => {
     vi.useFakeTimers()
-    const { result, rerender } = renderHook(({ ready }) => useArmed(ready), {
-      initialProps: { ready: false },
+    const { result, rerender } = renderHook(({ claim }) => useSettled(claim), {
+      initialProps: { claim: 'none' },
     })
-    expect(result.current).toBe(false)
+    expect(result.current).toBe(true)
 
     // A bid lands. The tile is live, and a thumb is already on its way.
-    rerender({ ready: true })
+    rerender({ claim: '4x5' })
     expect(result.current).toBe(false)
 
     act(() => void vi.advanceTimersByTime(ARM_MS - 1))
@@ -43,45 +43,69 @@ describe('a control that has just come alive', () => {
     expect(result.current).toBe(true)
   })
 
-  it('leaves alone a control that was usable all along', () => {
+  it('leaves alone a control nothing has happened to', () => {
     // Nothing changed under anybody, so there is nothing to protect them from
     // — and a player who has been looking at Lie for ten seconds should not be
     // made to wait for it.
-    const { result } = renderHook(() => useArmed(true))
+    const { result } = renderHook(() => useSettled('4x5'))
     expect(result.current).toBe(true)
   })
 
   it('does not restart its clock on a re-render that changes nothing', () => {
     vi.useFakeTimers()
-    const { result, rerender } = renderHook(({ ready }) => useArmed(ready), {
-      initialProps: { ready: false },
+    const { result, rerender } = renderHook(({ claim }) => useSettled(claim), {
+      initialProps: { claim: 'none' },
     })
-    rerender({ ready: true })
+    rerender({ claim: '4x5' })
 
     // The table re-renders on every event at it, and there are several a
     // second on a busy table. If each one restarted the clock the control
     // would arm late, or never.
     act(() => void vi.advanceTimersByTime(ARM_MS - 100))
-    rerender({ ready: true })
-    rerender({ ready: true })
+    rerender({ claim: '4x5' })
+    rerender({ claim: '4x5' })
     act(() => void vi.advanceTimersByTime(101))
 
     expect(result.current).toBe(true)
   })
 
-  it('goes back to inert when the control does', () => {
+  /*
+   * The bug this file's first version had, and it shipped.
+   *
+   * The challenge tiles were keyed on whether there was a bid at all — a
+   * boolean that goes true once a round and then stays true. So the beat
+   * happened on the opening bid and never again, and every bid after it, which
+   * is every bid anybody bursts in with, armed the tiles instantly. Reported
+   * exactly as it behaved: "I meant to call Lie on that bid, somebody cut in a
+   * hundredth of a second before I pressed, and my Lie went against theirs."
+   */
+  it('goes inert again on the second change, and the third', () => {
     vi.useFakeTimers()
-    const { result, rerender } = renderHook(({ ready }) => useArmed(ready), {
-      initialProps: { ready: true },
+    const { result, rerender } = renderHook(({ claim }) => useSettled(claim), {
+      initialProps: { claim: '4x5' },
     })
-    expect(result.current).toBe(true)
+
+    for (const claim of ['4x6', '5x6', '5x6|bull']) {
+      rerender({ claim })
+      expect(result.current).toBe(false)
+      act(() => void vi.advanceTimersByTime(ARM_MS + 1))
+      expect(result.current).toBe(true)
+    }
+  })
+
+  it('goes back to inert when the round takes the bid away', () => {
+    vi.useFakeTimers()
+    const { result, rerender } = renderHook(({ claim }) => useSettled(claim), {
+      initialProps: { claim: '4x5' },
+    })
 
     // The round resolves: there is nothing to doubt again.
-    rerender({ ready: false })
+    rerender({ claim: 'none' })
     expect(result.current).toBe(false)
 
     // And the next bid has to wait its beat like the first one did.
-    rerender({ ready: true })
+    act(() => void vi.advanceTimersByTime(ARM_MS + 1))
+    rerender({ claim: '2x3' })
     expect(result.current).toBe(false)
     act(() => void vi.advanceTimersByTime(ARM_MS + 1))
     expect(result.current).toBe(true)

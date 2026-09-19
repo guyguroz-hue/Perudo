@@ -79,9 +79,3 @@ export function useSettled(key: unknown, delay = ARM_MS): boolean {
 
   return settled
 }
-
-export function useArmed(ready: boolean, delay = ARM_MS): boolean {
-  const settled = useSettled(ready, delay)
-  // Already usable on arrival is already armed: nothing changed under anybody.
-  return ready && settled
-}
