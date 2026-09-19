@@ -4,7 +4,6 @@ import { callBull, challenge, openRound, placeBid } from './actions'
 import { createClient } from './deps'
 import { GameError } from './errors'
 import { Store } from './store'
-import { iceServers } from './voice'
 
 /**
  * The authoritative game server.
@@ -62,17 +61,6 @@ Deno.serve(async (request: Request): Promise<Response> => {
         return ok(await callBull(store, actor, gameId))
       case 'challenge':
         return ok(await challenge(store, actor, gameId))
-      /*
-       * Where to relay the voices, for the pairs that cannot reach each other.
-       *
-       * Behind the same membership check as every other action, which is the
-       * reason it is an action here rather than a function of its own: relay
-       * credentials cost money to use, and the people entitled to them are
-       * exactly the people playing this game.
-       */
-      case 'voice_ice':
-        await requirePlaying(store, actor, gameId)
-        return ok(await iceServers())
       default:
         return fail(new GameError('BAD_REQUEST', `Unknown action: ${String(body.action)}`))
     }
@@ -102,19 +90,6 @@ async function whoIsCalling(request: Request): Promise<string> {
     throw new GameError('NOT_AUTHENTICATED', 'Those credentials are not valid.', 401)
   }
   return data.user.id
-}
-
-/**
- * Refuse anybody who is not playing this game.
- *
- * The actions do this for themselves on the way to doing something; this one
- * has nothing else to do, so it asks outright.
- */
-async function requirePlaying(store: Store, actor: { id: string }, gameId: string) {
-  const players = await store.players(gameId)
-  if (!players.some((player) => player.user_id === actor.id)) {
-    throw new GameError('NOT_A_PLAYER', 'You are not in this game.', 403)
-  }
 }
 
 function ok(payload: unknown): Response {

@@ -138,19 +138,3 @@ export async function fetchOwnHand(
   if (error !== null) throw new GameActionError('UNKNOWN', error.message, false)
   return (data?.dice as Face[] | undefined) ?? null
 }
-
-/**
- * Where to relay the voices, for the pairs that cannot reach each other.
- *
- * Minted by the server, because the key that mints them is permanent and would
- * let anybody holding it hand strangers a relay at our expense. An empty list
- * is a real answer and not a failure: it means no relay is configured, and most
- * pairs never need one.
- */
-export async function voiceIce(gameId: string): Promise<RTCIceServer[]> {
-  const { iceServers } = await act<{ iceServers: RTCIceServer[] }>({
-    action: 'voice_ice',
-    gameId,
-  })
-  return iceServers ?? []
-}

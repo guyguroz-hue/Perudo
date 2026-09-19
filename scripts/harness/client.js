@@ -92,52 +92,22 @@ class Query {
 const channels = new Set()
 let polling = false
 let since = 0
-let liveSince = 0
 
 function startPolling() {
   if (polling) return
   polling = true
   const tick = async () => {
     try {
-      const response = await fetch(`/fake/changes?since=${since}&live=${liveSince}`)
-      const { seq, changes, live } = await response.json()
+      const response = await fetch(`/fake/changes?since=${since}`)
+      const { seq, changes } = await response.json()
       since = seq
       for (const change of changes) {
         for (const channel of channels) {
-          for (const listener of channel.rows) {
+          for (const listener of channel.listeners) {
             if (listener.table !== change.table) continue
             if (!filterMatches(listener.filter, change.row)) continue
             listener.callback({ eventType: 'UPDATE', new: change.row })
           }
-        }
-      }
-
-      /*
-       * Presence and broadcast, which a voice call is entirely made of.
-       *
-       * Presence arrives as a whole snapshot and is only handed on when it
-       * differs, because the mesh above it opens and closes connections from
-       * the difference — a sync on every poll would be a table that rebuilt its
-       * audio ten times a second.
-       */
-      if (live !== undefined) {
-        liveSince = live.seq
-        for (const message of live.messages) {
-          for (const channel of channels) {
-            if (channel.name !== message.channel) continue
-            for (const listener of channel.casts) {
-              if (listener.event !== message.event) continue
-              listener.callback({ payload: message.payload })
-            }
-          }
-        }
-
-        const next = live.presence ?? {}
-        for (const channel of channels) {
-          const room = next[channel.name] ?? {}
-          if (JSON.stringify(room) === JSON.stringify(channel.present)) continue
-          channel.present = room
-          for (const listener of channel.syncs) listener()
         }
       }
     } catch {
@@ -158,41 +128,14 @@ function filterMatches(filter, row) {
 }
 
 class Channel {
-  constructor(name, options) {
+  constructor(name) {
     this.name = name
-    this.rows = []
-    this.casts = []
-    this.syncs = []
-    this.present = {}
-    this.key = options?.config?.presence?.key ?? cachedUser ?? 'anonymous'
+    this.listeners = []
   }
-
-  on(type, config, callback) {
-    if (type === 'broadcast') this.casts.push({ event: config.event, callback })
-    else if (type === 'presence') this.syncs.push(callback)
-    else this.rows.push({ table: config.table, filter: config.filter, callback })
+  on(_type, config, callback) {
+    this.listeners.push({ table: config.table, filter: config.filter, callback })
     return this
   }
-
-  async send({ event, payload }) {
-    await post('/fake/broadcast', { channel: this.name, event, payload })
-    return 'ok'
-  }
-
-  async track(state) {
-    await post('/fake/presence', { channel: this.name, key: this.key, state })
-    return 'ok'
-  }
-
-  async untrack() {
-    await post('/fake/presence', { channel: this.name, key: this.key, leave: true })
-    return 'ok'
-  }
-
-  presenceState() {
-    return this.present
-  }
-
   subscribe(onStatus) {
     channels.add(this)
     startPolling()
@@ -240,10 +183,9 @@ export const supabase = {
   auth,
   from: (table) => new Query(table),
   rpc: (name, args) => post('/fake/rpc', { name, args }),
-  channel: (name, options) => new Channel(name, options),
+  channel: (name) => new Channel(name),
   removeChannel: async (channel) => {
     channels.delete(channel)
-    await channel.untrack().catch(() => {})
   },
   functions: {
     async invoke(name, { body, signal } = {}) {

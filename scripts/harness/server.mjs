@@ -67,10 +67,7 @@ export async function startHarness({ port = 5199 } = {}) {
     const url = new URL(request.url, 'http://harness')
 
     if (url.pathname === '/fake/changes') {
-      return send(200, {
-        ...db.changesSince(Number(url.searchParams.get('since') ?? 0)),
-        live: db.liveSince(Number(url.searchParams.get('live') ?? 0)),
-      })
+      return send(200, db.changesSince(Number(url.searchParams.get('since') ?? 0)))
     }
 
     const body = request.method === 'POST' ? await readJson(request) : {}
@@ -100,16 +97,6 @@ export async function startHarness({ port = 5199 } = {}) {
         return send(200, db.query({ ...spec, filters: [{ op: 'eq', col: 'id', val: write.id }] }))
       }
       return send(200, db.query(spec))
-    }
-
-    if (url.pathname === '/fake/broadcast') {
-      return send(200, { seq: db.broadcast(body.channel, body.event, body.payload) })
-    }
-
-    if (url.pathname === '/fake/presence') {
-      if (body.leave === true) db.untrack(body.channel, body.key)
-      else db.track(body.channel, body.key, body.state)
-      return send(200, { ok: true })
     }
 
     if (url.pathname === '/fake/rpc') {

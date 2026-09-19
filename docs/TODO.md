@@ -221,39 +221,6 @@ Completed items are marked `[x]` and kept, not deleted.
       unreachable until you remember the case the feature exists for: two people
       cutting in at once.
 
-- [x] **F-2** Voice at the table. Perudo is played out loud — the bluffing is
-      the game — so the room runs a small voice call between its players in the
-      browser, with no app to install and nothing to organise. WebRTC mesh, one
-      connection per other player, which is the wrong shape above eight people
-      and exactly right at six; signalling over Supabase Realtime broadcast and
-      presence, which costs nothing and was already there; TURN from Cloudflare,
-      minted server-side because the key that mints it is permanent. Spectators
-      are deliberately excluded: a mesh costs each player one connection per
-      listener and the room admits any number of them.
-
-      Who is talking shows on their own badge, which is the reason for putting
-      voice inside the game rather than beside it — a bid is a performance, and
-      knowing who is making it while they make it is most of what reading a
-      table is.
-
-      `test:live` proves the chain rather than a mock of it: Chromium's fake
-      capture device plays a tone, it crosses a real RTCPeerConnection, and the
-      other browser's screen says who is talking. What no harness here can test
-      is Safari on a phone. See docs/VOICE.md for the traps that were handled
-      blind, and for the relay setup.
-
-      The relay is configured by environment rather than by provider, which it
-      was not at first: the original version was written against one company's
-      API and that company wants a card on file — a fact nobody checked before
-      recommending it. `TURN_URLS`/`TURN_USERNAME`/`TURN_CREDENTIAL` is what
-      every free provider and every self-hosted coturn hands out, and the
-      minted-credentials path is kept as the better option for anybody who
-      wants it. With neither, the call runs on public STUN and a pair that
-      cannot connect is **named** — a dashed amber edge on that player's badge
-      — because the alternative is presenting a failure as silence, and a
-      player who is not told spends the evening thinking somebody is being
-      quiet.
-
 - [x] **F-1** Watching a table, and asking to sit at one. A room that had
       started was a closed door: somebody who tapped the invite link a minute
       late got "that game is already under way" and a Back button, and a

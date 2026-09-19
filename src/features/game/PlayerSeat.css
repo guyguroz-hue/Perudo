@@ -217,37 +217,3 @@
       0 0 10px rgb(212 162 76 / 0.25);
   }
 }
-
-/*
- * Somebody talking, on the face they are talking from.
- *
- * The point of putting voice inside the game rather than beside it: a bid is a
- * performance, and knowing who is making it while they make it is most of what
- * reading a table is. Blue, the colour this product already uses for live and
- * present, and a ring rather than a fill so the name stays readable.
- *
- * No animation. It follows a voice, which moves on its own; a badge that also
- * pulsed on a timer would be two rhythms fighting on one object.
- */
-.badge--talking {
-  box-shadow:
-    0 0 0 2px rgb(150 195 255 / 0.9),
-    0 0 16px rgb(120 170 255 / 0.5);
-}
-
-/*
- * In the call, and their voice never arrived.
- *
- * A dashed edge rather than a colour: this is an absence, and every solid ring
- * on this table means something is present. Amber rather than red because
- * nothing is broken — two ends that cannot reach each other without a relay is
- * how the internet is, and the fix is a setting rather than a bug report.
- *
- * What it must not look like is quiet. A player who is not told spends the
- * evening thinking somebody is being unusually silent.
- */
-.badge--unheard {
-  box-shadow: 0 0 0 1px rgb(212 162 76 / 0.55);
-  outline: 1px dashed rgb(240 205 135 / 0.7);
-  outline-offset: 2px;
-}

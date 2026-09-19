@@ -500,61 +500,7 @@ export function createDb() {
     }
   }
 
-  // ------------------------------------------------- broadcast and presence
-  /*
-   * The other half of Realtime, which the game did not need until voices.
-   *
-   * Row changes say what the database holds; these two say what the people
-   * holding phones are doing right now, and nothing about them is ever written
-   * down. A voice call is entirely made of this: who is in it, and the
-   * back-and-forth two browsers have before they can hear each other.
-   */
-  let messageSeq = 0
-  const messages = []
-  const presence = new Map()
-
-  function broadcast(channel, event, payload) {
-    messageSeq += 1
-    messages.push({ seq: messageSeq, channel, event, payload })
-    if (messages.length > 300) messages.splice(0, messages.length - 300)
-    return messageSeq
-  }
-
-  function track(channel, key, state) {
-    const room = presence.get(channel) ?? new Map()
-    room.set(key, state ?? {})
-    presence.set(channel, room)
-  }
-
-  function untrack(channel, key) {
-    presence.get(channel)?.delete(key)
-  }
-
-  function since(seq) {
-    return {
-      seq: messageSeq,
-      messages: messages.filter((message) => message.seq > seq),
-      presence: Object.fromEntries(
-        [...presence].map(([channel, room]) => [channel, Object.fromEntries(room)]),
-      ),
-    }
-  }
-
-  return {
-    tables,
-    query,
-    rpc,
-    upsertProfile,
-    logEvent,
-    rollDie,
-    touch,
-    changesSince,
-    broadcast,
-    track,
-    untrack,
-    liveSince: since,
-    seqNow: () => seq,
-  }
+  return { tables, query, rpc, upsertProfile, logEvent, rollDie, touch, changesSince, seqNow: () => seq }
 
   function changesSince(since) {
     return { seq, changes: changes.filter((change) => change.seq > since) }

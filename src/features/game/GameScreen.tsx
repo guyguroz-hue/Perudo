@@ -9,8 +9,6 @@ import { Notice } from './Notice'
 import { claimFor } from './reveal'
 import type { RevealClaim } from './reveal'
 import { useGame } from './useGame'
-import { MicButton } from '../voice/MicButton'
-import { useVoice } from '../voice/useVoice'
 import type { TableView } from './view'
 import './GameScreen.css'
 
@@ -34,15 +32,6 @@ export function GameScreen({
   roomMenu?: ReactNode
 }) {
   const game = useGame(gameId, youId)
-  /*
-   * The table, talking.
-   *
-   * Held here rather than in the room, because it is a call between the people
-   * in this game: the mesh is one connection per other player and the room now
-   * admits any number of watchers. It survives a round ending and a reveal
-   * playing — nothing about a voice call belongs to a round.
-   */
-  const voice = useVoice(gameId, youId)
   /*
    * Why the table never arrived.
    *
@@ -134,16 +123,7 @@ export function GameScreen({
 
       <GameTable
         connection={game.connection}
-        speaking={voice.speaking}
-        unreachable={voice.unreachable}
-        roomMenu={
-          <>
-            {/* First in the corner cluster, because it is the only one of them
-                anybody presses more than once a game. */}
-            <MicButton voice={voice} />
-            {roomMenu}
-          </>
-        }
+        roomMenu={roomMenu}
         view={game.view}
         busy={game.busy}
         pending={game.pending}

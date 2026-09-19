@@ -40,21 +40,7 @@ const check = (ok, what, detail) => (ok ? pass(what) : fail(what, detail))
 const harness = await startHarness({ port: PORT })
 const browser = await chromium.launch({
   executablePath: CHROME,
-  args: [
-    '--use-gl=swiftshader',
-    '--enable-unsafe-swiftshader',
-    /*
-     * A microphone that is always there and always says something.
-     *
-     * Chromium's fake capture device plays a tone, which is exactly what a
-     * voice test needs: it goes in one browser's microphone and has to come
-     * out of another's speaker, through a real RTCPeerConnection, before
-     * anything on screen can say so.
-     */
-    '--use-fake-device-for-media-stream',
-    '--use-fake-ui-for-media-stream',
-    '--autoplay-policy=no-user-gesture-required',
-  ],
+  args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
 })
 
 const db = harness.db
@@ -263,67 +249,6 @@ for (const { name, page } of players) {
     return { over: el.scrollHeight - el.clientHeight, height: el.clientHeight }
   })
   check(scroll.over <= 1, `${name}: nothing scrolls`, `${scroll.over}px past the fold`)
-}
-
-// -----------------------------------------------------------------------------
-// Two of them talking
-// -----------------------------------------------------------------------------
-// Perudo is played out loud, so the table runs a voice call between its
-// players. What is proved here is the whole chain and not a mock of it: a tone
-// goes into one browser's microphone, crosses a real RTCPeerConnection, comes
-// out of another browser's speaker, and is loud enough there that the screen
-// says who is talking.
-//
-// Chromium's fake capture device is what makes that testable. What it cannot
-// test is Safari on a phone, which is where this will actually be used.
-
-{
-  const [ada, bo] = players
-  for (const player of [ada, bo]) {
-    await player.page.click('.mic')
-    const joined = await player.page
-      .waitForSelector('.mic--live', { timeout: 20_000 })
-      .then(() => true)
-      .catch(() => false)
-    check(joined, `${player.name} can join the call`)
-  }
-
-  const paired = await ada.page
-    .waitForFunction(() => document.querySelector('.mic__count')?.textContent === '1', null, {
-      timeout: 20_000,
-    })
-    .then(() => true)
-    .catch(() => false)
-  check(paired, 'and each of them finds the other in it')
-
-  // The claim that matters: a voice crossed the connection and arrived loud.
-  const heard = await ada.page
-    .waitForFunction(() => document.querySelectorAll('.badge--talking').length > 0, null, {
-      timeout: 25_000,
-    })
-    .then(() => true)
-    .catch(() => false)
-  check(heard, 'and a voice actually crosses between them')
-
-  const muted = await bo.page.evaluate(async () => {
-    document.querySelector('.mic').click()
-    await new Promise((r) => setTimeout(r, 400))
-    return document.querySelector('.mic--muted') !== null
-  })
-  check(muted, 'muting is one tap, and does not leave the call')
-
-  const stillIn = await bo.page.evaluate(
-    () => document.querySelector('.mic--live') !== null,
-  )
-  check(stillIn, 'and they are still in it while muted')
-
-  // Everybody not in the call is unaffected, which is the point of it being
-  // optional: Cy never pressed anything.
-  const cyAlone = await players[2].page.evaluate(() => ({
-    live: document.querySelector('.mic--live') !== null,
-    canBid: document.querySelector('.builder__submit') !== null,
-  }))
-  check(!cyAlone.live && cyAlone.canBid, 'and somebody who never joined plays on regardless')
 }
 
 // -----------------------------------------------------------------------------

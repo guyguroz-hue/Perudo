@@ -623,92 +623,6 @@ function lift(error) {
 	return fault;
 }
 //#endregion
-//#region supabase/functions/game/voice.ts
-/**
-* Where the voices are relayed, when they have to be.
-*
-* Two browsers usually talk to each other directly. Usually — a phone on a
-* mobile network is often behind carrier-grade NAT, which has no route in from
-* outside, and for those pairs the audio has to go through a relay. That relay
-* is TURN, and a TURN server will not take traffic from just anybody.
-*
-* Which is why this is here and not in the browser: whatever the relay wants as
-* proof, the browser is the wrong place to keep it.
-*
-* Two ways to configure one, and the order matters — the simple one wins,
-* because the reason it exists is that the other one asks for a credit card.
-*
-*   TURN_URLS, TURN_USERNAME, TURN_CREDENTIAL
-*     A relay and a fixed username and password, handed straight to the
-*     browser. This is what every free provider gives you, and it is what a
-*     coturn on a box of your own gives you. The password is long-lived and
-*     reaches the client, which is the honest trade: it is a relay account,
-*     not a key that mints relay accounts.
-*
-*   CLOUDFLARE_TURN_KEY_ID, CLOUDFLARE_TURN_API_TOKEN
-*     A key that mints credentials good for a few hours. Better, because
-*     nothing long-lived ever leaves this function — and it wants a card on
-*     file, which is why it is not the only way.
-*
-* With neither, this returns nothing rather than failing. Voice still works
-* over STUN for most pairs, and a table where two people cannot hear each other
-* is a better outcome than a table where nobody can press the button. The
-* client says which two, so it is not a mystery.
-*/
-const KEY_ID = Deno.env.get("CLOUDFLARE_TURN_KEY_ID") ?? "";
-const API_TOKEN = Deno.env.get("CLOUDFLARE_TURN_API_TOKEN") ?? "";
-/** Comma-separated, because a relay is usually offered on several ports. */
-const TURN_URLS = Deno.env.get("TURN_URLS") ?? "";
-const TURN_USERNAME = Deno.env.get("TURN_USERNAME") ?? "";
-const TURN_CREDENTIAL = Deno.env.get("TURN_CREDENTIAL") ?? "";
-/**
-* How long the minted credentials last.
-*
-* Longer than any game anybody will play in one sitting, so a table does not
-* lose its relay in the middle of a round, and far short of the key itself,
-* which never leaves this function.
-*/
-const TTL_SECONDS = 21600;
-async function iceServers() {
-	if (TURN_URLS !== "") {
-		const urls = TURN_URLS.split(",").map((url) => url.trim()).filter((url) => url !== "");
-		if (urls.length > 0) return { iceServers: [{
-			urls,
-			...TURN_USERNAME === "" ? {} : { username: TURN_USERNAME },
-			...TURN_CREDENTIAL === "" ? {} : { credential: TURN_CREDENTIAL }
-		}] };
-	}
-	if (KEY_ID === "" || API_TOKEN === "") return { iceServers: [] };
-	let response;
-	try {
-		response = await fetch(`https://rtc.live.cloudflare.com/v1/turn/keys/${KEY_ID}/credentials/generate-ice-servers`, {
-			method: "POST",
-			headers: {
-				Authorization: `Bearer ${API_TOKEN}`,
-				"Content-Type": "application/json"
-			},
-			body: JSON.stringify({ ttl: TTL_SECONDS })
-		});
-	} catch {
-		return { iceServers: [] };
-	}
-	if (!response.ok) throw new GameError("VOICE_UNAVAILABLE", "The voice relay refused our credentials. Check the TURN key on the server.", 502);
-	return { iceServers: normalise((await response.json()).iceServers) };
-}
-/**
-* One shape, whatever came back.
-*
-* The provider has two endpoints that differ only in whether `iceServers` is an
-* array or a single object, and a browser wants an array either way. Accepting
-* both costs three lines and removes a class of breakage that would only ever
-* show up as "voice stopped working" long after anybody changed anything.
-*/
-function normalise(value) {
-	if (Array.isArray(value)) return value;
-	if (value !== null && typeof value === "object") return [value];
-	return [];
-}
-//#endregion
 //#region supabase/functions/game/index.ts
 /**
 * The authoritative game server.
@@ -745,9 +659,6 @@ Deno.serve(async (request) => {
 			case "bid": return ok(await placeBid(store, actor, gameId, asInt(body.quantity, "quantity"), asFace(body.face)));
 			case "bull": return ok(await callBull(store, actor, gameId));
 			case "challenge": return ok(await challenge(store, actor, gameId));
-			case "voice_ice":
-				await requirePlaying(store, actor, gameId);
-				return ok(await iceServers());
 			default: return fail(new GameError("BAD_REQUEST", `Unknown action: ${String(body.action)}`));
 		}
 	} catch (error) {
@@ -767,15 +678,6 @@ async function whoIsCalling(request) {
 	const { data, error } = await createClient(url, anonKey, { global: { headers: { Authorization: authorization } } }).auth.getUser();
 	if (error !== null || data.user === null) throw new GameError("NOT_AUTHENTICATED", "Those credentials are not valid.", 401);
 	return data.user.id;
-}
-/**
-* Refuse anybody who is not playing this game.
-*
-* The actions do this for themselves on the way to doing something; this one
-* has nothing else to do, so it asks outright.
-*/
-async function requirePlaying(store, actor, gameId) {
-	if (!(await store.players(gameId)).some((player) => player.user_id === actor.id)) throw new GameError("NOT_A_PLAYER", "You are not in this game.", 403);
 }
 function ok(payload) {
 	return new Response(JSON.stringify(payload), {

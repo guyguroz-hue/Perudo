@@ -26,8 +26,6 @@ export function PlayerSeat({
   lifted = 0,
   overhead = 0,
   cutIn = false,
-  talking = false,
-  unheard = false,
 }: {
   placement: SeatPlacement
   /**
@@ -39,23 +37,6 @@ export function PlayerSeat({
    * matching a colour to six cups.
    */
   cutIn?: boolean
-  /**
-   * True while their voice is coming through.
-   *
-   * The reason voice belongs inside the game rather than beside it: a bid is a
-   * performance, and knowing who is making it while they make it is most of
-   * what reading a table is.
-   */
-  talking?: boolean
-  /**
-   * In the voice call, and their audio never arrived.
-   *
-   * Said out loud rather than left as quiet. Without a relay, two ends that are
-   * both behind carrier-grade NAT cannot reach each other at all — ordinary on
-   * mobile data — and the failure is indistinguishable from somebody choosing
-   * not to talk.
-   */
-  unheard?: boolean
   /** How far the cups are off the table, 0 to 1, which the badges follow. */
   lifted?: number
   /**
@@ -109,7 +90,7 @@ export function PlayerSeat({
   if (player.isYou) {
     return (
       <li
-        className={`badge badge--you ${near ? 'badge--near' : 'badge--far'}${player.hasTurn ? ' badge--turn' : ''}${aerial ? ' badge--aerial' : ''}${cutIn ? ' badge--cut' : ''}${talking ? ' badge--talking' : ''}${unheard ? ' badge--unheard' : ''}`}
+        className={`badge badge--you ${near ? 'badge--near' : 'badge--far'}${player.hasTurn ? ' badge--turn' : ''}${aerial ? ' badge--aerial' : ''}${cutIn ? ' badge--cut' : ''}`}
         style={style}
       >
         <span className="badge__status">
@@ -128,8 +109,6 @@ export function PlayerSeat({
         player.isEliminated ? 'badge--out' : '',
         aerial ? 'badge--aerial' : '',
         cutIn ? 'badge--cut' : '',
-        talking ? 'badge--talking' : '',
-        unheard ? 'badge--unheard' : '',
       ]
         .filter(Boolean)
         .join(' ')}
